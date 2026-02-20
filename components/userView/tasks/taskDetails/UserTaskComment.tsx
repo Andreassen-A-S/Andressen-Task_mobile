@@ -1,81 +1,37 @@
-import { useEffect, useState, useContext } from "react";
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
-import { getTaskComments, createComment, deleteComment, getUser } from "@/lib/api";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
-import { AuthContext } from "@/contexts/AuthContext";
 import UserTaskCommentBubble from "./UserTaskCommentBubble";
 import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
 import { typography } from "@/constants/typography";
 
-export default function UserTaskComment({ taskId }: { taskId: string }) {
-  const authContext = useContext(AuthContext);
-  const currentUser = authContext?.user;
+interface Props {
+  comments: TaskComment[];
+  commentAuthors: Record<string, User>;
+  isLoading: boolean;
+  error: string | null;
+  currentUserId?: string;
+  onDelete: (commentId: string) => void;
+  commentInput: string;
+  onCommentChange: (text: string) => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+  onInputFocus?: () => void;
+}
 
-  const [comments, setComments] = useState<TaskComment[]>([]);
-  const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [comment, setComment] = useState("");
-
-  useEffect(() => {
-    if (!taskId) return;
-    const fetchComments = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const commentsData = await getTaskComments(taskId);
-        setComments(commentsData);
-
-        const uniqueUserIds = [...new Set(commentsData.map((c) => c.user_id))];
-        const authorsData: Record<string, User> = {};
-        await Promise.all(
-          uniqueUserIds.map(async (userId) => {
-            try {
-              authorsData[userId] = await getUser(userId);
-            } catch { }
-          }),
-        );
-        setCommentAuthors(authorsData);
-      } catch {
-        setError("Kunne ikke hente kommentarer");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchComments();
-  }, [taskId]);
-
-  const handleSubmit = async () => {
-    if (!comment.trim()) return;
-    try {
-      setIsSubmitting(true);
-      const newComment = await createComment(taskId, { message: comment.trim() });
-      setComments((prev) => [...prev, newComment]);
-      if (currentUser && !commentAuthors[newComment.user_id]) {
-        try {
-          const userData = await getUser(newComment.user_id);
-          setCommentAuthors((prev) => ({ ...prev, [newComment.user_id]: userData }));
-        } catch { }
-      }
-      setComment("");
-    } catch {
-      setError("Kunne ikke tilføje kommentar");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (commentId: string) => {
-    try {
-      await deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c.comment_id !== commentId));
-    } catch {
-      setError("Kunne ikke slette kommentar");
-    }
-  };
-
+export default function UserTaskComment({
+  comments,
+  commentAuthors,
+  isLoading,
+  error,
+  currentUserId,
+  onDelete,
+  commentInput,
+  onCommentChange,
+  onSubmit,
+  isSubmitting,
+  onInputFocus,
+}: Props) {
   return (
     <View>
       <Text className="mb-4" style={typography.overline}>
@@ -93,9 +49,9 @@ export default function UserTaskComment({ taskId }: { taskId: string }) {
       ) : (
         <View className="gap-4 mb-4">
           {comments.map((c) => {
-            const isOwn = currentUser?.user_id === c.user_id;
+            const isOwn = currentUserId === c.user_id;
             return isOwn ? (
-              <OwnUserTaskCommentBubble key={c.comment_id} comment={c} onDelete={handleDelete} />
+              <OwnUserTaskCommentBubble key={c.comment_id} comment={c} onDelete={onDelete} />
             ) : (
               <UserTaskCommentBubble key={c.comment_id} comment={c} author={commentAuthors[c.user_id]} />
             );
@@ -103,30 +59,29 @@ export default function UserTaskComment({ taskId }: { taskId: string }) {
         </View>
       )}
 
-      {/* Comment input */}
-      <View className="mt-2">
-        <TextInput
-          value={comment}
-          onChangeText={setComment}
-          placeholder="Tilføj en kommentar..."
-          multiline
-          editable={!isSubmitting}
-          className="bg-white border border-[#E8E6E1] rounded-lg px-4 py-3 min-h-[80px] focus:border-[#2D9F6F]"
-          style={typography.bodyMd}
-          textAlignVertical="top"
-        />
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={!comment.trim() || isSubmitting}
-          className="self-end mt-3 px-5 py-2.5 rounded-lg bg-[#0f6e56] disabled:opacity-50"
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="white" size="small" />
-          ) : (
-            <Text className="text-white font-semibold text-sm">Kommenter</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      {/* Composer */}
+      <TextInput
+        value={commentInput}
+        onChangeText={onCommentChange}
+        placeholder="Tilføj en kommentar..."
+        placeholderTextColor="#9DA1B4"
+        multiline
+        editable={!isSubmitting}
+        style={[typography.bodyMd, { maxHeight: 96 }]}
+        className="bg-white border border-[#E8E6E1] rounded-lg px-4 h-24 focus:border-[#2D9F6F]"
+        onFocus={onInputFocus}
+      />
+      <TouchableOpacity
+        onPress={onSubmit}
+        disabled={!commentInput.trim() || isSubmitting}
+        className="self-end mt-2 px-5 py-2.5 rounded-lg bg-[#0f6e56] disabled:opacity-50"
+      >
+        {isSubmitting ? (
+          <ActivityIndicator color="white" size="small" />
+        ) : (
+          <Text className="text-white font-semibold text-sm">Kommenter</Text>
+        )}
+      </TouchableOpacity>
     </View>
   );
 }

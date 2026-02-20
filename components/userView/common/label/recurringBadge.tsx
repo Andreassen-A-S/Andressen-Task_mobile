@@ -27,7 +27,7 @@ export default function RecurringBadge({ size = "md" }: RecurringBadgeProps) {
     if (size === "md") {
         return (
             <View style={[styles.container, sizeStyles.md]}>
-                <FontAwesome6 name="repeat" size={16} color="#2C5FE0" />
+                <FontAwesome6 name="repeat" size={12} color="#2C5FE0" />
                 <Text style={[typography.badgeRecurring]}>Gentages</Text>
             </View>
         );
@@ -36,7 +36,7 @@ export default function RecurringBadge({ size = "md" }: RecurringBadgeProps) {
     if (size === "lg") {
         return (
             <View style={[styles.container, sizeStyles.lg]}>
-                <FontAwesome6 name="repeat" size={24} color="#2C5FE0" />
+                <FontAwesome6 name="repeat" size={14} color="#2C5FE0" />
                 <Text style={[typography.badgeRecurring]}>Gentages</Text>
             </View>
         );
