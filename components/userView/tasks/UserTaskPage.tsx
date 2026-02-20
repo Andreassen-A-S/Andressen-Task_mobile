@@ -34,22 +34,23 @@ export default function UserTaskPage() {
   const { user, isLoading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (refresh = false) => {
     if (!user?.user_id) return;
     try {
-      setIsLoading(true);
+      refresh ? setIsRefreshing(true) : setIsLoading(true);
       setError(null);
       const assignments = await getUserAssignments(user.user_id);
       setTasks(sortTasks(assignments.map((a) => a.task)));
     } catch {
       setError("Kunne ikke hente opgaver. Prøv igen senere.");
     } finally {
-      setIsLoading(false);
+      refresh ? setIsRefreshing(false) : setIsLoading(false);
     }
   }, [user?.user_id]);
 
@@ -84,7 +85,7 @@ export default function UserTaskPage() {
     });
   }, [tasksForDay, filter]);
 
-  if (authLoading || isLoading) {
+  if (authLoading || (isLoading && tasks.length === 0)) {
     return (
       <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
         <View style={styles.content}>
@@ -106,7 +107,7 @@ export default function UserTaskPage() {
           <View style={[styles.center, { paddingHorizontal: 24 }]}>
             <View style={styles.errorBox}>
               <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity onPress={fetchTasks} style={styles.retryBtn}>
+              <TouchableOpacity onPress={() => fetchTasks()} style={styles.retryBtn}>
                 <Text style={styles.retryBtnText}>Prøv igen</Text>
               </TouchableOpacity>
             </View>
@@ -119,67 +120,69 @@ export default function UserTaskPage() {
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
       <View style={styles.content}>
-      <UserTaskHeader user={user ?? undefined} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
-      <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} />
-      <FlatList
-        data={filteredTasks}
-        keyExtractor={(item) => item.task_id}
-        renderItem={({ item }) => (
-          <UserTaskCard task={item} onClick={() => setSelectedTaskId(item.task_id)} />
-        )}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View>
+        <UserTaskHeader user={user ?? undefined} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
+        <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} />
+        <FlatList
+          data={filteredTasks}
+          keyExtractor={(item) => item.task_id}
+          renderItem={({ item }) => (
+            <UserTaskCard task={item} onClick={() => setSelectedTaskId(item.task_id)} />
+          )}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          refreshing={isRefreshing}
+          onRefresh={() => fetchTasks(true)}
+          ListHeaderComponent={
+            <View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.pillsContent}
-              style={styles.pillsWrapper}
-            >
-              {FILTERS.map(({ key, label }) => (
-                <TouchableOpacity
-                  key={key}
-                  onPress={() => setFilter(key)}
-                  style={[
-                    styles.pill,
-                    filter === key && styles.pillActive,
-                  ]}
-                >
-                  <Text
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.pillsContent}
+                style={styles.pillsWrapper}
+              >
+                {FILTERS.map(({ key, label }) => (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => setFilter(key)}
                     style={[
-                      filter === key ? typography.labelLgWhite : typography.labelLgGray,
+                      styles.pill,
+                      filter === key && styles.pillActive,
                     ]}
                   >
-                    {key === "all" ? `${label} (${tasksForDay.length})` : label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <View style={styles.emptyCard}>
-              <Ionicons name="checkmark-circle-outline" size={48} color="#d1d5db" />
-              <Text style={styles.emptyTitle}>Ingen opgaver planlagt for denne dag</Text>
-              <Text style={styles.emptySub}>Nye opgaver vil blive vist her</Text>
+                    <Text
+                      style={[
+                        filter === key ? typography.labelLgWhite : typography.labelLgGray,
+                      ]}
+                    >
+                      {key === "all" ? `${label} (${tasksForDay.length})` : label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
-          </View>
-        }
-      />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <View style={styles.emptyCard}>
+                <Ionicons name="checkmark-circle-outline" size={48} color="#d1d5db" />
+                <Text style={styles.emptyTitle}>Ingen opgaver planlagt for denne dag</Text>
+                <Text style={styles.emptySub}>Nye opgaver vil blive vist her</Text>
+              </View>
+            </View>
+          }
+        />
 
-      <Modal
-        visible={!!selectedTaskId}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setSelectedTaskId(null)}
-      >
-        {selectedTaskId && (
-          <UserTaskDetails taskId={selectedTaskId} onBack={() => setSelectedTaskId(null)} />
-        )}
-      </Modal>
+        <Modal
+          visible={!!selectedTaskId}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setSelectedTaskId(null)}
+        >
+          {selectedTaskId && (
+            <UserTaskDetails taskId={selectedTaskId} onBack={() => setSelectedTaskId(null)} onTaskUpdated={fetchTasks} />
+          )}
+        </Modal>
       </View>
     </SafeAreaView>
   );

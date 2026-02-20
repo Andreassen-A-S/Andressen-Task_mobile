@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext, useRef } from "react";
 import {
   View,
   Text,
@@ -7,28 +7,37 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Task, TaskGoalType, TaskStatus } from "@/types/task";
+import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
-import { addTaskProgress, getTask, updateTask, getUser } from "@/lib/api";
+import { addTaskProgress, getTask, updateTask, getUser, getTaskComments, createComment, deleteComment } from "@/lib/api";
 import {
   formatDaDate,
-  getPriorityAccentColor,
-  translatePriority,
   translateTaskUnit,
-  translateStatus,
-  getPriorityColors,
-  getStatusColors,
 } from "@/helpers/helpers";
 import { Ionicons } from "@expo/vector-icons";
+import { AuthContext } from "@/contexts/AuthContext";
 import UserTaskComment from "./UserTaskComment";
+import { typography } from "@/constants/typography";
+import CloseButton from "../../common/buttons/CloseButton";
+import RecurringBadge from "../../common/label/recurringBadge";
+import Badge from "../../common/label/badge";
+import DetailsPriorityBadge from "../../common/label/DetailsPriorityBadge";
+import { colors } from "@/constants/colors";
 
 interface Props {
   taskId: string;
   onBack: () => void;
+  onTaskUpdated?: () => void;
 }
 
-export default function UserTaskDetails({ taskId, onBack }: Props) {
+export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props) {
+  const authContext = useContext(AuthContext);
+  const currentUser = authContext?.user;
+
   const [task, setTask] = useState<Task | null>(null);
   const [creator, setCreator] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,11 +45,26 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
   const [progressDelta, setProgressDelta] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const [comments, setComments] = useState<TaskComment[]>([]);
+  const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [commentInput, setCommentInput] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const handleCommentFocus = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 300);
+  };
+
   useEffect(() => {
     if (!taskId) return;
     const fetchTask = async () => {
       try {
-        setError(null)
+        setError(null);
         setIsLoading(true);
         const taskData = await getTask(taskId);
         setTask(taskData);
@@ -58,6 +82,34 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
     fetchTask();
   }, [taskId]);
 
+  useEffect(() => {
+    if (!taskId) return;
+    const fetchComments = async () => {
+      try {
+        setIsLoadingComments(true);
+        setCommentError(null);
+        const commentsData = await getTaskComments(taskId);
+        setComments(commentsData);
+
+        const uniqueUserIds = [...new Set(commentsData.map((c) => c.user_id))];
+        const authorsData: Record<string, User> = {};
+        await Promise.all(
+          uniqueUserIds.map(async (userId) => {
+            try {
+              authorsData[userId] = await getUser(userId);
+            } catch { }
+          }),
+        );
+        setCommentAuthors(authorsData);
+      } catch {
+        setCommentError("Kunne ikke hente kommentarer");
+      } finally {
+        setIsLoadingComments(false);
+      }
+    };
+    fetchComments();
+  }, [taskId]);
+
   const handleComplete = async () => {
     if (!task) return;
     try {
@@ -65,6 +117,10 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
       const newStatus = task.status === TaskStatus.DONE ? TaskStatus.PENDING : TaskStatus.DONE;
       const updated = await updateTask(task.task_id, { status: newStatus });
       setTask(updated);
+      if (newStatus === TaskStatus.DONE) {
+        onBack();
+        onTaskUpdated?.();
+      }
     } catch {
       Alert.alert("Fejl", "Kunne ikke opdatere opgave");
     } finally {
@@ -95,6 +151,39 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
     }
   };
 
+  const handleSubmitComment = async () => {
+    if (!commentInput.trim()) return;
+    try {
+      setIsSubmittingComment(true);
+      const newComment = await createComment(taskId, { message: commentInput.trim() });
+      setComments((prev) => [...prev, newComment]);
+      if (currentUser && !commentAuthors[newComment.user_id]) {
+        try {
+          const userData = await getUser(newComment.user_id);
+          setCommentAuthors((prev) => ({ ...prev, [newComment.user_id]: userData }));
+        } catch (err) {
+          setCommentError("Kunne ikke hente forfatterdata for kommentar");
+        }
+      }
+      setCommentInput("");
+      setCommentError(null);
+    } catch {
+      setCommentError("Kunne ikke tilføje kommentar");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    setCommentError(null);
+    try {
+      await deleteComment(commentId);
+      setComments((prev) => prev.filter((c) => c.comment_id !== commentId));
+    } catch {
+      setCommentError("Kunne ikke slette kommentar");
+    }
+  };
+
   const unitLabel = task ? translateTaskUnit(task.unit) : "";
   const currentQuantity = task?.current_quantity ?? 0;
   const hasProgress = task?.current_quantity != null && task?.goal_type === TaskGoalType.FIXED;
@@ -115,144 +204,146 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 pb-3">
         {isLoading ? (
-          <Text className="text-xs text-[#9DA1B4] uppercase font-bold tracking-widest">HENTER...</Text>
+          <Text className="tracking-widest" style={typography.bodyXs}>HENTER...</Text>
         ) : error ? (
-          <Text className="text-xs text-red-500 uppercase font-bold tracking-widest">FEJL</Text>
+          <Text className="tracking-widest" style={[typography.bodyXs, { color: colors.red }]}>FEJL</Text>
         ) : task ? (
-          (() => {
-            const statusColors = getStatusColors(task.status);
-            return (
-              <View style={[{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1 }, statusColors.container]}>
-                <Text style={[{ fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 }, statusColors.text]}>
-                  {translateStatus(task.status)}
-                </Text>
-              </View>
-            );
-          })()
+          <Badge variant="status" value={task.status} size="lg" />
         ) : null}
 
-        <TouchableOpacity
-          onPress={onBack}
-          className="w-8 h-8 border border-gray-200 rounded-lg items-center justify-center"
-        >
-          <Ionicons name="close" size={16} color="#6B7084" />
-        </TouchableOpacity>
+        <CloseButton onClick={onBack} />
       </View>
 
       {/* Content */}
-      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
-        {isLoading && (
-          <View className="items-center justify-center py-20">
-            <ActivityIndicator color="#0f6e56" size="large" />
-            <Text className="text-sm text-gray-400 mt-3">Henter opgave...</Text>
-          </View>
-        )}
-
-        {error && !isLoading && (
-          <View className="bg-red-50 border border-red-300 rounded-lg p-4 my-4">
-            <Text className="text-red-600 text-sm text-center">{error}</Text>
-          </View>
-        )}
-
-        {task && !isLoading && !error && (
-          <View>
-            {/* Priority badge */}
-            <View className="flex-row items-center gap-2 mb-3">
-              {(() => {
-                const priorityColors = getPriorityColors(task.priority);
-                return (
-                  <View style={[{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1 }, priorityColors.container]}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getPriorityAccentColor(task.priority) }} />
-                    <Text style={[{ fontSize: 11, fontWeight: "700" }, priorityColors.text]}>{translatePriority(task.priority)} prioritet</Text>
-                  </View>
-                );
-              })()}
-              {task.recurring_template_id && (
-                <View className="px-2 py-1 rounded-md bg-purple-100 border border-purple-200">
-                  <Text className="text-xs font-bold text-purple-600 uppercase">GENTAGET</Text>
-                </View>
-              )}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1, }}
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          className="flex-1 px-5"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+          {isLoading && (
+            <View className="items-center justify-center py-20">
+              <ActivityIndicator color="#0f6e56" size="large" />
+              <Text className="mt-3" style={typography.bodySm}>Henter opgave...</Text>
             </View>
+          )}
 
-            {/* Title */}
-            <Text className="text-xl font-bold text-[#1B1D22] mb-2">{task.title}</Text>
+          {error && !isLoading && (
+            <View className="bg-red-50 border border-red-300 rounded-lg p-4 my-4">
+              <Text className="text-red-600 text-sm text-center">{error}</Text>
+            </View>
+          )}
 
-            {/* Description */}
-            {task.description ? (
-              <Text className="text-sm text-[#6B7084] mb-5 leading-relaxed">{task.description}</Text>
-            ) : null}
-
-            {/* Progress */}
-            {hasProgress && (
-              <View className="mb-4">
-                <Text className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
-                  Fremskridt
-                </Text>
-                <View className="flex-row items-baseline justify-between mb-1.5">
-                  <Text className="text-base font-semibold text-[#1B1D22]">{progressLabel}</Text>
-                  {progressPct !== null && (
-                    <Text className="text-sm text-[#9DA1B4]">{progressPct}%</Text>
-                  )}
-                </View>
-                <View className="h-2 rounded-full bg-[#E8E6E1] overflow-hidden mb-4">
-                  <View
-                    className="h-full rounded-full bg-[#0f6e56]"
-                    style={{ width: `${progressPct ?? 0}%` }}
-                  />
-                </View>
-                <TextInput
-                  keyboardType="numeric"
-                  placeholder={`+ Tilføj ${unitLabel || "enheder"}`}
-                  placeholderTextColor="#9DA1B4"
-                  value={progressDelta}
-                  onChangeText={setProgressDelta}
-                  className="h-11 rounded-lg border border-[#E8E6E1] px-3.5 bg-[#F6F5F1] text-sm text-[#1B1D22] mb-2"
-                />
-                <TouchableOpacity
-                  onPress={handleAddProgress}
-                  disabled={isUpdating}
-                  className="h-11 rounded-lg bg-[#0f6e56] items-center justify-center disabled:opacity-50"
-                >
-                  {isUpdating ? (
-                    <ActivityIndicator color="white" />
-                  ) : (
-                    <Text className="text-white font-semibold">Registrer fremskridt</Text>
-                  )}
-                </TouchableOpacity>
-                <View className="h-px bg-[#E8E6E1] my-4" />
+          {task && !isLoading && !error && (
+            <View>
+              {/* Priority badge */}
+              <View className="flex-row items-center gap-2 mb-3">
+                <DetailsPriorityBadge priority={task.priority} size="lg" />
+                {task.recurring_template_id && <RecurringBadge size="lg" />}
               </View>
-            )}
 
-            {/* Comments */}
-            <UserTaskComment taskId={taskId} />
+              {/* Title */}
+              <Text className="mb-2" style={typography.h3}>{task.title}</Text>
 
-            <View className="h-6" />
-          </View>
-        )}
-      </ScrollView>
+              {/* Description */}
+              {task.description ? (
+                <Text className="mb-5 leading-relaxed" style={typography.bodySm}>{task.description}</Text>
+              ) : null}
 
-      {/* Footer */}
+              {/* Progress */}
+              {hasProgress && (
+                <>
+                  <Text className="mb-2" style={typography.overline}>
+                    Fremskridt
+                  </Text>
+                  <View className="flex-row items-baseline justify-between mb-1.5">
+                    <Text style={typography.monoMd}>{progressLabel}</Text>
+                    {progressPct !== null && (
+                      <Text style={typography.monoMd}>{progressPct}%</Text>
+                    )}
+                  </View>
+                  <View className="h-2 rounded-full bg-[#E8E6E1] overflow-hidden mb-4">
+                    <View
+                      className="h-full rounded-full bg-[#0f6e56]"
+                      style={{ width: `${progressPct ?? 0}%` }}
+                    />
+                  </View>
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder={`+ Tilføj ${unitLabel || "enheder"}`}
+                    placeholderTextColor="#9DA1B4"
+                    value={progressDelta}
+                    onChangeText={setProgressDelta}
+                    className="h-12 rounded-lg border border-[#E8E6E1] px-3.5 bg-[#F6F5F1] mb-2 focus:border-[#2D9F6F]"
+                    style={typography.monoSm}
+                  />
+                  <TouchableOpacity
+                    onPress={handleAddProgress}
+                    disabled={isUpdating}
+                    className="h-12 rounded-lg bg-[#0f6e56] items-center justify-center disabled:opacity-50"
+                  >
+                    {isUpdating ? (
+                      <ActivityIndicator color="white" />
+                    ) : (
+                      <Text style={typography.btnMdWhite}>Registrer fremskridt</Text>
+                    )}
+                  </TouchableOpacity>
+                  <View className="h-px bg-[#E8E6E1] my-4" />
+                </>
+              )}
+
+              {/* Comments */}
+              <UserTaskComment
+                comments={comments}
+                commentAuthors={commentAuthors}
+                isLoading={isLoadingComments}
+                error={commentError}
+                currentUserId={currentUser?.user_id}
+                onDelete={handleDeleteComment}
+                commentInput={commentInput}
+                onCommentChange={setCommentInput}
+                onSubmit={handleSubmitComment}
+                isSubmitting={isSubmittingComment}
+                onInputFocus={handleCommentFocus}
+              />
+
+              <View className="h-6" />
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Footer — always fixed at bottom */}
       {task && !isLoading && !error && (
-        <View className="px-5 pb-8 pt-2 border-t border-[#E8E6E1]">
+        <View className="px-5 pb-8 pt-3 border-t border-[#E8E6E1]">
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-xs text-[#9DA1B4]">
+            <Text style={typography.monoXs}>
               Oprettet af: {creator?.name || creator?.email || task.created_by}
             </Text>
-            <Text className="text-xs text-[#9DA1B4]">{formatDaDate(task.created_at)}</Text>
+            <Text style={typography.monoXs}>{formatDaDate(task.created_at)}</Text>
           </View>
 
           <TouchableOpacity
             onPress={handleComplete}
             disabled={isUpdating}
-            className="h-14 rounded-xl bg-[#0f6e56] flex-row items-center justify-center gap-2 disabled:opacity-50"
+            className={`h-14 rounded-xl flex-row items-center justify-center gap-2 disabled:opacity-50 ${task.status === TaskStatus.DONE ? "bg-[#9DA1B4]" : "bg-[#0f6e56]"}`}
           >
             {isUpdating ? (
               <ActivityIndicator color="white" />
             ) : (
               <>
-                <Ionicons name="checkmark" size={20} color="white" />
-                <Text className="text-white font-semibold text-base">
-                  {task.status === "DONE" ? "Marker som ikke færdig" : "Marker som færdig"}
+                <Ionicons
+                  name={task.status === TaskStatus.DONE ? "refresh" : "checkmark"}
+                  size={20}
+                  color="white"
+                />
+                <Text style={typography.btnMdWhite}>
+                  {task.status === TaskStatus.DONE ? "Marker som ikke færdig" : "Marker som færdig"}
                 </Text>
               </>
             )}
