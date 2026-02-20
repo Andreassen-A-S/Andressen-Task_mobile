@@ -17,10 +17,7 @@ import { User } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser, getTaskComments, createComment, deleteComment } from "@/lib/api";
 import {
   formatDaDate,
-  getPriorityAccentColor,
-  translatePriority,
   translateTaskUnit,
-  getPriorityColors,
 } from "@/helpers/helpers";
 import { Ionicons } from "@expo/vector-icons";
 import { AuthContext } from "@/contexts/AuthContext";
@@ -30,6 +27,7 @@ import CloseButton from "../../common/buttons/CloseButton";
 import RecurringBadge from "../../common/label/recurringBadge";
 import Badge from "../../common/label/badge";
 import DetailsPriorityBadge from "../../common/label/DetailsPriorityBadge";
+import { colors } from "@/constants/colors";
 
 interface Props {
   taskId: string;
@@ -58,10 +56,9 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
   const scrollViewRef = useRef<ScrollView>(null);
 
   const handleCommentFocus = () => {
-    const subscription = Keyboard.addListener("keyboardDidShow", () => {
+    setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
-      subscription.remove();
-    });
+    }, 300);
   };
 
   useEffect(() => {
@@ -121,8 +118,10 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
       const newStatus = task.status === TaskStatus.DONE ? TaskStatus.PENDING : TaskStatus.DONE;
       const updated = await updateTask(task.task_id, { status: newStatus });
       setTask(updated);
-      onTaskUpdated?.();
-      onBack();
+      if (newStatus === TaskStatus.DONE) {
+        onBack();
+        onTaskUpdated?.();
+      }
     } catch {
       Alert.alert("Fejl", "Kunne ikke opdatere opgave");
     } finally {
@@ -202,9 +201,9 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 pb-3">
         {isLoading ? (
-          <Text className="text-xs text-[#9DA1B4] uppercase font-bold tracking-widest">HENTER...</Text>
+          <Text className="tracking-widest" style={typography.bodyXs}>HENTER...</Text>
         ) : error ? (
-          <Text className="text-red-500 uppercase font-bold tracking-widest" style={typography.bodyXs}>FEJL</Text>
+          <Text className="tracking-widest" style={[typography.bodyXs, { color: colors.red }]}>FEJL</Text>
         ) : task ? (
           <Badge variant="status" value={task.status} size="lg" />
         ) : null}
@@ -291,7 +290,7 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
                       <Text style={typography.btnMdWhite}>Registrer fremskridt</Text>
                     )}
                   </TouchableOpacity>
-                  <View className="bg-[#E8E6E1] my-4" />
+                  <View className="h-px bg-[#E8E6E1] my-4" />
                 </>
               )}
 
@@ -320,24 +319,28 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
       {task && !isLoading && !error && (
         <View className="px-5 pb-8 pt-3 border-t border-[#E8E6E1]">
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-xs text-[#9DA1B4]">
+            <Text style={typography.monoXs}>
               Oprettet af: {creator?.name || creator?.email || task.created_by}
             </Text>
-            <Text className="text-xs text-[#9DA1B4]">{formatDaDate(task.created_at)}</Text>
+            <Text style={typography.monoXs}>{formatDaDate(task.created_at)}</Text>
           </View>
 
           <TouchableOpacity
             onPress={handleComplete}
             disabled={isUpdating}
-            className="h-14 rounded-xl bg-[#0f6e56] flex-row items-center justify-center gap-2 disabled:opacity-50"
+            className={`h-14 rounded-xl flex-row items-center justify-center gap-2 disabled:opacity-50 ${task.status === TaskStatus.DONE ? "bg-[#9DA1B4]" : "bg-[#0f6e56]"}`}
           >
             {isUpdating ? (
               <ActivityIndicator color="white" />
             ) : (
               <>
-                <Ionicons name="checkmark" size={20} color="white" />
-                <Text className="text-white font-semibold text-base">
-                  {task.status === "DONE" ? "Marker som ikke færdig" : "Marker som færdig"}
+                <Ionicons
+                  name={task.status === TaskStatus.DONE ? "refresh" : "checkmark"}
+                  size={20}
+                  color="white"
+                />
+                <Text style={typography.btnMdWhite}>
+                  {task.status === TaskStatus.DONE ? "Marker som ikke færdig" : "Marker som færdig"}
                 </Text>
               </>
             )}

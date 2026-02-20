@@ -25,7 +25,7 @@ export default function DetailsPriorityBadge({ size = "md", priority }: DetailsP
         return (
             <View style={[styles.container, sizeStyles.sm, colors.container]}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getPriorityAccentColor(priority) }} />
-                <Text style={[typography.badgeRecurring, colors.text]}>{translatePriority(priority)} prioritet</Text>
+                <Text style={[typography.badge, colors.text]}>{translatePriority(priority)} prioritet</Text>
             </View>
         );
     }
@@ -34,7 +34,7 @@ export default function DetailsPriorityBadge({ size = "md", priority }: DetailsP
         return (
             <View style={[styles.container, sizeStyles.md, colors.container]}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getPriorityAccentColor(priority) }} />
-                <Text style={[typography.badgeRecurring, colors.text]}>{translatePriority(priority)} prioritet</Text>
+                <Text style={[typography.badge, colors.text]}>{translatePriority(priority)} prioritet</Text>
             </View>
         );
     }
@@ -43,7 +43,7 @@ export default function DetailsPriorityBadge({ size = "md", priority }: DetailsP
         return (
             <View style={[styles.container, sizeStyles.lg, colors.container]}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getPriorityAccentColor(priority) }} />
-                <Text style={[typography.badgeRecurring, colors.text]}>{translatePriority(priority)} prioritet</Text>
+                <Text style={[typography.badge, colors.text]}>{translatePriority(priority)} prioritet</Text>
             </View>
         );
     }

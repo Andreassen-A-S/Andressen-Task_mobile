@@ -34,22 +34,23 @@ export default function UserTaskPage() {
   const { user, isLoading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (refresh = false) => {
     if (!user?.user_id) return;
     try {
-      setIsLoading(true);
+      refresh ? setIsRefreshing(true) : setIsLoading(true);
       setError(null);
       const assignments = await getUserAssignments(user.user_id);
       setTasks(sortTasks(assignments.map((a) => a.task)));
     } catch {
       setError("Kunne ikke hente opgaver. Prøv igen senere.");
     } finally {
-      setIsLoading(false);
+      refresh ? setIsRefreshing(false) : setIsLoading(false);
     }
   }, [user?.user_id]);
 
@@ -84,7 +85,7 @@ export default function UserTaskPage() {
     });
   }, [tasksForDay, filter]);
 
-  if (authLoading || isLoading) {
+  if (authLoading || (isLoading && tasks.length === 0)) {
     return (
       <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
         <View style={styles.content}>
@@ -106,7 +107,7 @@ export default function UserTaskPage() {
           <View style={[styles.center, { paddingHorizontal: 24 }]}>
             <View style={styles.errorBox}>
               <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity onPress={fetchTasks} style={styles.retryBtn}>
+              <TouchableOpacity onPress={() => fetchTasks()} style={styles.retryBtn}>
                 <Text style={styles.retryBtnText}>Prøv igen</Text>
               </TouchableOpacity>
             </View>
@@ -129,8 +130,8 @@ export default function UserTaskPage() {
           )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
-          refreshing={isLoading}
-          onRefresh={fetchTasks}
+          refreshing={isRefreshing}
+          onRefresh={() => fetchTasks(true)}
           ListHeaderComponent={
             <View>
 
