@@ -9,7 +9,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Keyboard,
 } from "react-native";
 import { Task, TaskGoalType, TaskStatus } from "@/types/task";
 import { TaskComment } from "@/types/comment";
@@ -162,9 +161,12 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
         try {
           const userData = await getUser(newComment.user_id);
           setCommentAuthors((prev) => ({ ...prev, [newComment.user_id]: userData }));
-        } catch { }
+        } catch (err) {
+          setCommentError("Kunne ikke hente forfatterdata for kommentar");
+        }
       }
       setCommentInput("");
+      setCommentError(null);
     } catch {
       setCommentError("Kunne ikke tilføje kommentar");
     } finally {
@@ -173,6 +175,7 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
   };
 
   const handleDeleteComment = async (commentId: string) => {
+    setCommentError(null);
     try {
       await deleteComment(commentId);
       setComments((prev) => prev.filter((c) => c.comment_id !== commentId));

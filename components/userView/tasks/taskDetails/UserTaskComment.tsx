@@ -70,6 +70,7 @@ export default function UserTaskComment({
         style={[typography.bodyMd, { maxHeight: 96 }]}
         className="bg-white border border-[#E8E6E1] rounded-lg px-4 h-24 focus:border-[#2D9F6F]"
         onFocus={onInputFocus}
+        textAlignVertical="top"
       />
       <TouchableOpacity
         onPress={onSubmit}

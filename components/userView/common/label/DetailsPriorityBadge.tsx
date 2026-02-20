@@ -20,35 +20,13 @@ export default function DetailsPriorityBadge({ size = "md", priority }: DetailsP
 
     const colors = getPriorityColors(priority)
 
-
-    if (size === "sm") {
-        return (
-            <View style={[styles.container, sizeStyles.sm, colors.container]}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getPriorityAccentColor(priority) }} />
-                <Text style={[typography.badge, colors.text]}>{translatePriority(priority)} prioritet</Text>
-            </View>
-        );
-    }
-
-    if (size === "md") {
-        return (
-            <View style={[styles.container, sizeStyles.md, colors.container]}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getPriorityAccentColor(priority) }} />
-                <Text style={[typography.badge, colors.text]}>{translatePriority(priority)} prioritet</Text>
-            </View>
-        );
-    }
-
-    if (size === "lg") {
-        return (
-            <View style={[styles.container, sizeStyles.lg, colors.container]}>
-                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getPriorityAccentColor(priority) }} />
-                <Text style={[typography.badge, colors.text]}>{translatePriority(priority)} prioritet</Text>
-            </View>
-        );
-    }
-
-    return null;
+    const badgeSizeStyle = sizeStyles[size] ?? sizeStyles.md;
+    return (
+        <View style={[styles.container, badgeSizeStyle, colors.container]}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getPriorityAccentColor(priority) }} />
+            <Text style={[typography.badge, colors.text]}>{translatePriority(priority)} prioritet</Text>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
