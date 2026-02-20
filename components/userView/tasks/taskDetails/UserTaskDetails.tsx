@@ -22,6 +22,10 @@ import {
 } from "@/helpers/helpers";
 import { Ionicons } from "@expo/vector-icons";
 import UserTaskComment from "./UserTaskComment";
+import { typography } from "@/constants/typography";
+import CloseButton from "../../common/buttons/CloseButton";
+import RecurringBadge from "../../common/label/recurringBadge";
+import Badge from "../../common/label/badge";
 
 interface Props {
   taskId: string;
@@ -117,26 +121,17 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
         {isLoading ? (
           <Text className="text-xs text-[#9DA1B4] uppercase font-bold tracking-widest">HENTER...</Text>
         ) : error ? (
-          <Text className="text-xs text-red-500 uppercase font-bold tracking-widest">FEJL</Text>
+          <Text className="text-red-500 uppercase font-bold tracking-widest" style={typography.bodyXs}>FEJL</Text>
         ) : task ? (
           (() => {
             const statusColors = getStatusColors(task.status);
             return (
-              <View style={[{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1 }, statusColors.container]}>
-                <Text style={[{ fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 }, statusColors.text]}>
-                  {translateStatus(task.status)}
-                </Text>
-              </View>
+              <Badge variant="status" value={task.status} size="md" />
             );
           })()
         ) : null}
 
-        <TouchableOpacity
-          onPress={onBack}
-          className="w-8 h-8 border border-gray-200 rounded-lg items-center justify-center"
-        >
-          <Ionicons name="close" size={16} color="#6B7084" />
-        </TouchableOpacity>
+        <CloseButton onClick={onBack} />
       </View>
 
       {/* Content */}
@@ -144,7 +139,7 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
         {isLoading && (
           <View className="items-center justify-center py-20">
             <ActivityIndicator color="#0f6e56" size="large" />
-            <Text className="text-sm text-gray-400 mt-3">Henter opgave...</Text>
+            <Text className="mt-3" style={typography.bodySm}>Henter opgave...</Text>
           </View>
         )}
 
@@ -161,37 +156,33 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
               {(() => {
                 const priorityColors = getPriorityColors(task.priority);
                 return (
-                  <View style={[{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1 }, priorityColors.container]}>
+                  <View style={[{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }, priorityColors.container]}>
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getPriorityAccentColor(task.priority) }} />
                     <Text style={[{ fontSize: 11, fontWeight: "700" }, priorityColors.text]}>{translatePriority(task.priority)} prioritet</Text>
                   </View>
                 );
               })()}
-              {task.recurring_template_id && (
-                <View className="px-2 py-1 rounded-md bg-purple-100 border border-purple-200">
-                  <Text className="text-xs font-bold text-purple-600 uppercase">GENTAGET</Text>
-                </View>
-              )}
+              {task.recurring_template_id && <RecurringBadge size="md" />}
             </View>
 
             {/* Title */}
-            <Text className="text-xl font-bold text-[#1B1D22] mb-2">{task.title}</Text>
+            <Text className="mb-2" style={typography.h3}>{task.title}</Text>
 
             {/* Description */}
             {task.description ? (
-              <Text className="text-sm text-[#6B7084] mb-5 leading-relaxed">{task.description}</Text>
+              <Text className="mb-5 leading-relaxed" style={typography.bodySm}>{task.description}</Text>
             ) : null}
 
             {/* Progress */}
             {hasProgress && (
-              <View className="mb-4">
-                <Text className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+              <>
+                <Text className="mb-2" style={typography.overline}>
                   Fremskridt
                 </Text>
                 <View className="flex-row items-baseline justify-between mb-1.5">
-                  <Text className="text-base font-semibold text-[#1B1D22]">{progressLabel}</Text>
+                  <Text style={typography.monoMd}>{progressLabel}</Text>
                   {progressPct !== null && (
-                    <Text className="text-sm text-[#9DA1B4]">{progressPct}%</Text>
+                    <Text style={typography.monoMd}>{progressPct}%</Text>
                   )}
                 </View>
                 <View className="h-2 rounded-full bg-[#E8E6E1] overflow-hidden mb-4">
@@ -206,21 +197,21 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
                   placeholderTextColor="#9DA1B4"
                   value={progressDelta}
                   onChangeText={setProgressDelta}
-                  className="h-11 rounded-lg border border-[#E8E6E1] px-3.5 bg-[#F6F5F1] text-sm text-[#1B1D22] mb-2"
+                  className="h-12 rounded-lg border border-[#E8E6E1] px-3.5 bg-[#F6F5F1] mb-2 focus:border-[#2D9F6F]" style={typography.monoSm}
                 />
                 <TouchableOpacity
                   onPress={handleAddProgress}
                   disabled={isUpdating}
-                  className="h-11 rounded-lg bg-[#0f6e56] items-center justify-center disabled:opacity-50"
+                  className="h-12 rounded-lg bg-[#0f6e56] items-center justify-center disabled:opacity-50"
                 >
                   {isUpdating ? (
                     <ActivityIndicator color="white" />
                   ) : (
-                    <Text className="text-white font-semibold">Registrer fremskridt</Text>
+                    <Text style={typography.btnMdWhite}>Registrer fremskridt</Text>
                   )}
                 </TouchableOpacity>
-                <View className="h-px bg-[#E8E6E1] my-4" />
-              </View>
+                <View className="bg-[#E8E6E1] my-4" />
+              </>
             )}
 
             {/* Comments */}

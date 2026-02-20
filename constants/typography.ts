@@ -74,6 +74,11 @@ export const typography = StyleSheet.create({
     lineHeight: 20,
     color: colors.textSecondary,
   },
+  bodySmWhite: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textWhite,
+  },
   bodyXs: {
     ...base,
     fontSize: 13,
@@ -130,6 +135,12 @@ export const typography = StyleSheet.create({
     lineHeight: 16,
     color: colors.textMuted,
   },
+  captionItalic: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.textMuted,
+    fontStyle: "italic",
+  },
 
   // ─── BADGES & TAGS ───────────────────────────────────────────
   badge: {
@@ -166,6 +177,12 @@ export const typography = StyleSheet.create({
     fontFamily: "Outfit_600SemiBold",
     fontSize: 13,
     lineHeight: 18,
+  },
+  btnMdWhite: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textWhite,
   },
   btnSm: {
     ...base,

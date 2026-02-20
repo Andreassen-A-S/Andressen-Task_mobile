@@ -6,6 +6,7 @@ import { User } from "@/types/users";
 import { AuthContext } from "@/contexts/AuthContext";
 import UserTaskCommentBubble from "./UserTaskCommentBubble";
 import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
+import { typography } from "@/constants/typography";
 
 export default function UserTaskComment({ taskId }: { taskId: string }) {
   const authContext = useContext(AuthContext);
@@ -33,7 +34,7 @@ export default function UserTaskComment({ taskId }: { taskId: string }) {
           uniqueUserIds.map(async (userId) => {
             try {
               authorsData[userId] = await getUser(userId);
-            } catch {}
+            } catch { }
           }),
         );
         setCommentAuthors(authorsData);
@@ -56,7 +57,7 @@ export default function UserTaskComment({ taskId }: { taskId: string }) {
         try {
           const userData = await getUser(newComment.user_id);
           setCommentAuthors((prev) => ({ ...prev, [newComment.user_id]: userData }));
-        } catch {}
+        } catch { }
       }
       setComment("");
     } catch {
@@ -77,7 +78,7 @@ export default function UserTaskComment({ taskId }: { taskId: string }) {
 
   return (
     <View>
-      <Text className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">
+      <Text className="mb-4" style={typography.overline}>
         Kommentarer ({comments.length})
       </Text>
 
@@ -88,7 +89,7 @@ export default function UserTaskComment({ taskId }: { taskId: string }) {
           <Text className="text-red-600 text-sm">{error}</Text>
         </View>
       ) : comments.length === 0 ? (
-        <Text className="text-sm text-[#9DA1B4] italic py-2 mb-4">Ingen kommentarer endnu</Text>
+        <Text className="py-2 mb-4" style={typography.captionItalic}>Ingen kommentarer endnu</Text>
       ) : (
         <View className="gap-4 mb-4">
           {comments.map((c) => {
@@ -102,16 +103,16 @@ export default function UserTaskComment({ taskId }: { taskId: string }) {
         </View>
       )}
 
-      {/* Input */}
+      {/* Comment input */}
       <View className="mt-2">
         <TextInput
           value={comment}
           onChangeText={setComment}
           placeholder="Tilføj en kommentar..."
-          placeholderTextColor="#9DA1B4"
           multiline
           editable={!isSubmitting}
-          className="bg-white border border-[#E8E6E1] rounded-lg px-4 py-3 text-sm text-[#1B1D22] min-h-[80px]"
+          className="bg-white border border-[#E8E6E1] rounded-lg px-4 py-3 min-h-[80px] focus:border-[#2D9F6F]"
+          style={typography.bodyMd}
           textAlignVertical="top"
         />
         <TouchableOpacity

@@ -1,4 +1,6 @@
+import { typography } from "@/constants/typography";
 import React from "react";
+import { TouchableOpacity, Text } from "react-native";
 
 interface CloseButtonProps {
     onClick: () => void;
@@ -8,17 +10,16 @@ interface CloseButtonProps {
 
 export default function CloseButton({
     onClick,
-    className = "text-gray-500 hover:bg-gray-100 hover:text-gray-900 rounded-lg w-9 h-9  transition-all",
+    className = "rounded-lg w-10 h-10 border border-gray-200 items-center justify-center",
     ariaLabel = "Luk",
 }: CloseButtonProps) {
     return (
-        <button
-            type="button"
-            onClick={onClick}
+        <TouchableOpacity
+            onPress={onClick}
             className={className}
-            aria-label={ariaLabel}
+            accessibilityLabel={ariaLabel}
         >
-            <span className="text-2xl">×</span>
-        </button>
+            <Text className="text-2xl text-gray-500">×</Text>
+        </TouchableOpacity>
     );
 }
