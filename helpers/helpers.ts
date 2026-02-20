@@ -17,8 +17,7 @@ export function getAuthHeaders(): HeadersInit {
 }
 
 export function formatRelativeDate(isoDate: string | Date): string {
-  const date =
-    typeof isoDate === "string" ? new Date(isoDate.split("T")[0]) : isoDate;
+  const date = parseDateInput(isoDate);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -240,7 +239,7 @@ export function getTodayAssignmentStats(assignments: TaskAssignment[]) {
   const today = toLocalDateKey(new Date());
   const assignedToday = assignments.filter(
     (a) =>
-      a.task?.scheduled_date && toLocalDateKey(a.task.scheduled_date) === today,
+      toLocalDateKey(a.task.scheduled_date) === today,
   ).length;
   const completedToday = assignments.filter(
     (a) => a.completed_at && toLocalDateKey(a.completed_at) === today,

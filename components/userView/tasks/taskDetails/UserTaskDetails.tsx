@@ -34,20 +34,20 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [progressDelta, setProgressDelta] = useState("");
-  const [progressNote, setProgressNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!taskId) return;
     const fetchTask = async () => {
       try {
+        setError(null)
         setIsLoading(true);
         const taskData = await getTask(taskId);
         setTask(taskData);
         if (taskData.created_by) {
           try {
             setCreator(await getUser(taskData.created_by));
-          } catch {}
+          } catch { }
         }
       } catch {
         setError("Kunne ikke hente opgave detaljer");
@@ -83,13 +83,11 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
       setIsUpdating(true);
       await addTaskProgress(task.task_id, {
         quantity_done: delta,
-        note: progressNote.trim() || undefined,
         unit: task.unit || undefined,
       });
       const updated = await getTask(task.task_id);
       setTask(updated);
       setProgressDelta("");
-      setProgressNote("");
     } catch {
       Alert.alert("Fejl", "Kunne ikke registrere fremskridt");
     } finally {
@@ -246,7 +244,7 @@ export default function UserTaskDetails({ taskId, onBack }: Props) {
           <TouchableOpacity
             onPress={handleComplete}
             disabled={isUpdating}
-            className="h-13 rounded-xl bg-[#0f6e56] flex-row items-center justify-center gap-2 disabled:opacity-50"
+            className="h-14 rounded-xl bg-[#0f6e56] flex-row items-center justify-center gap-2 disabled:opacity-50"
           >
             {isUpdating ? (
               <ActivityIndicator color="white" />

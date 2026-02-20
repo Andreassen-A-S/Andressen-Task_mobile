@@ -66,9 +66,8 @@ export default function LoginScreen() {
               <TouchableOpacity
                 key={option.value}
                 onPress={() => setSelectedRole(option.value)}
-                className={`flex-row items-center p-4 rounded-xl border-2 bg-white ${
-                  isSelected ? "border-[#0f6e56]" : "border-gray-200"
-                }`}
+                className={`flex-row items-center p-4 rounded-xl border-2 bg-white ${isSelected ? "border-[#0f6e56]" : "border-gray-200"
+                  }`}
               >
                 <View
                   className="w-10 h-10 rounded-full items-center justify-center mr-4"
@@ -81,9 +80,8 @@ export default function LoginScreen() {
                   <Text className="text-xs text-gray-500">{option.description}</Text>
                 </View>
                 <View
-                  className={`w-5 h-5 rounded-full border-2 items-center justify-center ${
-                    isSelected ? "border-[#0f6e56] bg-[#0f6e56]" : "border-gray-300"
-                  }`}
+                  className={`w-5 h-5 rounded-full border-2 items-center justify-center ${isSelected ? "border-[#0f6e56] bg-[#0f6e56]" : "border-gray-300"
+                    }`}
                 >
                   {isSelected && <View className="w-2 h-2 rounded-full bg-white" />}
                 </View>
@@ -102,9 +100,8 @@ export default function LoginScreen() {
         <TouchableOpacity
           onPress={handleLogin}
           disabled={!selectedRole || isLoading}
-          className={`h-13 rounded-xl items-center justify-center ${
-            !selectedRole || isLoading ? "bg-gray-300" : "bg-[#0f6e56]"
-          }`}
+          className={`h-14 rounded-xl items-center justify-center ${!selectedRole || isLoading ? "bg-gray-300" : "bg-[#0f6e56]"
+            }`}
         >
           {isLoading ? (
             <ActivityIndicator color="white" />

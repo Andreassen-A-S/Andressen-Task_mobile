@@ -57,9 +57,7 @@ export default function UserTaskCard({ task, onClick }: Props) {
             {task.title}
           </Text>
           <Text style={[typography.monoXs, styles.date]}>
-            {task.scheduled_date
-              ? formatRelativeDate(task.scheduled_date)
-              : formatRelativeDate(task.deadline)}
+            {formatRelativeDate(task.scheduled_date)}
           </Text>
         </View>
 

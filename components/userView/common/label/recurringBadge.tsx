@@ -1,6 +1,4 @@
-"use client";
 
-import { colors } from '@/constants/colors';
 import { typography } from '@/constants/typography';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { View, StyleSheet, Text } from 'react-native';

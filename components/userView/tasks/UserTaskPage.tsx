@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/hooks/useAuth";
-import { getUserAssignments, getTask } from "@/lib/api";
+import { getUserAssignments } from "@/lib/api";
 import { Task, TaskGoalType, TaskPriority, TaskStatus } from "@/types/task";
 import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
@@ -45,12 +45,7 @@ export default function UserTaskPage() {
       setIsLoading(true);
       setError(null);
       const assignments = await getUserAssignments(user.user_id);
-      if (assignments.length === 0) {
-        setTasks([]);
-        return;
-      }
-      const userTasks = await Promise.all(assignments.map((a) => getTask(a.task_id)));
-      setTasks(sortTasks(userTasks));
+      setTasks(sortTasks(assignments.map((a) => a.task)));
     } catch {
       setError("Kunne ikke hente opgaver. Prøv igen senere.");
     } finally {
@@ -67,13 +62,13 @@ export default function UserTaskPage() {
   const tasksForDay = useMemo(() => {
     return tasks.filter((task) => {
       const isDone = task.status === TaskStatus.DONE;
-      const scheduledKey = task.scheduled_date ? toLocalDateKey(task.scheduled_date) : null;
-      const deadlineKey = task.deadline ? toLocalDateKey(task.deadline) : null;
+      const scheduledKey = toLocalDateKey(task.scheduled_date);
+      const deadlineKey = toLocalDateKey(task.deadline);
 
       const isScheduledToday = scheduledKey === todayKey;
-      const isCarryOverScheduled = !!scheduledKey && scheduledKey < todayKey && !isDone;
+      const isCarryOverScheduled = scheduledKey < todayKey && !isDone;
       const isDueToday = deadlineKey === todayKey;
-      const isOverdue = !!deadlineKey && deadlineKey < todayKey && !isDone;
+      const isOverdue = deadlineKey < todayKey && !isDone;
 
       return isScheduledToday || isCarryOverScheduled || isDueToday || isOverdue;
     });
