@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -58,18 +57,8 @@ export default function ProfilePage() {
     ]);
   };
 
-  if (!currentUser) {
-    return (
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.charcoal }} edges={["top", "left", "right"]}>
-        <View className="flex-1 bg-[#F6F5F1] w-full items-center justify-center">
-          <ActivityIndicator size="large" color="#0f6e56" />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.charcoal }} edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.charcoal }} edges={["left", "right"]}>
       <UserHeader variant="profile" user={currentUser} position={userDetails?.position} />
       <ScrollView className="flex-1" style={{ backgroundColor: colors.eggWhite }} showsVerticalScrollIndicator={false}>
 
@@ -155,7 +144,7 @@ export default function ProfilePage() {
                 <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
               </View>
               <Text style={typography.labelLg} className="flex-1" numberOfLines={1}>
-                {currentUser.email}
+                {currentUser?.email}
               </Text>
             </View>
           </View>

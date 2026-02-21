@@ -85,7 +85,7 @@ export default function CalendarPage() {
   const selectedTasks = getTasksForDate(selectedDate);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
+    <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["left", "right"]}>
       <View className="flex-1 bg-[#F6F5F1]">
         {/* Header */}
         <UserHeader variant="user" heading="Kalender" sub="Overblik over kommende opgaver" user={user} />

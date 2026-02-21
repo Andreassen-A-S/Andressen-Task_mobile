@@ -1,4 +1,5 @@
 import { View, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SingleAvatar from "./label/singleAvatar";
 import { typography } from "@/constants/typography";
 
@@ -11,9 +12,11 @@ type UserHeaderProps = {
 };
 
 export default function UserHeader({ variant, user, heading, sub, position }: UserHeaderProps) {
+    const { top } = useSafeAreaInsets();
+
     if (variant === "profile") {
         return (
-            <View className="bg-[#1B1D22] px-4  pb-3">
+            <View style={{ paddingTop: top }} className="bg-[#1B1D22] px-4 pb-3">
                 <Text style={typography.labelSmUppercase} className="mb-3">
                     Andressen A/S · Task Management
                 </Text>
@@ -33,7 +36,7 @@ export default function UserHeader({ variant, user, heading, sub, position }: Us
     }
 
     return (
-        <View className="flex-row items-center bg-[#1B1D22] border-b border-[#E8E6E1] px-4 py-3 gap-3">
+        <View style={{ paddingTop: top }} className="flex-row items-center bg-[#1B1D22] border-b border-[#E8E6E1] px-4 pb-3 gap-3">
             <View className="flex-1">
                 <Text style={typography.h3White}>{heading || "Mine opgaver"}</Text>
                 <Text style={typography.caption}>{sub || `Velkommen, ${user?.name || user?.email}`}</Text>
