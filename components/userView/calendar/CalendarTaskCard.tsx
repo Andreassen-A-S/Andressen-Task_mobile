@@ -1,6 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Task, TaskGoalType } from "@/types/task";
-import { formatLocalDate, getPriorityAccentColor, translateTaskUnit, translatePriority, getPriorityColors } from "@/helpers/helpers";
+import { formatLocalDate, getPriorityAccentColor, translateTaskUnit, getPriorityColors } from "@/helpers/helpers";
+import { typography } from "@/constants/typography";
+import Badge from "../common/label/badge";
+import { colors } from "@/constants/colors";
 
 interface Props {
   task: Task;
@@ -8,24 +11,22 @@ interface Props {
 }
 
 export default function CalendarTaskCard({ task, onClick }: Props) {
-  const priorityColors = getPriorityColors(task.priority);
   return (
     <TouchableOpacity
       onPress={onClick}
-      style={styles.card}
+      className="flex-row border rounded-lg overflow-hidden"
+      style={{ backgroundColor: colors.white, borderColor: colors.border }}
     >
-      <View style={[styles.priorityAccent, { backgroundColor: getPriorityAccentColor(task.priority) }]} />
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{task.title}</Text>
-          <View style={[styles.badge, priorityColors.container]}>
-            <Text style={[styles.badgeText, priorityColors.text]}>{translatePriority(task.priority)}</Text>
-          </View>
+      <View className="w-1" style={{ backgroundColor: getPriorityAccentColor(task.priority) }} />
+      <View className="flex-1 px-3 py-2">
+        <View className="flex-row items-start justify-between gap-2 mb-1">
+          <Text className="flex-1" style={typography.h6}>{task.title}</Text>
+          <Badge variant="priority" value={task.priority} />
         </View>
-        <Text style={styles.deadline}>
+        <Text style={typography.monoXs}>
           Deadline: {formatLocalDate(task.deadline)}
           {task.current_quantity != null && task.goal_type === TaskGoalType.FIXED && (
-            <Text style={styles.quantity}>
+            <Text style={typography.monoXsAccent}>
               {"  "}{task.current_quantity}/{task.target_quantity} {translateTaskUnit(task.unit)}
             </Text>
           )}
@@ -34,52 +35,3 @@ export default function CalendarTaskCard({ task, onClick }: Props) {
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E8E6E1",
-    borderRadius: 12,
-    flexDirection: "row",
-    overflow: "hidden",
-  },
-  priorityAccent: {
-    width: 4,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 8,
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1B1D22",
-    flex: 1,
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  deadline: {
-    fontSize: 12,
-    color: "#6B7084",
-  },
-  quantity: {
-    color: "#0f6e56",
-  },
-});

@@ -4,7 +4,7 @@ import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 
 type UserTaskHeaderProps = {
-    user?: { name?: string; email?: string };
+    user?: { name?: string; email?: string } | null;
     heading?: string;
     sub?: string;
 };
