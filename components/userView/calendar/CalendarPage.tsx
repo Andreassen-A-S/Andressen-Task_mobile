@@ -16,7 +16,7 @@ import { formatLocalDate, toLocalDateKey } from "@/helpers/helpers";
 import CalendarMonthNavigator from "./CalendarMonthNavigator";
 import CalendarTaskCard from "./CalendarTaskCard";
 import UserTaskDetails from "../tasks/taskDetails/UserTaskDetails";
-import UserTaskHeader from "../common/UserHeader";
+import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 
 const WEEKDAYS = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
@@ -88,7 +88,7 @@ export default function CalendarPage() {
     <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
       <View className="flex-1 bg-[#F6F5F1]">
         {/* Header */}
-        <UserTaskHeader heading="Kalender" sub="Overblik over kommende opgaver" user={user} />
+        <UserHeader variant="user" heading="Kalender" sub="Overblik over kommende opgaver" user={user} />
 
         {/* Month Navigator */}
         <CalendarMonthNavigator monthName={monthName} onPrev={() => changeMonth(-1)} onNext={() => changeMonth(1)} />

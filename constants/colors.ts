@@ -28,4 +28,7 @@ export const colors = {
   // UI
   white: "#FFFFFF",
   dark: "#1B1D22",
+
+  // Navigation
+  navInactive: "#A8AABB",
 } as const;

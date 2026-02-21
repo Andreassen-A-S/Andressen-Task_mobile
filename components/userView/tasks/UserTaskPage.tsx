@@ -19,7 +19,7 @@ import { sortTasks } from "@/helpers/sort";
 import UserTaskDateNavigator from "./UserTaskDateNavigator";
 import UserTaskCard from "./UserTaskCard";
 import UserTaskDetails from "./taskDetails/UserTaskDetails";
-import UserTaskHeader from "../common/UserHeader";
+import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
@@ -120,7 +120,7 @@ export default function UserTaskPage() {
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
       <View style={styles.content}>
-        <UserTaskHeader user={user} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
+        <UserHeader variant="user" user={user} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
         <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} />
         <FlatList
           data={filteredTasks}

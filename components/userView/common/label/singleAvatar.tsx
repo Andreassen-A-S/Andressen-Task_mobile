@@ -1,5 +1,3 @@
-"use client";
-
 import { typography } from "@/constants/typography";
 import { getInitials, getAvatarColor } from "@/helpers/helpers";
 import { View, Text } from "react-native";
@@ -16,10 +14,16 @@ export default function SingleAvatar({
     className = ""
 }: SingleAvatarProps) {
     const sizeClasses = {
-        xs: "w-6 h-6 initials-sm",
-        sm: "w-8 h-8 text-[12px] initials-md",
-        md: "w-[26px] h-[26px] initials-md",
-        lg: "w-[34px] h-[34px] initials-lg ",
+        xs: "w-6 h-6",
+        sm: "w-8 h-8",
+        md: "w-[26px] h-[26px]",
+        lg: "w-[34px] h-[34px]",
+    };
+    const fontSize = {
+        xs: typography.initialsSm,
+        sm: typography.initialsSm,
+        md: typography.initialsMd,
+        lg: typography.initialsLg,
     };
 
     return (
@@ -28,12 +32,11 @@ export default function SingleAvatar({
                 ${sizeClasses[size]}
                 rounded-lg
                 flex items-center justify-center
-               
                 ${className}
             `}
             style={{ backgroundColor: getAvatarColor(name) }}
         >
-            <Text style={[typography.initialsLg]}>{getInitials(name)}</Text>
+            <Text style={[fontSize[size]]}>{getInitials(name)}</Text>
         </View>
     );
 }

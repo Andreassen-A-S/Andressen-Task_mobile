@@ -251,7 +251,7 @@ export const typography = StyleSheet.create({
     fontFamily: "Outfit_500Medium",
     fontSize: 13,
     lineHeight: 18,
-    color: colors.textWhite,
+    color: colors.green,
   },
 
   /* ─── INITIALS (avatars) ────────────────────────────────────── */
@@ -271,6 +271,11 @@ export const typography = StyleSheet.create({
   initialsSm: {
     fontFamily: "Outfit_600SemiBold",
     fontSize: 9 /* 9px */,
+    color: colors.textWhite,
+  },
+  initialsXs: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 9 /* 6px */,
     color: colors.textWhite,
   },
 });
