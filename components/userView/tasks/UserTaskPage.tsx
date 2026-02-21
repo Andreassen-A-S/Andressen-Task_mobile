@@ -120,7 +120,7 @@ export default function UserTaskPage() {
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
       <View style={styles.content}>
-        <UserTaskHeader user={user ?? undefined} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
+        <UserTaskHeader user={user} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
         <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} />
         <FlatList
           data={filteredTasks}

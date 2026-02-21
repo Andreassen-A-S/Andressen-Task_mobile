@@ -119,6 +119,21 @@ export const typography = StyleSheet.create({
     lineHeight: 16,
     color: colors.textSecondary,
   },
+  labelSmUppercase: {
+    ...base,
+    fontFamily: "Outfit_500Medium",
+    fontSize: 12,
+    lineHeight: 16,
+    textTransform: "uppercase",
+    color: colors.textSecondary,
+  },
+  labelSmWhite: {
+    ...base,
+    fontFamily: "Outfit_500Medium",
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.textWhite,
+  },
 
   // ─── OVERLINES & CAPTIONS ────────────────────────────────────
   overline: {
@@ -134,6 +149,17 @@ export const typography = StyleSheet.create({
     ...base,
     fontSize: 11,
     lineHeight: 16,
+    color: colors.textMuted,
+  },
+
+  // ─── TABLE HEADER ──────────────────────────────────────────── //
+
+  tableHeader: {
+    fontFamily: "Outfit_600SemiBold",
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.06 * 10,
+    textTransform: "uppercase",
     color: colors.textMuted,
   },
 

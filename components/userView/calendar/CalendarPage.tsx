@@ -16,6 +16,8 @@ import { formatLocalDate, toLocalDateKey } from "@/helpers/helpers";
 import CalendarMonthNavigator from "./CalendarMonthNavigator";
 import CalendarTaskCard from "./CalendarTaskCard";
 import UserTaskDetails from "../tasks/taskDetails/UserTaskDetails";
+import UserTaskHeader from "../common/UserHeader";
+import { typography } from "@/constants/typography";
 
 const WEEKDAYS = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
 
@@ -85,98 +87,94 @@ export default function CalendarPage() {
   return (
     <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
       <View className="flex-1 bg-[#F6F5F1]">
-      {/* Header */}
-      <View className="bg-[#1B1D22] px-5 pt-4 pb-4">
-        <Text className="text-white text-lg font-bold">Kalender</Text>
-        <Text className="text-gray-400 text-sm">Overblik over kommende opgaver</Text>
-      </View>
+        {/* Header */}
+        <UserTaskHeader heading="Kalender" sub="Overblik over kommende opgaver" user={user} />
 
-      {/* Month Navigator */}
-      <CalendarMonthNavigator monthName={monthName} onPrev={() => changeMonth(-1)} onNext={() => changeMonth(1)} />
+        {/* Month Navigator */}
+        <CalendarMonthNavigator monthName={monthName} onPrev={() => changeMonth(-1)} onNext={() => changeMonth(1)} />
 
-      {/* Calendar Grid */}
-      <View className="px-3 pt-3 pb-2">
-        {/* Weekday headers */}
-        <View className="flex-row gap-0.5 mb-1">
-          {WEEKDAYS.map((d) => (
-            <View key={d} className="flex-1 items-center py-1">
-              <Text className="text-xs font-semibold text-gray-500">{d}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Days */}
-        <View className="flex-row flex-wrap gap-0.5">
-          {days.map((day, idx) => {
-            const hasTasks = getTasksForDate(day.date).length > 0;
-            const isSelected = isSameDay(day.date, selectedDate);
-            const isTodayDate = isToday(day.date);
-            return (
-              <TouchableOpacity
-                key={idx}
-                onPress={() => setSelectedDate(day.date)}
-                style={{ width: `${100 / 7}%` }}
-                className={`h-10 items-center justify-center rounded-lg ${
-                  !day.isCurrentMonth ? "opacity-30" : ""
-                } ${isTodayDate ? "bg-[#0f6e56]" : isSelected ? "bg-[#E8E6E1]" : ""}`}
-              >
-                <Text className={`text-sm font-semibold ${isTodayDate ? "text-white" : "text-gray-800"}`}>
-                  {day.date.getDate()}
-                </Text>
-                {hasTasks && (
-                  <View
-                    className="w-1 h-1 rounded-full mt-0.5"
-                    style={{ backgroundColor: isTodayDate ? "rgba(255,255,255,0.7)" : "#0f6e56" }}
-                  />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      <View className="h-px bg-[#E8E6E1] mx-3" />
-
-      {/* Selected day tasks */}
-      <View className="flex-1 px-3 pt-3">
-        <Text className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2.5 px-1">
-          {formatLocalDate(selectedDate, "da-DK", { weekday: "long", day: "numeric", month: "long" })} — {selectedTasks.length} opgaver
-        </Text>
-
-        {isLoading ? (
-          <ActivityIndicator color="#0f6e56" size="large" />
-        ) : selectedTasks.length === 0 ? (
-          <View className="flex-1 items-center justify-center pb-20">
-            <View className="w-14 h-14 bg-white border border-[#E8E6E1] rounded-lg items-center justify-center mb-3">
-              <Ionicons name="clipboard-outline" size={24} color="#6B7084" />
-            </View>
-            <Text className="text-base font-semibold text-gray-700">Ingen opgaver</Text>
-            <Text className="text-xs text-gray-400 mt-1">Der er ingen planlagte opgaver denne dag</Text>
+        {/* Calendar Grid */}
+        <View className="px-3 pt-3 pb-2">
+          {/* Weekday headers */}
+          <View className="flex-row gap-0.5 mb-1">
+            {WEEKDAYS.map((d) => (
+              <View key={d} className="flex-1 items-center py-1">
+                <Text style={typography.labelSm}>{d}</Text>
+              </View>
+            ))}
           </View>
-        ) : (
-          <FlatList
-            data={selectedTasks}
-            keyExtractor={(item) => item.task_id}
-            renderItem={({ item }) => (
-              <CalendarTaskCard task={item} onClick={() => setSelectedTaskId(item.task_id)} />
-            )}
-            contentContainerClassName="gap-1.5 pb-6"
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-      </View>
 
-      {/* Task Details Modal */}
-      <Modal
-        visible={!!selectedTaskId}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setSelectedTaskId(null)}
-      >
-        {selectedTaskId && (
-          <UserTaskDetails taskId={selectedTaskId} onBack={() => setSelectedTaskId(null)} />
-        )}
-      </Modal>
+          {/* Days */}
+          <View className="flex-row flex-wrap gap-0.5">
+            {days.map((day, idx) => {
+              const hasTasks = getTasksForDate(day.date).length > 0;
+              const isSelected = isSameDay(day.date, selectedDate);
+              const isTodayDate = isToday(day.date);
+              return (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => setSelectedDate(day.date)}
+                  style={{ width: `${(100 - 6 * 0.5) / 7}%` }}
+                  className={`h-10 items-center justify-center rounded-lg ${!day.isCurrentMonth ? "opacity-30" : ""
+                    } ${isTodayDate ? "bg-[#0f6e56]" : isSelected ? "bg-[#E8E6E1]" : ""}`}
+                >
+                  <Text style={[isTodayDate ? typography.labelSmWhite : typography.labelSm]}>
+                    {day.date.getDate()}
+                  </Text>
+                  {hasTasks && (
+                    <View
+                      className="w-1 h-1 rounded-full mt-0.5"
+                      style={{ backgroundColor: isTodayDate ? "rgba(255,255,255,0.7)" : "#0f6e56" }}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View className="h-px bg-[#E8E6E1] mx-3" />
+
+        {/* Selected day tasks */}
+        <View className="flex-1 px-3 pt-3">
+          <Text style={typography.labelSmUppercase} className="mb-2.5 px-1">
+            {formatLocalDate(selectedDate, "da-DK", { weekday: "long", day: "numeric", month: "long" })} - {selectedTasks.length} {selectedTasks.length === 1 ? "opgave" : "opgaver"}
+          </Text>
+
+          {isLoading ? (
+            <ActivityIndicator color="#0f6e56" size="large" />
+          ) : selectedTasks.length === 0 ? (
+            <View className="flex-1 items-center justify-center pb-20">
+              <View className="w-14 h-14 bg-white border border-[#E8E6E1] rounded-lg items-center justify-center mb-3">
+                <Ionicons name="clipboard-outline" size={24} color="#6B7084" />
+              </View>
+              <Text style={typography.bodyMd}>Ingen opgaver</Text>
+              <Text style={typography.bodyXs}>Der er ingen planlagte opgaver denne dag</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={selectedTasks}
+              keyExtractor={(item) => item.task_id}
+              renderItem={({ item }) => (
+                <CalendarTaskCard task={item} onClick={() => setSelectedTaskId(item.task_id)} />
+              )}
+              contentContainerClassName="gap-1.5 pb-6"
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </View>
+
+        {/* Task Details Modal */}
+        <Modal
+          visible={!!selectedTaskId}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setSelectedTaskId(null)}
+        >
+          {selectedTaskId && (
+            <UserTaskDetails taskId={selectedTaskId} onBack={() => setSelectedTaskId(null)} />
+          )}
+        </Modal>
       </View>
     </SafeAreaView>
   );
