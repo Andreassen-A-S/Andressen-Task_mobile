@@ -34,17 +34,7 @@ function RootGuard() {
     }
   }, [isAuthenticated, isLoading]);
 
-  return (
-    <>
-      <Slot />
-      {isLoading && (
-        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: colors.eggWhite }}>
-          <ActivityIndicator size="large" color={colors.green} />
-        </View>
-      )
-      }
-    </>
-  );
+  return <Slot />;
 }
 
 export default function RootLayout() {
