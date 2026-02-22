@@ -18,7 +18,7 @@ export default function UserHeader({ variant, user, heading, sub, position }: Us
         return (
             <View style={{ paddingTop: top }} className="bg-[#1B1D22] px-4 pb-3">
                 <Text style={typography.labelSmUppercase} className="mb-3">
-                    Andressen A/S · Task Management
+                    Andreassen A/S · Task Management
                 </Text>
                 <View className="flex-row items-center gap-3">
                     <SingleAvatar name={user?.name || "Ukendt bruger"} size="lg" />

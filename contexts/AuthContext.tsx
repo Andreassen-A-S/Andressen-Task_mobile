@@ -9,14 +9,9 @@ interface AuthContextType {
   userRole: UserRole | null;
   user: User | null;
   isLoading: boolean;
-  login: (role: UserRole) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
-
-const TEST_CREDENTIALS = {
-  ADMIN: { email: "rasmus@andreassen.dk", password: "123" },
-  USER: { email: "viktor@andreassen.dk", password: "123" },
-};
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -42,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch {
-        await AsyncStorage.multiRemove(["authToken", "userRole"]);
+        await AsyncStorage.multiRemove(["authToken"]);
         setAuthToken(null);
         setIsAuthenticated(false);
         setUser(null);
@@ -55,30 +50,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
   }, []);
 
-  const login = async (role: UserRole) => {
+  const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const credentials = TEST_CREDENTIALS[role];
-      const response = await apiLogin(credentials);
+      const response = await apiLogin({ email, password });
 
       if (!response.token || !response.user) {
         throw new Error("Invalid login response");
       }
 
       await AsyncStorage.setItem("authToken", response.token);
-      await AsyncStorage.setItem("userRole", role);
       setAuthToken(response.token);
 
       setIsAuthenticated(true);
       setUser(response.user);
-      setUserRole(role);
+      setUserRole(response.user.role);
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = async () => {
-    await AsyncStorage.multiRemove(["authToken", "userRole"]);
+    await AsyncStorage.multiRemove(["authToken"]);
     setAuthToken(null);
     setIsAuthenticated(false);
     setUser(null);
