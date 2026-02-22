@@ -1,22 +1,25 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Text } from "react-native";
+import { colors } from "@/constants/colors";
+import { typography } from "@/constants/typography";
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#0f6e56",
-        tabBarInactiveTintColor: "#9DA1B4",
+        tabBarActiveTintColor: colors.green,
+        tabBarInactiveTintColor: colors.navInactive,
         tabBarStyle: {
-          backgroundColor: "#ffffff",
-          borderTopColor: "#E8E6E1",
-          height: 60,
-          paddingBottom: 8,
+          backgroundColor: colors.white,
+          borderTopColor: colors.border,
+          height: 70,
         },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "500",
-        },
+        tabBarLabel: ({ focused, children }) => (
+          <Text style={focused ? typography.navItemActive : typography.navItem}>
+            {children}
+          </Text>
+        ),
         headerShown: false,
       }}
     >
@@ -24,8 +27,8 @@ export default function TabLayout() {
         name="tasks"
         options={{
           title: "Opgaver",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="checkbox-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "checkbox" : "checkbox-outline"} size={size} color={color} />
           ),
         }}
       />
@@ -33,8 +36,8 @@ export default function TabLayout() {
         name="calendar"
         options={{
           title: "Kalender",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "calendar" : "calendar-outline"} size={size} color={color} />
           ),
         }}
       />
@@ -42,8 +45,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profil",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
           ),
         }}
       />

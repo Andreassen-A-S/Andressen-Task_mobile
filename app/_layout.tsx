@@ -32,7 +32,7 @@ function RootGuard() {
     } else if (isAuthenticated && !inTabs) {
       router.replace("/(tabs)/tasks");
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading]);
 
   return <Slot />;
 }
@@ -50,8 +50,8 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F6F5F1" }}>
-        <ActivityIndicator size="large" color="#0f6e56" />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.eggWhite }}>
+        <ActivityIndicator size="large" color={colors.green} />
       </View>
     );
   }

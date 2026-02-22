@@ -66,7 +66,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 key={option.value}
                 onPress={() => setSelectedRole(option.value)}
-                className={`flex-row items-center p-4 rounded-xl border-2 bg-white ${isSelected ? "border-[#0f6e56]" : "border-gray-200"
+                className={`flex-row items-center p-4 rounded-lg border-2 bg-white ${isSelected ? "border-[#0f6e56]" : "border-gray-200"
                   }`}
               >
                 <View
@@ -91,7 +91,7 @@ export default function LoginScreen() {
         </View>
 
         {error && (
-          <View className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+          <View className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
             <Text className="text-red-700 text-sm text-center">{error}</Text>
           </View>
         )}
@@ -100,7 +100,7 @@ export default function LoginScreen() {
         <TouchableOpacity
           onPress={handleLogin}
           disabled={!selectedRole || isLoading}
-          className={`h-14 rounded-xl items-center justify-center ${!selectedRole || isLoading ? "bg-gray-300" : "bg-[#0f6e56]"
+          className={`h-14 rounded-lg items-center justify-center ${!selectedRole || isLoading ? "bg-gray-300" : "bg-[#0f6e56]"
             }`}
         >
           {isLoading ? (

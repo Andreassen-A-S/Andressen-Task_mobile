@@ -331,7 +331,7 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
           <TouchableOpacity
             onPress={handleComplete}
             disabled={isUpdating}
-            className={`h-14 rounded-xl flex-row items-center justify-center gap-2 disabled:opacity-50 ${task.status === TaskStatus.DONE ? "bg-[#9DA1B4]" : "bg-[#0f6e56]"}`}
+            className={`h-14 rounded-lg flex-row items-center justify-center gap-2 disabled:opacity-50 ${task.status === TaskStatus.DONE ? "bg-[#9DA1B4]" : "bg-[#0f6e56]"}`}
           >
             {isUpdating ? (
               <ActivityIndicator color="white" />

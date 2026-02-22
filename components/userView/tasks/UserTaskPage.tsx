@@ -19,7 +19,7 @@ import { sortTasks } from "@/helpers/sort";
 import UserTaskDateNavigator from "./UserTaskDateNavigator";
 import UserTaskCard from "./UserTaskCard";
 import UserTaskDetails from "./taskDetails/UserTaskDetails";
-import UserTaskHeader from "../common/UserHeader";
+import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
@@ -31,9 +31,9 @@ const FILTERS = [
 ] as const;
 
 export default function UserTaskPage() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -55,8 +55,8 @@ export default function UserTaskPage() {
   }, [user?.user_id]);
 
   useEffect(() => {
-    if (!authLoading && user?.user_id) fetchTasks();
-  }, [user?.user_id, authLoading, fetchTasks]);
+    if (user?.user_id) fetchTasks();
+  }, [user?.user_id, fetchTasks]);
 
   const todayKey = toLocalDateKey(selectedDate);
 
@@ -85,21 +85,6 @@ export default function UserTaskPage() {
     });
   }, [tasksForDay, filter]);
 
-  if (authLoading || (isLoading && tasks.length === 0)) {
-    return (
-      <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
-        <View style={styles.content}>
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={colors.green} />
-            <Text style={styles.mutedText}>
-              {authLoading ? "Verificerer login..." : "Indlæser opgaver..."}
-            </Text>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   if (error) {
     return (
       <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
@@ -118,9 +103,9 @@ export default function UserTaskPage() {
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.screen} edges={["left", "right"]}>
       <View style={styles.content}>
-        <UserTaskHeader user={user} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
+        <UserHeader variant="user" user={user} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
         <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} />
         <FlatList
           data={filteredTasks}
@@ -163,13 +148,19 @@ export default function UserTaskPage() {
             </View>
           }
           ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <View style={styles.emptyCard}>
-                <Ionicons name="checkmark-circle-outline" size={48} color="#d1d5db" />
-                <Text style={styles.emptyTitle}>Ingen opgaver planlagt for denne dag</Text>
-                <Text style={styles.emptySub}>Nye opgaver vil blive vist her</Text>
+            isLoading ? (
+              <View style={styles.center}>
+                <ActivityIndicator size="large" color={colors.green} />
               </View>
-            </View>
+            ) : (
+              <View style={styles.emptyWrap}>
+                <View style={styles.emptyCard}>
+                  <Ionicons name="checkmark-circle-outline" size={48} color="#d1d5db" />
+                  <Text style={styles.emptyTitle}>Ingen opgaver planlagt for denne dag</Text>
+                  <Text style={styles.emptySub}>Nye opgaver vil blive vist her</Text>
+                </View>
+              </View>
+            )
           }
         />
 
@@ -202,10 +193,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  mutedText: {
-    marginTop: 12,
-    color: "#6B7280",
-  },
+
   errorBox: {
     backgroundColor: "#FEF2F2",
     borderColor: "#FECACA",

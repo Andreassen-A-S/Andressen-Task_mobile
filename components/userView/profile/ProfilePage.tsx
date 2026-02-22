@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,7 +14,9 @@ import { UserStats } from "@/types/stats";
 import { User } from "@/types/users";
 import { TaskAssignment } from "@/types/assignment";
 import { getTodayAssignmentStats } from "@/helpers/helpers";
-import ProfileHeader from "./ProfileHeader";
+import UserHeader from "../common/UserHeader";
+import { typography } from "@/constants/typography";
+import { colors } from "@/constants/colors";
 
 export default function ProfilePage() {
   const authContext = useContext(AuthContext);
@@ -56,73 +57,63 @@ export default function ProfilePage() {
     ]);
   };
 
-  if (!currentUser) {
-    return (
-      <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
-        <View className="flex-1 bg-[#F6F5F1] w-full items-center justify-center">
-          <ActivityIndicator size="large" color="#0f6e56" />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
-      <ScrollView className="flex-1 bg-[#F6F5F1]" showsVerticalScrollIndicator={false}>
-        <ProfileHeader user={currentUser} position={userDetails?.position} />
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.charcoal }} edges={["left", "right"]}>
+      <UserHeader variant="profile" user={currentUser} position={userDetails?.position} />
+      <ScrollView className="flex-1" style={{ backgroundColor: colors.eggWhite }} showsVerticalScrollIndicator={false}>
 
         {/* Stats Cards */}
         <View className="px-5 pt-4">
           <View className="flex-row gap-2">
-            <View className="flex-1 bg-white border border-[#E8E6E1] rounded-xl p-3">
-              <Text className="text-2xl font-bold text-[#1B1D22]">
+            <View className="flex-1 bg-white border rounded-lg p-3" style={{ borderColor: colors.border }}>
+              <Text style={typography.h3}>
                 {isLoading ? "—" : assignedToday || "0"}
               </Text>
-              <Text className="text-xs font-bold uppercase tracking-widest text-gray-500">I dag</Text>
+              <Text style={typography.labelSmUppercase}>I dag</Text>
             </View>
-            <View className="flex-1 bg-white border border-[#E8E6E1] rounded-xl p-3">
-              <Text className="text-2xl font-bold text-[#2D9F6F]">
+            <View className="flex-1 bg-white border rounded-lg p-3" style={{ borderColor: colors.border }}>
+              <Text style={[typography.h3, { color: colors.greenMid }]}>
                 {isLoading ? "—" : completedToday || "0"}
               </Text>
-              <Text className="text-xs font-bold uppercase tracking-widest text-gray-500">Færdige</Text>
+              <Text style={typography.labelSmUppercase}>Færdige</Text>
             </View>
-            <View className="flex-1 bg-white border border-[#E8E6E1] rounded-xl p-3">
-              <Text className="text-2xl font-bold text-[#D64545]">
+            <View className="flex-1 bg-white border rounded-lg p-3" style={{ borderColor: colors.border }}>
+              <Text style={[typography.h3, { color: colors.red }]}>
                 {isLoading ? "—" : stats?.overdue_tasks ?? "0"}
               </Text>
-              <Text className="text-xs font-bold uppercase tracking-widest text-gray-500">Forfaldne</Text>
+              <Text style={typography.labelSmUppercase}>Forfaldne</Text>
             </View>
           </View>
         </View>
 
         {/* This week */}
         <View className="px-5 pt-6">
-          <Text className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Denne uge</Text>
-          <View className="bg-white border border-[#E8E6E1] rounded-xl overflow-hidden">
-            <View className="flex-row items-center px-4 py-3 border-b border-[#E8E6E1]">
-              <View className="w-8 h-8 rounded-lg items-center justify-center bg-[#E8F7F0] mr-3">
-                <Ionicons name="checkmark-circle-outline" size={16} color="#0f6e56" />
+          <Text style={typography.labelSmUppercase} className="mb-3">Denne uge</Text>
+          <View className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: colors.border }}>
+            <View className="flex-row items-center px-4 py-3 border-b" style={{ borderColor: colors.border }}  >
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.greenLight }}>
+                <Ionicons name="checkmark-circle-outline" size={16} color={colors.green} />
               </View>
-              <Text className="text-sm font-medium flex-1 text-[#1B1D22]">Fuldførelsesrate</Text>
-              <Text className="text-sm font-semibold text-[#1B1D22]">
+              <Text style={typography.labelLg} className="flex-1">Fuldførelsesrate</Text>
+              <Text style={typography.monoMd}>
                 {isLoading ? "—" : `${stats?.weekly_stats?.completion_rate ?? "n/a"}%`}
               </Text>
             </View>
-            <View className="flex-row items-center px-4 py-3 border-b border-[#E8E6E1]">
-              <View className="w-8 h-8 rounded-lg items-center justify-center bg-[#F3F3F0] mr-3">
-                <Ionicons name="calendar-outline" size={16} color="#6B7084" />
+            <View className="flex-row items-center px-4 py-3 border-b" style={{ borderColor: colors.border }}>
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.muted }}>
+                <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
               </View>
-              <Text className="text-sm font-medium flex-1 text-[#1B1D22]">Opgaver tildelt</Text>
-              <Text className="text-sm font-semibold text-[#1B1D22]">
+              <Text style={typography.labelLg} className="flex-1">Opgaver tildelt</Text>
+              <Text style={typography.monoMd}>
                 {isLoading ? "—" : stats?.weekly_stats?.assigned_tasks ?? "n/a"}
               </Text>
             </View>
             <View className="flex-row items-center px-4 py-3">
-              <View className="w-8 h-8 rounded-lg items-center justify-center bg-[#E8F7F0] mr-3">
-                <Ionicons name="checkmark" size={16} color="#0f6e56" />
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.greenLight }}>
+                <Ionicons name="checkmark" size={16} color={colors.green} />
               </View>
-              <Text className="text-sm font-medium flex-1 text-[#1B1D22]">Fuldført</Text>
-              <Text className="text-sm font-semibold text-[#1B1D22]">
+              <Text style={typography.labelLg} className="flex-1">Fuldført</Text>
+              <Text style={typography.monoMd}>
                 {isLoading ? "—" : stats?.weekly_stats?.completed_tasks ?? "n/a"}
               </Text>
             </View>
@@ -131,29 +122,29 @@ export default function ProfilePage() {
 
         {/* Settings */}
         <View className="px-5 pt-6">
-          <Text className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Indstillinger</Text>
-          <View className="bg-white border border-[#E8E6E1] rounded-xl overflow-hidden">
-            <TouchableOpacity className="flex-row items-center px-4 py-3 border-b border-[#E8E6E1]">
-              <View className="w-8 h-8 rounded-lg items-center justify-center bg-[#F3F3F0] mr-3">
-                <Ionicons name="notifications-outline" size={16} color="#6B7084" />
+          <Text style={typography.labelSmUppercase} className="mb-3">Indstillinger</Text>
+          <View className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: colors.border }}>
+            <TouchableOpacity className="flex-row items-center px-4 py-3 border-b" style={{ borderColor: colors.border }}>
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.muted }}>
+                <Ionicons name="notifications-outline" size={16} color={colors.textSecondary} />
               </View>
-              <Text className="text-sm font-medium flex-1 text-[#1B1D22]">Notifikationer</Text>
-              <Ionicons name="chevron-forward" size={14} color="#9DA1B4" />
+              <Text style={typography.labelLg} className="flex-1">Notifikationer</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
             </TouchableOpacity>
-            <TouchableOpacity className="flex-row items-center px-4 py-3 border-b border-[#E8E6E1]">
-              <View className="w-8 h-8 rounded-lg items-center justify-center bg-[#F3F3F0] mr-3">
-                <Ionicons name="moon-outline" size={16} color="#6B7084" />
+            <TouchableOpacity className="flex-row items-center px-4 py-3 border-b" style={{ borderColor: colors.border }}>
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.muted }}>
+                <Ionicons name="moon-outline" size={16} color={colors.textSecondary} />
               </View>
-              <Text className="text-sm font-medium flex-1 text-[#1B1D22]">Tema</Text>
-              <Text className="text-sm text-gray-400 mr-2">Lyst</Text>
-              <Ionicons name="chevron-forward" size={14} color="#9DA1B4" />
+              <Text style={typography.labelLg} className="flex-1">Tema</Text>
+              <Text style={typography.labelLgGray} className="mr-2">Lyst</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
             </TouchableOpacity>
             <View className="flex-row items-center px-4 py-3">
-              <View className="w-8 h-8 rounded-lg items-center justify-center bg-[#F3F3F0] mr-3">
-                <Ionicons name="person-outline" size={16} color="#6B7084" />
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.muted }}>
+                <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
               </View>
-              <Text className="text-sm font-medium flex-1 text-[#1B1D22]" numberOfLines={1}>
-                {currentUser.email}
+              <Text style={typography.labelLg} className="flex-1" numberOfLines={1}>
+                {currentUser?.email}
               </Text>
             </View>
           </View>
@@ -163,10 +154,10 @@ export default function ProfilePage() {
         <View className="px-5 pt-4 pb-8">
           <TouchableOpacity
             onPress={handleLogout}
-            className="h-12 bg-transparent border border-[#D64545] rounded-xl flex-row items-center justify-center gap-2"
-          >
-            <Ionicons name="log-out-outline" size={18} color="#D64545" />
-            <Text className="text-[#D64545] font-semibold">Log ud</Text>
+            className="h-12 bg-transparent border rounded-lg flex-row items-center justify-center gap-2"
+            style={{ borderColor: colors.red }}>
+            <Ionicons name="log-out-outline" size={18} color={colors.red} />
+            <Text style={[typography.btnLg, { color: colors.red }]}>Log ud</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

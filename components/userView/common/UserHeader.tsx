@@ -1,48 +1,47 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SingleAvatar from "./label/singleAvatar";
-import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 
-type UserTaskHeaderProps = {
+type UserHeaderProps = {
+    variant: "user" | "profile";
     user?: { name?: string; email?: string } | null;
     heading?: string;
     sub?: string;
+    position?: string;
 };
 
-export default function UserTaskHeader({ user, heading, sub }: UserTaskHeaderProps) {
-    return (
-        <View style={styles.headerWrapper}>
-            <View style={styles.textContainer}>
-                <Text style={styles.headerText}>{heading || "Mine opgaver"}</Text>
-                <Text style={styles.subText}>{sub || `Velkommen, ${user?.name || user?.email}`}</Text>
+export default function UserHeader({ variant, user, heading, sub, position }: UserHeaderProps) {
+    const { top } = useSafeAreaInsets();
+
+    if (variant === "profile") {
+        return (
+            <View style={{ paddingTop: top }} className="bg-[#1B1D22] px-4 pb-3">
+                <Text style={typography.labelSmUppercase} className="mb-3">
+                    Andressen A/S · Task Management
+                </Text>
+                <View className="flex-row items-center gap-3">
+                    <SingleAvatar name={user?.name || "Ukendt bruger"} size="lg" />
+                    <View className="flex-1">
+                        <Text style={typography.h3White} numberOfLines={1}>
+                            {user?.name || "Ukendt bruger"}
+                        </Text>
+                        <Text style={typography.bodySm} numberOfLines={1}>
+                            {position || "Ukendt position"}
+                        </Text>
+                    </View>
+                </View>
             </View>
-            <SingleAvatar
-                size="lg"
-                name={user?.name || "ukendt bruger"}
-            />
+        );
+    }
+
+    return (
+        <View style={{ paddingTop: top }} className="flex-row items-center bg-[#1B1D22] border-b border-[#E8E6E1] px-4 pb-3 gap-3">
+            <View className="flex-1">
+                <Text style={typography.h3White}>{heading || "Mine opgaver"}</Text>
+                <Text style={typography.caption}>{sub || `Velkommen, ${user?.name || user?.email}`}</Text>
+            </View>
+            <SingleAvatar size="lg" name={user?.name || "Ukendt bruger"} />
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    headerWrapper: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: colors.charcoal,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        gap: 12,
-    },
-    textContainer: {
-        flex: 1,
-    },
-
-    headerText: {
-        ...typography.h3White,
-    },
-    subText: {
-        ...typography.caption,
-    }
-});
