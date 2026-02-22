@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch {
-        await AsyncStorage.multiRemove(["authToken", "userRole"]);
+        await AsyncStorage.multiRemove(["authToken"]);
         setAuthToken(null);
         setIsAuthenticated(false);
         setUser(null);
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await AsyncStorage.multiRemove(["authToken", "userRole"]);
+    await AsyncStorage.multiRemove(["authToken"]);
     setAuthToken(null);
     setIsAuthenticated(false);
     setUser(null);

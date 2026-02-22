@@ -90,7 +90,7 @@ export default function LoginScreen() {
                 <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   className="flex-1"
-                  style={[typography.labelLgGray, { flex: 1, lineHeight: undefined, textAlignVertical: "center" }]}
+                  style={[typography.labelLgGray, { lineHeight: undefined, textAlignVertical: "center" }]}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="••••••••"
