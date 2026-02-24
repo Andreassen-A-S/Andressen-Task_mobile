@@ -11,6 +11,12 @@ interface Props {
 }
 
 export default function CalendarTaskCard({ task, onClick }: Props) {
+  const hasFixedProgress = task.current_quantity != null && task.goal_type === TaskGoalType.FIXED;
+  const isPercent = task.unit === "NONE";
+  const progressPct = hasFixedProgress && task.target_quantity
+    ? Math.min(Math.round((task.current_quantity! / task.target_quantity) * 100), 100)
+    : null;
+
   return (
     <TouchableOpacity
       onPress={onClick}
@@ -25,9 +31,11 @@ export default function CalendarTaskCard({ task, onClick }: Props) {
         </View>
         <Text style={typography.monoXs}>
           Deadline: {formatLocalDate(task.deadline)}
-          {task.current_quantity != null && task.goal_type === TaskGoalType.FIXED && (
+          {hasFixedProgress && (
             <Text style={typography.monoXsAccent}>
-              {"  "}{task.current_quantity}/{task.target_quantity} {translateTaskUnit(task.unit)}
+              {"  "}{isPercent
+                ? `${progressPct ?? 0}%`
+                : `${task.current_quantity}/${task.target_quantity} ${translateTaskUnit(task.unit)}`}
             </Text>
           )}
         </Text>

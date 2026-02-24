@@ -23,11 +23,14 @@ export default function UserTaskCard({ task, onClick }: Props) {
   const progress = task.current_quantity ?? 0;
   const target = task.target_quantity ?? null;
   const unit = translateTaskUnit(task.unit);
+  const isPercent = task.unit === "NONE";
   const hasProgress = task.current_quantity != null && task.goal_type === TaskGoalType.FIXED;
-  const progressLabel = target !== null
-    ? `${progress} / ${target}${unit ? ` ${unit}` : ""}`
-    : `${progress}${unit ? ` ${unit}` : ""}`;
   const progressPct = target ? Math.min(Math.round((progress / target) * 100), 100) : null;
+  const progressLabel = isPercent
+    ? `${progressPct ?? 0}%`
+    : target !== null
+      ? `${progress} / ${target}${unit ? ` ${unit}` : ""}`
+      : `${progress}${unit ? ` ${unit}` : ""}`;
 
   return (
     <TouchableOpacity

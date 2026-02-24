@@ -185,6 +185,7 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
   };
 
   const unitLabel = task ? translateTaskUnit(task.unit) : "";
+  const isPercent = task?.unit === "NONE";
   const currentQuantity = task?.current_quantity ?? 0;
   const hasProgress = task?.current_quantity != null && task?.goal_type === TaskGoalType.FIXED;
   const progressPct = task?.target_quantity
@@ -262,7 +263,7 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
                     Fremskridt
                   </Text>
                   <View className="flex-row items-baseline justify-between mb-1.5">
-                    <Text style={typography.monoMd}>{progressLabel}</Text>
+                    {!isPercent && <Text style={typography.monoMd}>{progressLabel}</Text>}
                     {progressPct !== null && (
                       <Text style={typography.monoMd}>{progressPct}%</Text>
                     )}
