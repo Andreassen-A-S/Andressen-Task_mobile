@@ -19,6 +19,11 @@ export enum TaskUnit {
   KILOMETERS = "KILOMETERS",
   LITERS = "LITERS",
   KILOGRAMS = "KILOGRAMS",
+  M2 = "M2",
+  M3 = "M3",
+  LOADS = "LOADS",
+  PLUGS = "PLUGS",
+  TONS = "TONS",
 }
 
 export enum TaskGoalType {
