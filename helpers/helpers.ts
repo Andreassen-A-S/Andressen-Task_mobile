@@ -116,7 +116,7 @@ export function translateStatus(status: string): string {
     case "PENDING":
       return "MANGLER";
     case "DONE":
-      return "AFSLUTTET";
+      return "UDFØRT";
     case "REJECTED":
       return "ANNULLERET";
     case "IN_PROGRESS":
@@ -230,6 +230,16 @@ export function translateTaskUnit(unit?: string | null): string {
       return "l";
     case "KILOGRAMS":
       return "kg";
+    case "M2":
+      return "m²";
+    case "M3":
+      return "m³";
+    case "LOADS":
+      return "læs";
+    case "PLUGS":
+      return "stik";
+    case "TONS":
+      return "t";
     default:
       return "";
   }
@@ -238,8 +248,7 @@ export function translateTaskUnit(unit?: string | null): string {
 export function getTodayAssignmentStats(assignments: TaskAssignment[]) {
   const today = toLocalDateKey(new Date());
   const assignedToday = assignments.filter(
-    (a) =>
-      toLocalDateKey(a.task.scheduled_date) === today,
+    (a) => toLocalDateKey(a.task.scheduled_date) === today,
   ).length;
   const completedToday = assignments.filter(
     (a) => a.completed_at && toLocalDateKey(a.completed_at) === today,
