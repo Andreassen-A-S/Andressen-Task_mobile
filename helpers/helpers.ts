@@ -240,6 +240,8 @@ export function translateTaskUnit(unit?: string | null): string {
       return "stik";
     case "TONS":
       return "t";
+    case "NONE":
+      return "%";
     default:
       return "";
   }
