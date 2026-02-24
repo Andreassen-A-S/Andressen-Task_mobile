@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Task, TaskGoalType, TaskStatus } from "@/types/task";
+import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser, getTaskComments, createComment, deleteComment } from "@/lib/api";
@@ -185,7 +185,7 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
   };
 
   const unitLabel = task ? translateTaskUnit(task.unit) : "";
-  const isPercent = task?.unit === "NONE";
+  const isPercent = task?.unit === TaskUnit.NONE;
   const currentQuantity = task?.current_quantity ?? 0;
   const hasProgress = task?.current_quantity != null && task?.goal_type === TaskGoalType.FIXED;
   const progressPct = task?.target_quantity
