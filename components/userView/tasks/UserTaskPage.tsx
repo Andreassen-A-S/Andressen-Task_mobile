@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments } from "@/lib/api";
 import { Task, TaskGoalType, TaskPriority, TaskStatus } from "@/types/task";
@@ -32,6 +33,8 @@ const FILTERS = [
 
 export default function UserTaskPage() {
   const { user } = useAuth();
+  const { taskId: deepLinkTaskId } = useLocalSearchParams<{ taskId?: string }>();
+  const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -39,6 +42,12 @@ export default function UserTaskPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!deepLinkTaskId) return;
+    setSelectedTaskId(deepLinkTaskId);
+    router.setParams({ taskId: undefined });
+  }, [deepLinkTaskId]);
 
   const fetchTasks = useCallback(async (refresh = false) => {
     if (!user?.user_id) return;

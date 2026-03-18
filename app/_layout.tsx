@@ -39,7 +39,9 @@ function RootGuard() {
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
     const data = lastNotificationResponse?.notification.request.content.data;
-    if (data?.taskId || data?.screen === "tasks") {
+    if (data?.taskId) {
+      router.push(`/(tabs)/tasks?taskId=${data.taskId}`);
+    } else if (data?.screen === "tasks") {
       router.push("/(tabs)/tasks");
     }
   }, [lastNotificationResponse, isAuthenticated, isLoading]);
