@@ -1,8 +1,9 @@
 import { createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User, UserRole } from "@/types/users";
-import { verifyToken, login as apiLogin } from "@/lib/api";
+import { verifyToken, login as apiLogin, registerPushToken } from "@/lib/api";
 import { setAuthToken } from "@/helpers/helpers";
+import { registerForPushNotifications } from "@/helpers/notifications";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -10,7 +11,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setIsAuthenticated(true);
             setUser(response.user);
             setUserRole(response.user.role);
+            registerForPushNotifications().catch((err) => console.warn("Push registration failed:", err));
           } else {
             throw new Error("Invalid user data");
           }
@@ -65,12 +67,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(true);
       setUser(response.user);
       setUserRole(response.user.role);
+      registerForPushNotifications().catch((err) => console.warn("Push registration failed:", err));
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = async () => {
+    await registerPushToken(null).catch(() => {});
     await AsyncStorage.multiRemove(["authToken"]);
     setAuthToken(null);
     setIsAuthenticated(false);

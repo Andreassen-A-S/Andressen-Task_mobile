@@ -8,3 +8,11 @@ export async function getUser(userId: string): Promise<User> {
   const data = await res.json();
   return data.data;
 }
+
+export async function registerPushToken(pushToken: string | null): Promise<void> {
+  await fetch(`${API_URL}/users/push-token`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ push_token: pushToken }),
+  });
+}
