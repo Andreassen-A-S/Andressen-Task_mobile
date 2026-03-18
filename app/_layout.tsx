@@ -34,7 +34,7 @@ function RootGuard() {
     } else if (isAuthenticated && !inTabs) {
       router.replace("/(tabs)/tasks");
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, segments[0]]);
 
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;

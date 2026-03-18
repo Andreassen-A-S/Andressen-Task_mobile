@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await registerPushToken(null).catch(() => {});
+    await registerPushToken(null).catch(() => { });
     await AsyncStorage.multiRemove(["authToken"]);
     setAuthToken(null);
     setIsAuthenticated(false);
