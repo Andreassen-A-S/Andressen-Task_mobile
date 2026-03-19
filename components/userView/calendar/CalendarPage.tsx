@@ -74,17 +74,15 @@ export default function CalendarPage() {
 
   const todayKey = toLocalDateKey(new Date());
 
+  const isCarriedOver = (task: Task) =>
+    toLocalDateKey(task.scheduled_date) < todayKey &&
+    (task.status === TaskStatus.PENDING || task.status === TaskStatus.IN_PROGRESS);
+
   const getTasksForDate = (date: Date) => {
     const dateStr = toLocalDateKey(date);
     return tasks.filter((t) => {
-      const scheduledStr = toLocalDateKey(t.scheduled_date);
-      if (scheduledStr === dateStr) return true;
-      // Carry over PENDING/IN_PROGRESS tasks from past days, but only on today
-      return (
-        dateStr === todayKey &&
-        scheduledStr < todayKey &&
-        (t.status === TaskStatus.PENDING || t.status === TaskStatus.IN_PROGRESS)
-      );
+      if (toLocalDateKey(t.scheduled_date) === dateStr) return true;
+      return dateStr === todayKey && isCarriedOver(t);
     });
   };
 
@@ -95,14 +93,7 @@ export default function CalendarPage() {
   const monthName = formatLocalDate(currentDate, "da-DK", { month: "long", year: "numeric" });
   const selectedDateKey = toLocalDateKey(selectedDate);
   const scheduledTasks = tasks.filter((t) => toLocalDateKey(t.scheduled_date) === selectedDateKey);
-  const carriedOverTasks = tasks.filter((t) => {
-    const scheduledStr = toLocalDateKey(t.scheduled_date);
-    return (
-      selectedDateKey === todayKey &&
-      scheduledStr < todayKey &&
-      (t.status === TaskStatus.PENDING || t.status === TaskStatus.IN_PROGRESS)
-    );
-  });
+  const carriedOverTasks = selectedDateKey === todayKey ? tasks.filter(isCarriedOver) : [];
   const totalCount = scheduledTasks.length + carriedOverTasks.length;
   const hasBothSections = scheduledTasks.length > 0 && carriedOverTasks.length > 0;
 
