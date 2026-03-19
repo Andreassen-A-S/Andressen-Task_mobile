@@ -3,14 +3,14 @@ import {
   View,
   Text,
   TouchableOpacity,
-  FlatList,
+  ScrollView,
   ActivityIndicator,
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { getUserAssignments } from "@/lib/api";
-import { Task } from "@/types/task";
+import { Task, TaskStatus } from "@/types/task";
 import { useAuth } from "@/hooks/useAuth";
 import { formatLocalDate, toLocalDateKey } from "@/helpers/helpers";
 import CalendarMonthNavigator from "./CalendarMonthNavigator";
@@ -72,9 +72,18 @@ export default function CalendarPage() {
     return days;
   };
 
+  const todayKey = toLocalDateKey(new Date());
+
+  const isCarriedOver = (task: Task) =>
+    toLocalDateKey(task.scheduled_date) < todayKey &&
+    (task.status === TaskStatus.PENDING || task.status === TaskStatus.IN_PROGRESS);
+
   const getTasksForDate = (date: Date) => {
     const dateStr = toLocalDateKey(date);
-    return tasks.filter((t) => toLocalDateKey(t.scheduled_date) === dateStr);
+    return tasks.filter((t) => {
+      if (toLocalDateKey(t.scheduled_date) === dateStr) return true;
+      return dateStr === todayKey && isCarriedOver(t);
+    });
   };
 
   const isToday = (date: Date) => date.toDateString() === new Date().toDateString();
@@ -82,7 +91,11 @@ export default function CalendarPage() {
 
   const days = getDaysInMonth();
   const monthName = formatLocalDate(currentDate, "da-DK", { month: "long", year: "numeric" });
-  const selectedTasks = getTasksForDate(selectedDate);
+  const selectedDateKey = toLocalDateKey(selectedDate);
+  const scheduledTasks = tasks.filter((t) => toLocalDateKey(t.scheduled_date) === selectedDateKey);
+  const carriedOverTasks = selectedDateKey === todayKey ? tasks.filter(isCarriedOver) : [];
+  const totalCount = scheduledTasks.length + carriedOverTasks.length;
+  const hasBothSections = scheduledTasks.length > 0 && carriedOverTasks.length > 0;
 
   return (
     <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["left", "right"]}>
@@ -138,12 +151,12 @@ export default function CalendarPage() {
         {/* Selected day tasks */}
         <View className="flex-1 px-3 pt-3">
           <Text style={typography.labelSmUppercase} className="mb-2.5 px-1">
-            {formatLocalDate(selectedDate, "da-DK", { weekday: "long", day: "numeric", month: "long" })} - {selectedTasks.length} {selectedTasks.length === 1 ? "opgave" : "opgaver"}
+            {formatLocalDate(selectedDate, "da-DK", { weekday: "long", day: "numeric", month: "long" })} - {totalCount} {totalCount === 1 ? "opgave" : "opgaver"}
           </Text>
 
           {isLoading ? (
             <ActivityIndicator color="#0f6e56" size="large" />
-          ) : selectedTasks.length === 0 ? (
+          ) : totalCount === 0 ? (
             <View className="flex-1 items-center justify-center pb-20">
               <View className="w-14 h-14 bg-white border border-[#E8E6E1] rounded-lg items-center justify-center mb-3">
                 <Ionicons name="clipboard-outline" size={24} color="#6B7084" />
@@ -152,15 +165,30 @@ export default function CalendarPage() {
               <Text style={typography.bodyXs}>Der er ingen planlagte opgaver denne dag</Text>
             </View>
           ) : (
-            <FlatList
-              data={selectedTasks}
-              keyExtractor={(item) => item.task_id}
-              renderItem={({ item }) => (
-                <CalendarTaskCard task={item} onClick={() => setSelectedTaskId(item.task_id)} />
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="pb-6">
+              {scheduledTasks.length > 0 && (
+                <View className="gap-1.5">
+                  {hasBothSections && (
+                    <Text style={typography.labelSmUppercase} className="px-1 mb-1">Planlagt</Text>
+                  )}
+                  {scheduledTasks.map((task) => (
+                    <CalendarTaskCard key={task.task_id} task={task} onClick={() => setSelectedTaskId(task.task_id)} />
+                  ))}
+                </View>
               )}
-              contentContainerClassName="gap-1.5 pb-6"
-              showsVerticalScrollIndicator={false}
-            />
+
+              {carriedOverTasks.length > 0 && (
+                <View className={`gap-1.5 ${scheduledTasks.length > 0 ? "mt-4" : ""}`}>
+                  <View className="flex-row items-center gap-2 px-1 mb-1">
+                    <Text style={typography.labelSmUppercase}>Overført</Text>
+                    <View className="flex-1 h-px bg-[#E8E6E1]" />
+                  </View>
+                  {carriedOverTasks.map((task) => (
+                    <CalendarTaskCard key={task.task_id} task={task} onClick={() => setSelectedTaskId(task.task_id)} />
+                  ))}
+                </View>
+              )}
+            </ScrollView>
           )}
         </View>
 
