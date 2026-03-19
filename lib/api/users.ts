@@ -17,6 +17,6 @@ export async function registerPushToken(pushToken: string | null): Promise<void>
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Failed to register push token");
+    throw new Error(error.error || "Failed to register push token");
   }
 }
