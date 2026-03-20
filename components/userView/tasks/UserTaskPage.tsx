@@ -2,20 +2,20 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
-  FlatList,
+  SectionList,
   TouchableOpacity,
   ActivityIndicator,
   Modal,
   ScrollView,
-  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments } from "@/lib/api";
 import { Task, TaskGoalType, TaskPriority, TaskStatus } from "@/types/task";
-import { toLocalDateKey } from "@/helpers/helpers";
+import { toLocalDateKey, getPriorityColors } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
 import UserTaskDateNavigator from "./UserTaskDateNavigator";
 import UserTaskCard from "./UserTaskCard";
@@ -94,17 +94,31 @@ export default function UserTaskPage() {
     });
   }, [tasksForDay, filter]);
 
+  const scheduledFilteredTasks = filteredTasks.filter(
+    (t) => toLocalDateKey(t.scheduled_date) === todayKey,
+  );
+  const carriedOverFilteredTasks = filteredTasks.filter(
+    (t) => toLocalDateKey(t.scheduled_date) !== todayKey,
+  );
+  const hasBothSections = scheduledFilteredTasks.length > 0 && carriedOverFilteredTasks.length > 0;
+  const sections = [
+    ...(scheduledFilteredTasks.length > 0
+      ? [{ title: "Planlagt", data: scheduledFilteredTasks, count: scheduledFilteredTasks.length }]
+      : []),
+    ...(carriedOverFilteredTasks.length > 0
+      ? [{ title: "Overført", data: carriedOverFilteredTasks, count: carriedOverFilteredTasks.length }]
+      : []),
+  ];
+
   if (error) {
     return (
-      <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
-        <View style={styles.content}>
-          <View style={[styles.center, { paddingHorizontal: 24 }]}>
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity onPress={() => fetchTasks()} style={styles.retryBtn}>
-                <Text style={styles.retryBtnText}>Prøv igen</Text>
-              </TouchableOpacity>
-            </View>
+      <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
+        <View className="flex-1 bg-[#F6F5F1] items-center justify-center px-6">
+          <View className="bg-[#FEF2F2] border-2 border-[#FECACA] rounded-xl p-4 w-full items-center">
+            <Text className="text-[#991B1B] font-semibold text-center mb-3">{error}</Text>
+            <TouchableOpacity onPress={() => fetchTasks()} className="px-4 py-2.5 bg-[#DC2626] rounded-[10px]">
+              <Text className="text-white font-semibold">Prøv igen</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>
@@ -112,61 +126,84 @@ export default function UserTaskPage() {
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={["left", "right"]}>
-      <View style={styles.content}>
+    <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["left", "right"]}>
+      <View className="flex-1 bg-[#F6F5F1]">
         <UserHeader variant="user" user={user} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
         <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} />
-        <FlatList
-          data={filteredTasks}
+        <SectionList
+          sections={sections}
           keyExtractor={(item) => item.task_id}
           renderItem={({ item }) => (
             <UserTaskCard task={item} onClick={() => setSelectedTaskId(item.task_id)} />
           )}
+          renderSectionHeader={({ section: { title, count } }) => {
+            if (title === "Planlagt" && !hasBothSections) return null;
+            const isCarriedOver = title === "Overført";
+            return (
+              <View>
+                <View className="flex-row items-center justify-between pt-2.5  bg-[#F6F5F1]">
+                  <Text style={typography.labelSmUppercase}>{title}</Text>
+                  <View className="bg-[#E5E7EB] rounded-2xl px-2 py-0.5"
+                    style={{
+                      backgroundColor: isCarriedOver ? colors.redLight : colors.border,
+                    }}
+                  >
+                    <Text style={typography.labelSmUppercase}>{count}</Text>
+                  </View>
+                </View>
+                {/* <LinearGradient
+                  colors={["#F6F5F1", "rgba(246,245,241,0)"]}
+                  pointerEvents="none"
+                  style={{ height: 8, marginBottom: -8 }}
+                /> */}
+              </View>
+            );
+          }}
+          ItemSeparatorComponent={() => <View className="h-3" />}
+          SectionSeparatorComponent={() => <View className="h-3" />}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, paddingTop: 8 }}
           refreshing={isRefreshing}
           onRefresh={() => fetchTasks(true)}
+          stickySectionHeadersEnabled={false} // for making 
           ListHeaderComponent={
-            <View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.pillsContent}
-                style={styles.pillsWrapper}
-              >
-                {FILTERS.map(({ key, label }) => (
-                  <TouchableOpacity
-                    key={key}
-                    onPress={() => setFilter(key)}
-                    style={[
-                      styles.pill,
-                      filter === key && styles.pillActive,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        filter === key ? typography.labelLgWhite : typography.labelLgGray,
-                      ]}
-                    >
-                      {key === "all" ? `${label} (${tasksForDay.length})` : label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerClassName="gap-2"
+              className="py-1"
+            >
+              {FILTERS.map(({ key, label }) => (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => setFilter(key)}
+                  className={`px-4 py-2 rounded-2xl border ${filter === key
+                    ? "bg-[#1B1D22] border-[#1B1D22]"
+                    : "border-[#E8E6E1]"
+                    }`}
+                >
+                  <Text style={filter === key ? typography.labelLgWhite : typography.labelLgGray}>
+                    {key === "all" ? `${label} (${tasksForDay.length})` : label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           }
           ListEmptyComponent={
             isLoading ? (
-              <View style={styles.center}>
+              <View className="flex-1 items-center justify-center">
                 <ActivityIndicator size="large" color={colors.green} />
               </View>
             ) : (
-              <View style={styles.emptyWrap}>
-                <View style={styles.emptyCard}>
+              <View className="px-6 pt-6">
+                <View className="bg-white rounded-2xl border-2 border-[#E5E7EB] p-6 items-center">
                   <Ionicons name="checkmark-circle-outline" size={48} color="#d1d5db" />
-                  <Text style={styles.emptyTitle}>Ingen opgaver planlagt for denne dag</Text>
-                  <Text style={styles.emptySub}>Nye opgaver vil blive vist her</Text>
+                  <Text className="mt-4 text-base font-semibold text-[#4B5563] text-center">
+                    Ingen opgaver planlagt for denne dag
+                  </Text>
+                  <Text className="mt-2 text-[13px] text-[#9CA3AF] text-center">
+                    Nye opgaver vil blive vist her
+                  </Text>
                 </View>
               </View>
             )
@@ -187,97 +224,3 @@ export default function UserTaskPage() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.charcoal,
-  },
-  content: {
-    flex: 1,
-    backgroundColor: colors.eggWhite,
-  },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  errorBox: {
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FECACA",
-    borderWidth: 2,
-    borderRadius: 12,
-    padding: 16,
-    width: "100%",
-    alignItems: "center",
-  },
-  errorText: {
-    color: "#991B1B",
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  retryBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: "#DC2626",
-    borderRadius: 10,
-  },
-  retryBtnText: {
-    color: "white",
-    fontWeight: "600",
-  },
-
-  pillsWrapper: {
-    paddingVertical: 4,
-  },
-  pillsContent: {
-    gap: 8,
-  },
-  pill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "transparent",
-  },
-  pillActive: {
-    backgroundColor: colors.charcoal,
-    borderColor: colors.charcoal,
-  },
-
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    paddingTop: 8,
-    gap: 12,
-  },
-
-  emptyWrap: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-  },
-  emptyCard: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#E5E7EB",
-    padding: 24,
-    alignItems: "center",
-  },
-  emptyTitle: {
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#4B5563",
-    textAlign: "center",
-  },
-  emptySub: {
-    marginTop: 8,
-    fontSize: 13,
-    color: "#9CA3AF",
-    textAlign: "center",
-  },
-});
