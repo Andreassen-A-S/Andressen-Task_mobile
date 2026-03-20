@@ -192,7 +192,7 @@ export default function CalendarPage() {
               ItemSeparatorComponent={() => <View className="h-3" />}
               SectionSeparatorComponent={() => <View className="h-3" />}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 24 }}
+              contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
               stickySectionHeadersEnabled={false}
               ListEmptyComponent={
                 <View className="flex-1 items-center justify-center pb-20">

@@ -66,7 +66,7 @@ export default function UserTaskPage() {
     if (user?.user_id) fetchTasks();
   }, [user?.user_id, fetchTasks]);
 
-  const todayKey = toLocalDateKey(selectedDate);
+  const selectedDateKey = toLocalDateKey(selectedDate);
 
   const tasksForDay = useMemo(() => {
     return tasks.filter((task) => {
@@ -74,14 +74,14 @@ export default function UserTaskPage() {
       const scheduledKey = toLocalDateKey(task.scheduled_date);
       const deadlineKey = toLocalDateKey(task.deadline);
 
-      const isScheduledToday = scheduledKey === todayKey;
-      const isCarryOverScheduled = scheduledKey < todayKey && !isDone;
-      const isDueToday = deadlineKey === todayKey;
-      const isOverdue = deadlineKey < todayKey && !isDone;
+      const isScheduledToday = scheduledKey === selectedDateKey;
+      const isCarryOverScheduled = scheduledKey < selectedDateKey && !isDone;
+      const isDueToday = deadlineKey === selectedDateKey;
+      const isOverdue = deadlineKey < selectedDateKey && !isDone;
 
       return isScheduledToday || isCarryOverScheduled || isDueToday || isOverdue;
     });
-  }, [tasks, todayKey]);
+  }, [tasks, selectedDateKey]);
 
   const filteredTasks = useMemo(() => {
     return tasksForDay.filter((task) => {
@@ -94,10 +94,10 @@ export default function UserTaskPage() {
   }, [tasksForDay, filter]);
 
   const scheduledFilteredTasks = filteredTasks.filter(
-    (t) => toLocalDateKey(t.scheduled_date) >= todayKey,
+    (t) => toLocalDateKey(t.scheduled_date) >= selectedDateKey,
   );
   const carriedOverFilteredTasks = filteredTasks.filter(
-    (t) => toLocalDateKey(t.scheduled_date) < todayKey,
+    (t) => toLocalDateKey(t.scheduled_date) < selectedDateKey,
   );
   const hasBothSections = scheduledFilteredTasks.length > 0 && carriedOverFilteredTasks.length > 0;
   const sections = [
@@ -156,7 +156,7 @@ export default function UserTaskPage() {
           ItemSeparatorComponent={() => <View className="h-3" />}
           SectionSeparatorComponent={() => <View className="h-3" />}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, paddingTop: 8 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, paddingTop: 8, flexGrow: 1 }}
           refreshing={isRefreshing}
           onRefresh={() => fetchTasks(true)}
           stickySectionHeadersEnabled={false}
