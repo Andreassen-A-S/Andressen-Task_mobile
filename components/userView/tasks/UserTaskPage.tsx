@@ -9,13 +9,12 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments } from "@/lib/api";
 import { Task, TaskGoalType, TaskPriority, TaskStatus } from "@/types/task";
-import { toLocalDateKey, getPriorityColors } from "@/helpers/helpers";
+import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
 import UserTaskDateNavigator from "./UserTaskDateNavigator";
 import UserTaskCard from "./UserTaskCard";
@@ -95,10 +94,10 @@ export default function UserTaskPage() {
   }, [tasksForDay, filter]);
 
   const scheduledFilteredTasks = filteredTasks.filter(
-    (t) => toLocalDateKey(t.scheduled_date) === todayKey,
+    (t) => toLocalDateKey(t.scheduled_date) >= todayKey,
   );
   const carriedOverFilteredTasks = filteredTasks.filter(
-    (t) => toLocalDateKey(t.scheduled_date) !== todayKey,
+    (t) => toLocalDateKey(t.scheduled_date) < todayKey,
   );
   const hasBothSections = scheduledFilteredTasks.length > 0 && carriedOverFilteredTasks.length > 0;
   const sections = [
@@ -151,11 +150,6 @@ export default function UserTaskPage() {
                     <Text style={typography.labelSmUppercase}>{count}</Text>
                   </View>
                 </View>
-                {/* <LinearGradient
-                  colors={["#F6F5F1", "rgba(246,245,241,0)"]}
-                  pointerEvents="none"
-                  style={{ height: 8, marginBottom: -8 }}
-                /> */}
               </View>
             );
           }}
@@ -165,7 +159,7 @@ export default function UserTaskPage() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, paddingTop: 8 }}
           refreshing={isRefreshing}
           onRefresh={() => fetchTasks(true)}
-          stickySectionHeadersEnabled={false} // for making 
+          stickySectionHeadersEnabled={false}
           ListHeaderComponent={
             <ScrollView
               horizontal

@@ -8,7 +8,6 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { getUserAssignments } from "@/lib/api";
 import { Task, TaskStatus } from "@/types/task";
@@ -187,11 +186,6 @@ export default function CalendarPage() {
                         <Text style={typography.labelSmUppercase}>{data.length}</Text>
                       </View>
                     </View>
-                    {/* <LinearGradient
-                      colors={["#F6F5F1", "rgba(246,245,241,0)"]}
-                      pointerEvents="none"
-                      style={{ height: 8, marginBottom: -8 }}
-                    /> */}
                   </View>
                 );
               }}
