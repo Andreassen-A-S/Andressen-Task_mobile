@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { Task, TaskGoalType, TaskUnit } from "@/types/task";
-import { formatLocalDate, getPriorityAccentColor, translateTaskUnit, getPriorityColors } from "@/helpers/helpers";
+import { formatLocalDate, getPriorityAccentColor, translateTaskUnit } from "@/helpers/helpers";
 import { typography } from "@/constants/typography";
 import Badge from "../common/label/badge";
 import { colors } from "@/constants/colors";

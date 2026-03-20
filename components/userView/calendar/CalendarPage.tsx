@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
+  SectionList,
   ActivityIndicator,
   Modal,
 } from "react-native";
@@ -18,6 +18,7 @@ import CalendarTaskCard from "./CalendarTaskCard";
 import UserTaskDetails from "../tasks/taskDetails/UserTaskDetails";
 import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
+import { colors } from "@/constants/colors";
 
 const WEEKDAYS = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
 
@@ -96,6 +97,14 @@ export default function CalendarPage() {
   const carriedOverTasks = selectedDateKey === todayKey ? tasks.filter(isCarriedOver) : [];
   const totalCount = scheduledTasks.length + carriedOverTasks.length;
   const hasBothSections = scheduledTasks.length > 0 && carriedOverTasks.length > 0;
+  const sections = [
+    ...(scheduledTasks.length > 0
+      ? [{ title: "Planlagt", data: scheduledTasks }]
+      : []),
+    ...(carriedOverTasks.length > 0
+      ? [{ title: "Overført", data: carriedOverTasks }]
+      : []),
+  ];
 
   return (
     <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["left", "right"]}>
@@ -149,46 +158,52 @@ export default function CalendarPage() {
         <View className="h-px bg-[#E8E6E1] mx-3" />
 
         {/* Selected day tasks */}
-        <View className="flex-1 px-3 pt-3">
+        <View className="flex-1 px-3 pt-2">
           <Text style={typography.labelSmUppercase} className="mb-2.5 px-1">
             {formatLocalDate(selectedDate, "da-DK", { weekday: "long", day: "numeric", month: "long" })} - {totalCount} {totalCount === 1 ? "opgave" : "opgaver"}
           </Text>
 
           {isLoading ? (
             <ActivityIndicator color="#0f6e56" size="large" />
-          ) : totalCount === 0 ? (
-            <View className="flex-1 items-center justify-center pb-20">
-              <View className="w-14 h-14 bg-white border border-[#E8E6E1] rounded-lg items-center justify-center mb-3">
-                <Ionicons name="clipboard-outline" size={24} color="#6B7084" />
-              </View>
-              <Text style={typography.bodyMd}>Ingen opgaver</Text>
-              <Text style={typography.bodyXs}>Der er ingen planlagte opgaver denne dag</Text>
-            </View>
           ) : (
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="pb-6">
-              {scheduledTasks.length > 0 && (
-                <View className="gap-1.5">
-                  {hasBothSections && (
-                    <Text style={typography.labelSmUppercase} className="px-1 mb-1">Planlagt</Text>
-                  )}
-                  {scheduledTasks.map((task) => (
-                    <CalendarTaskCard key={task.task_id} task={task} onClick={() => setSelectedTaskId(task.task_id)} />
-                  ))}
-                </View>
+            <SectionList
+              sections={sections}
+              keyExtractor={(item) => item.task_id}
+              renderItem={({ item }) => (
+                <CalendarTaskCard task={item} onClick={() => setSelectedTaskId(item.task_id)} />
               )}
-
-              {carriedOverTasks.length > 0 && (
-                <View className={`gap-1.5 ${scheduledTasks.length > 0 ? "mt-4" : ""}`}>
-                  <View className="flex-row items-center gap-2 px-1 mb-1">
-                    <Text style={typography.labelSmUppercase}>Overført</Text>
-                    <View className="flex-1 h-px bg-[#E8E6E1]" />
+              renderSectionHeader={({ section: { title, data } }) => {
+                if (title === "Planlagt" && !hasBothSections) return null;
+                const isCarriedOverSection = title === "Overført";
+                return (
+                  <View>
+                    <View className="flex-row items-center justify-between pt-2.5 bg-[#F6F5F1]">
+                      <Text style={typography.labelSmUppercase}>{title}</Text>
+                      <View
+                        className="rounded-2xl px-2 py-0.5"
+                        style={{ backgroundColor: isCarriedOverSection ? colors.redLight : colors.border }}
+                      >
+                        <Text style={typography.labelSmUppercase}>{data.length}</Text>
+                      </View>
+                    </View>
                   </View>
-                  {carriedOverTasks.map((task) => (
-                    <CalendarTaskCard key={task.task_id} task={task} onClick={() => setSelectedTaskId(task.task_id)} />
-                  ))}
+                );
+              }}
+              ItemSeparatorComponent={() => <View className="h-3" />}
+              SectionSeparatorComponent={() => <View className="h-3" />}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
+              stickySectionHeadersEnabled={false}
+              ListEmptyComponent={
+                <View className="flex-1 items-center justify-center pb-20">
+                  <View className="w-14 h-14 bg-white border border-[#E8E6E1] rounded-lg items-center justify-center mb-3">
+                    <Ionicons name="clipboard-outline" size={24} color="#6B7084" />
+                  </View>
+                  <Text style={typography.bodyMd}>Ingen opgaver</Text>
+                  <Text style={typography.bodyXs}>Der er ingen planlagte opgaver denne dag</Text>
                 </View>
-              )}
-            </ScrollView>
+              }
+            />
           )}
         </View>
 
