@@ -16,6 +16,7 @@ import { User } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser, getTaskComments, createComment, deleteComment } from "@/lib/api";
 import {
   formatDaDate,
+  formatRelativeDate,
   translateTaskUnit,
 } from "@/helpers/helpers";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,7 @@ import RecurringBadge from "../../common/label/recurringBadge";
 import Badge from "../../common/label/badge";
 import DetailsPriorityBadge from "../../common/label/DetailsPriorityBadge";
 import { colors } from "@/constants/colors";
+import SingleAvatar from "../../common/label/singleAvatar";
 
 interface Props {
   taskId: string;
@@ -209,7 +211,14 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
         ) : error ? (
           <Text className="tracking-widest" style={[typography.bodyXs, { color: colors.red }]}>FEJL</Text>
         ) : task ? (
-          <Badge variant="status" value={task.status} size="lg" />
+          /* Badges */
+          <View className="flex-row items-center gap-3">
+            <Badge variant="priority" value={task.priority} size="lg" />
+            <Badge variant="status" value={task.status} size="lg" />
+            {task.recurring_template_id && <RecurringBadge size="lg" />}
+          </View>
+
+
         ) : null}
 
         <CloseButton onClick={onBack} />
@@ -218,7 +227,7 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
       {/* Content */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1, }}
+        style={{ flex: 1 }}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -242,19 +251,23 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
 
           {task && !isLoading && !error && (
             <View>
-              {/* Priority badge */}
-              <View className="flex-row items-center gap-2 mb-3">
-                <DetailsPriorityBadge priority={task.priority} size="lg" />
-                {task.recurring_template_id && <RecurringBadge size="lg" />}
-              </View>
-
               {/* Title */}
-              <Text className="mb-2" style={typography.h3}>{task.title}</Text>
+              <Text className="mb-4" style={typography.h2}>{task.title}</Text>
 
-              {/* Description */}
-              {task.description ? (
-                <Text className="mb-5 leading-relaxed" style={typography.bodySm}>{task.description}</Text>
-              ) : null}
+              {/* Author */}
+              {creator?.name && (
+                <View className="flex-row items-center mb-4">
+                  <SingleAvatar name={creator.name} size="lg" />
+                  <View className="ml-3">
+                    <Text style={[typography.labelMd, { marginBottom: 2 }]}>
+                      Oprettet af {creator.name}
+                    </Text>
+                    <Text style={typography.bodyXs}>
+                      {formatRelativeDate(task.created_at)}
+                    </Text>
+                  </View>
+                </View>
+              )}
 
               {/* Progress */}
               {hasProgress && (
@@ -298,7 +311,19 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
                 </>
               )}
 
-              {/* Comments */}
+              {/* Description */}
+              <View className="mb-4">
+                <Text className="mb-2" style={typography.overline}>
+                  Beskrivelse
+                </Text>
+                <Text className="leading-relaxed" style={typography.bodySm}>
+                  {task.description}
+                </Text>
+              </View>
+
+
+
+              {/* Comments list */}
               <UserTaskComment
                 comments={comments}
                 commentAuthors={commentAuthors}
@@ -306,51 +331,77 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
                 error={commentError}
                 currentUserId={currentUser?.user_id}
                 onDelete={handleDeleteComment}
-                commentInput={commentInput}
-                onCommentChange={setCommentInput}
-                onSubmit={handleSubmitComment}
-                isSubmitting={isSubmittingComment}
-                onInputFocus={handleCommentFocus}
               />
 
-              <View className="h-6" />
             </View>
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
 
-      {/* Footer — always fixed at bottom */}
-      {task && !isLoading && !error && (
-        <View className="px-5 pb-8 pt-3 border-t border-[#E8E6E1]">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text style={typography.monoXs}>
-              Oprettet af: {creator?.name || creator?.email || task.created_by}
-            </Text>
-            <Text style={typography.monoXs}>{formatDaDate(task.created_at)}</Text>
+        {/* Comment input */}
+        {task && !isLoading && !error && (
+          <View className="px-5 pt-3 pb-2 border-t border-[#E8E6E1]">
+            <View className="flex-row items-center gap-2 bg-white border border-[#E8E6E1] rounded-xl px-3 py-2">
+              <TextInput
+                value={commentInput}
+                onChangeText={setCommentInput}
+                placeholder="Tilføj en kommentar..."
+                placeholderTextColor="#9DA1B4"
+                multiline
+                editable={!isSubmittingComment}
+                autoCorrect
+                autoCapitalize="sentences"
+                style={[typography.bodyMd, { flex: 1, maxHeight: 96, paddingTop: 0, paddingBottom: 0 }]}
+                onFocus={handleCommentFocus}
+                underlineColorAndroid="transparent"
+              />
+              <TouchableOpacity
+                onPress={handleSubmitComment}
+                disabled={!commentInput.trim() || isSubmittingComment}
+                className="w-9 h-9 rounded-lg bg-[#0f6e56] items-center justify-center disabled:opacity-40"
+              >
+                {isSubmittingComment ? (
+                  <ActivityIndicator color="white" size="small" />
+                ) : (
+                  <Ionicons name="send" size={18} color="white" />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
+        )}
 
-          <TouchableOpacity
-            onPress={handleComplete}
-            disabled={isUpdating}
-            className={`h-14 rounded-lg flex-row items-center justify-center gap-2 disabled:opacity-50 ${task.status === TaskStatus.DONE ? "bg-[#9DA1B4]" : "bg-[#0f6e56]"}`}
-          >
-            {isUpdating ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <>
-                <Ionicons
-                  name={task.status === TaskStatus.DONE ? "refresh" : "checkmark"}
-                  size={20}
-                  color="white"
-                />
-                <Text style={typography.btnMdWhite}>
-                  {task.status === TaskStatus.DONE ? "Marker som ikke færdig" : "Marker som færdig"}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-      )}
+        {/* Footer */}
+        {task && !isLoading && !error && (
+          <View className="px-5 pb-8 pt-3 border-t border-[#E8E6E1]">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text style={typography.monoXs}>
+                Oprettet af: {creator?.name || task.created_by}
+              </Text>
+              <Text style={typography.monoXs}>{formatDaDate(task.created_at)}</Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleComplete}
+              disabled={isUpdating}
+              className={`h-14 rounded-lg flex-row items-center justify-center gap-2 disabled:opacity-50 ${task.status === TaskStatus.DONE ? "bg-[#9DA1B4]" : "bg-[#0f6e56]"}`}
+            >
+              {isUpdating ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <Ionicons
+                    name={task.status === TaskStatus.DONE ? "refresh" : "checkmark"}
+                    size={20}
+                    color="white"
+                  />
+                  <Text style={typography.btnMdWhite}>
+                    {task.status === TaskStatus.DONE ? "Marker som ikke færdig" : "Marker som færdig"}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </KeyboardAvoidingView>
     </View>
   );
 }
