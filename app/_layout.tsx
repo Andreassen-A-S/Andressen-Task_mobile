@@ -47,6 +47,14 @@ function RootGuard() {
     }
   }, [lastNotificationResponse, isAuthenticated, isLoading]);
 
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.eggWhite }}>
+        <ActivityIndicator size="large" color={colors.green} />
+      </View>
+    );
+  }
+
   return <Slot />;
 }
 

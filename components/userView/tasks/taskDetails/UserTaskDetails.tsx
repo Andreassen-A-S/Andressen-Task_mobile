@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import { addTaskProgress, getTask, updateTask, getUser } from "@/lib/api";
 import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
 import { useRouter, Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AuthContext } from "@/contexts/AuthContext";
 import TaskProgressCard from "./TaskProgressCard";
 import TaskDetailsHeader from "./TaskDetailsHeader";
 import { typography } from "@/constants/typography";
@@ -30,7 +29,6 @@ interface Props {
 
 export default function UserTaskDetails({ taskId }: Props) {
   const insets = useSafeAreaInsets();
-  const authContext = useContext(AuthContext);
   const router = useRouter();
 
   const [task, setTask] = useState<Task | null>(null);
