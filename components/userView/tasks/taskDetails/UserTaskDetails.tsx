@@ -1,18 +1,17 @@
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useCallback } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   ScrollView,
   ActivityIndicator,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
 import { User } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser } from "@/lib/api";
 import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter, Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthContext } from "@/contexts/AuthContext";
@@ -21,6 +20,9 @@ import TaskDetailsHeader from "./TaskDetailsHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import SingleAvatar from "../../common/label/singleAvatar";
+import Badge from "../../common/label/badge";
+import RecurringBadge from "../../common/label/recurringBadge";
+import SlideToComplete from "../../common/SlideToComplete";
 
 interface Props {
   taskId: string;
@@ -37,27 +39,28 @@ export default function UserTaskDetails({ taskId }: Props) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchTask = useCallback(async () => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      const taskData = await getTask(taskId);
+      setTask(taskData);
+      if (taskData.created_by) {
+        try {
+          setCreator(await getUser(taskData.created_by));
+        } catch { }
+      }
+    } catch {
+      setError("Kunne ikke hente opgave detaljer");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [taskId]);
+
   useEffect(() => {
     if (!taskId) return;
-    const fetchTask = async () => {
-      try {
-        setError(null);
-        setIsLoading(true);
-        const taskData = await getTask(taskId);
-        setTask(taskData);
-        if (taskData.created_by) {
-          try {
-            setCreator(await getUser(taskData.created_by));
-          } catch { }
-        }
-      } catch {
-        setError("Kunne ikke hente opgave detaljer");
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchTask();
-  }, [taskId]);
+  }, [fetchTask]);
 
   const handleComplete = async () => {
     if (!task) return;
@@ -84,8 +87,7 @@ export default function UserTaskDetails({ taskId }: Props) {
         quantity_done: Number(value),
         unit: task.unit || undefined,
       });
-      const updated = await getTask(task.task_id);
-      setTask(updated);
+      setTask(prev => prev ? { ...prev, current_quantity: (prev.current_quantity ?? 0) + Number(value) } : prev);
     } catch {
       Alert.alert("Fejl", "Kunne ikke registrere fremskridt");
     } finally {
@@ -101,15 +103,14 @@ export default function UserTaskDetails({ taskId }: Props) {
     : null;
 
   return (
-    <View className="flex-1 bg-[#F6F5F1]">
+    <View style={{ flex: 1, backgroundColor: colors.eggWhite }}>
       <Stack.Screen options={{ headerShown: false }} />
       <TaskDetailsHeader title={task?.title} />
 
       <ScrollView
-        className="flex-1 px-5"
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingTop: insets.top + 56, paddingBottom: 120 }}
+        contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + 56 + 24, paddingBottom: insets.bottom + 24, paddingHorizontal: 20 }}
       >
         {isLoading && (
           <View className="items-center justify-center py-20">
@@ -119,67 +120,85 @@ export default function UserTaskDetails({ taskId }: Props) {
         )}
 
         {error && !isLoading && (
-          <View className="bg-red-50 border border-red-300 rounded-lg p-4 my-4">
-            <Text className="text-red-600 text-sm text-center">{error}</Text>
+          <View style={{ backgroundColor: colors.redLight, borderWidth: 1, borderColor: colors.redBorder, borderRadius: 8, padding: 16, gap: 12 }}>
+            <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center" }]}>{error}</Text>
+            <TouchableOpacity
+              onPress={fetchTask}
+              style={{ alignSelf: "center", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.redText }}
+            >
+              <Text style={[typography.btnMd, { color: colors.white }]}>Prøv igen</Text>
+            </TouchableOpacity>
           </View>
         )}
 
         {task && !isLoading && !error && (
-          <View>
-            <Text className="mb-4" style={typography.h2}>{task.title}</Text>
+          <View style={{ flex: 1, justifyContent: "space-between", gap: 16 }}>
+            <View style={{ gap: 16 }}>
+              <Text style={typography.h2}>{task.title}</Text>
 
-            {creator?.name && (
-              <View className="flex-row items-center mb-4">
-                <SingleAvatar name={creator.name} size="lg" />
-                <View className="ml-3">
-                  <Text style={[typography.labelMd, { marginBottom: 2 }]}>
-                    Oprettet af {creator.name}
-                  </Text>
-                  <Text style={typography.bodyXs}>
-                    {formatRelativeDate(task.created_at)}
-                  </Text>
-                </View>
+              {/* Badges */}
+              <View className="flex-row flex-wrap gap-2">
+                <Badge variant="status" value={task.status} size="md" />
+                {task.priority && <Badge variant="priority" value={task.priority} size="md" />}
+                {task.recurring_template_id && <RecurringBadge size="md" />}
               </View>
-            )}
 
-            {hasProgress && progressPct !== null && (
-              <TaskProgressCard
-                progressPct={progressPct}
-                unitLabel={unitLabel}
-                onAddProgress={handleAddProgress}
-                isUpdating={isUpdating}
-              />
-            )}
-
-            <View className="mb-4">
-              <Text className="mb-2" style={typography.overline}>Beskrivelse</Text>
-              <Text className="leading-relaxed" style={typography.bodySm}>
-                {task.description}
-              </Text>
-            </View>
-
-            <View className="mt-4">
-              <TouchableOpacity
-                onPress={handleComplete}
-                disabled={isUpdating}
-                className={`h-14 rounded-lg flex-row items-center justify-center gap-2 disabled:opacity-50 ${task.status === TaskStatus.DONE ? "bg-[#9DA1B4]" : "bg-[#0f6e56]"}`}
-              >
-                {isUpdating ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <>
-                    <Ionicons
-                      name={task.status === TaskStatus.DONE ? "refresh" : "checkmark"}
-                      size={20}
-                      color="white"
-                    />
-                    <Text style={typography.btnMdWhite}>
-                      {task.status === TaskStatus.DONE ? "Marker som ikke færdig" : "Marker som færdig"}
+              {creator?.name && (
+                <View className="flex-row items-center gap-3">
+                  <SingleAvatar name={creator.name} size="lg" />
+                  <View>
+                    <Text style={[typography.labelMd, { marginBottom: 2 }]}>
+                      Oprettet af {creator.name}
                     </Text>
-                  </>
-                )}
-              </TouchableOpacity>
+                    <Text style={typography.bodyXs}>
+                      {formatRelativeDate(task.created_at)}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {hasProgress && progressPct !== null && (
+                <TaskProgressCard
+                  progressPct={progressPct}
+                  unitLabel={unitLabel}
+                  onAddProgress={handleAddProgress}
+                  isUpdating={isUpdating}
+                />
+              )}
+
+              <View style={{ gap: 8 }}>
+                <Text style={typography.overline}>Beskrivelse</Text>
+                <Text style={[typography.bodySm, { lineHeight: 22 }]}>
+                  {task.description}
+                </Text>
+              </View>
             </View>
+
+            {/* <TouchableOpacity
+              onPress={handleComplete}
+              disabled={isUpdating}
+              style={{ height: 56, borderRadius: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, opacity: isUpdating ? 0.5 : 1, backgroundColor: task.status === TaskStatus.DONE ? colors.textMuted : colors.green }}
+            >
+              {isUpdating ? (
+                <ActivityIndicator color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons
+                    name={task.status === TaskStatus.DONE ? "refresh" : "checkmark"}
+                    size={20}
+                    color={colors.white}
+                  />
+                  <Text style={typography.btnMdWhite}>
+                    {task.status === TaskStatus.DONE ? "Marker som ikke færdig" : "Marker som færdig"}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity> */}
+            <SlideToComplete
+              onComplete={handleComplete}
+              isCompleted={task.status === TaskStatus.DONE}
+              isUpdating={isUpdating}
+            />
           </View>
         )}
       </ScrollView>

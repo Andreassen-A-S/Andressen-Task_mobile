@@ -1,4 +1,4 @@
-import { useState, useCallback, useContext } from "react";
+import { useState, useCallback, useContext, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,28 +9,30 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthContext } from "@/contexts/AuthContext";
 import { getTaskComments, createComment, deleteComment, getUser } from "@/lib/api";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-import TaskDetailsHeader from "./TaskDetailsHeader";
-import UserTaskComment from "./UserTaskComment";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import ModalScreen from "@/components/userView/common/ModalScreen";
+import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
+import UserTaskCommentBubble from "./UserTaskCommentBubble";
 
 interface Props {
   taskId: string;
 }
 
 export default function TaskComments({ taskId }: Props) {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
+
+  const flatListRef = useRef<FlatList>(null);
+  const inputRef = useRef<TextInput>(null);
 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
@@ -49,7 +51,7 @@ export default function TaskComments({ taskId }: Props) {
       const authors: Record<string, User> = {};
       await Promise.all(
         uniqueIds.map(async (id) => {
-          try { authors[id] = await getUser(id); } catch {}
+          try { authors[id] = await getUser(id); } catch { }
         })
       );
       setCommentAuthors(authors);
@@ -60,21 +62,34 @@ export default function TaskComments({ taskId }: Props) {
     }
   }, [taskId]);
 
-  useFocusEffect(useCallback(() => { fetchComments(); }, [fetchComments]));
+  useFocusEffect(useCallback(() => {
+    fetchComments();
+    // Open keyboard on arrival
+    const timer = setTimeout(() => inputRef.current?.focus(), 300);
+    return () => clearTimeout(timer);
+  }, [fetchComments]));
+
+  // Scroll to bottom when comments load
+  useEffect(() => {
+    if (!isLoading && comments.length > 0) {
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
+    }
+  }, [isLoading]);
 
   const handleSubmit = async () => {
     if (!input.trim()) return;
     try {
       setIsSubmitting(true);
       const newComment = await createComment(taskId, { message: input.trim() });
-      setComments((prev) => [...prev, newComment]);
       if (!commentAuthors[newComment.user_id]) {
         try {
           const user = await getUser(newComment.user_id);
           setCommentAuthors((prev) => ({ ...prev, [newComment.user_id]: user }));
-        } catch {}
+        } catch { }
       }
+      setComments((prev) => [...prev, newComment]);
       setInput("");
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
     } catch {
       setError("Kunne ikke tilføje kommentar");
     } finally {
@@ -92,9 +107,7 @@ export default function TaskComments({ taskId }: Props) {
   };
 
   return (
-    <View className="flex-1 bg-[#F6F5F1]">
-      <Stack.Screen options={{ headerShown: false }} />
-      <TaskDetailsHeader title="Kommentarer" />
+    <ModalScreen title="Kommentarer">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -104,59 +117,84 @@ export default function TaskComments({ taskId }: Props) {
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator color={colors.green} size="large" />
           </View>
-        ) : error ? (
-          <View className="flex-1 items-center justify-center px-6">
-            <Text style={typography.bodySm} className="text-red-500 text-center">{error}</Text>
-          </View>
         ) : (
           <FlatList
+            ref={flatListRef}
             data={comments}
             keyExtractor={(item) => item.comment_id}
-            contentContainerStyle={{ paddingTop: insets.top + 56 + 12, paddingBottom: 12, paddingHorizontal: 20 }}
+            contentContainerStyle={{
+              paddingTop: 56 + 16,
+              paddingBottom: 16,
+              paddingHorizontal: 16,
+              flexGrow: 1,
+              justifyContent: comments.length === 0 ? "center" : "flex-start",
+            }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
-              <View className="items-center py-12">
-                <Text style={typography.bodySm} className="text-gray-400">Ingen kommentarer endnu</Text>
+              <View className="items-center">
+                <Text style={[typography.bodySm, { color: colors.textMuted, textAlign: "center" }]}>
+                  Ingen kommentarer endnu.{"\n"}Skriv den første!
+                </Text>
               </View>
             }
-            renderItem={({ item }) => (
-              <UserTaskComment
-                comment={item}
-                author={commentAuthors[item.user_id]}
-                currentUserId={currentUser?.user_id}
-                onDelete={handleDelete}
-              />
-            )}
+            renderItem={({ item }) =>
+              currentUser?.user_id === item.user_id ? (
+                <OwnUserTaskCommentBubble comment={item} onDelete={handleDelete} />
+              ) : (
+                <UserTaskCommentBubble comment={item} author={commentAuthors[item.user_id]} />
+              )
+            }
+            ItemSeparatorComponent={() => <View className="h-2" />}
           />
         )}
 
         {/* Input bar */}
         <View
-          className="flex-row items-center gap-3 px-4 py-3 bg-white border-t border-[#E8E6E1]"
-          style={{ paddingBottom: insets.bottom + 12 }}
+          className="flex-row items-end gap-2 px-4 py-3"
+          style={{ paddingBottom: insets.bottom + 8, backgroundColor: colors.white }}
         >
           <TextInput
+            ref={inputRef}
             value={input}
             onChangeText={setInput}
-            placeholder="Skriv en kommentar..."
+            placeholder="Besked..."
+            placeholderTextColor={colors.textMuted}
             multiline
             autoCorrect
             autoCapitalize="sentences"
-            style={[typography.bodyMd, { flex: 1, maxHeight: 100 }]}
+            style={[
+              typography.bodyMd,
+              {
+                flex: 1,
+                maxHeight: 100,
+                backgroundColor: colors.muted,
+                borderRadius: 20,
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+              },
+            ]}
           />
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={!input.trim() || isSubmitting}
-            className="disabled:opacity-40"
+            className="mb-1 disabled:opacity-40"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: input.trim() ? colors.green : colors.muted,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             {isSubmitting ? (
-              <ActivityIndicator color={colors.green} size="small" />
+              <ActivityIndicator color={colors.white} size="small" />
             ) : (
-              <Text style={[typography.labelLg, { color: colors.green }]}>Send</Text>
+              <Ionicons name="arrow-up" size={18} color={input.trim() ? colors.white : colors.textMuted} />
             )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </ModalScreen>
   );
 }

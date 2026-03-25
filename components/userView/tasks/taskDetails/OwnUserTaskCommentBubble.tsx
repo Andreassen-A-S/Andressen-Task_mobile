@@ -24,7 +24,7 @@ export default function OwnUserTaskCommentBubble({ comment, onDelete }: Props) {
         {formatCommentDate(comment.created_at)}
       </Text>
 
-      <View className="rounded-lg px-3 py-2 bg-[#0f6e56] self-end">
+      <View className="rounded-lg px-3 py-2 self-end" style={{ backgroundColor: colors.green }}>
         <Text style={typography.bodySmWhite}>{comment.message}</Text>
       </View>
 

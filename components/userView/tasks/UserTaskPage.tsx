@@ -127,7 +127,7 @@ export default function UserTaskPage() {
     <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["left", "right"]}>
       <View className="flex-1 bg-[#F6F5F1]">
         <UserHeader variant="user" user={user} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
-        <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} />
+        {/* <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} /> */}
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.task_id}

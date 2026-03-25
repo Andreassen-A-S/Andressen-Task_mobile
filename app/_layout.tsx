@@ -19,6 +19,7 @@ import {
   IBMPlexMono_500Medium,
 } from "@expo-google-fonts/ibm-plex-mono";
 import { colors } from "@/constants/colors";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 function RootGuard() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -69,11 +70,11 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.charcoal }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.charcoal }}>
       <StatusBar style="light" />
       <AuthProvider>
         <RootGuard />
       </AuthProvider>
-    </View>
+    </GestureHandlerRootView>
   );
 }
