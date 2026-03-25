@@ -8,7 +8,6 @@ import Animated, {
   interpolate,
   runOnJS,
 } from "react-native-reanimated";
-
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/colors";
@@ -33,6 +32,7 @@ export default function SlideToComplete({ onComplete, isCompleted = false, isUpd
 
   const pan = useMemo(() => Gesture.Pan()
     .activeOffsetX(8)
+    .failOffsetY([-5, 5])
     .enabled(!isUpdating)
     .onUpdate(({ translationX }) => {
       translateX.value = Math.max(0, Math.min(translationX, maxSlide.value));

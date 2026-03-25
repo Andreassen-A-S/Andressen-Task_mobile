@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -52,10 +52,6 @@ export default function UserTaskPage() {
       refresh ? setIsRefreshing(false) : setIsLoading(false);
     }
   }, [user?.user_id]);
-
-  useEffect(() => {
-    if (user?.user_id) fetchTasks();
-  }, [user?.user_id, fetchTasks]);
 
   useFocusEffect(
     useCallback(() => {

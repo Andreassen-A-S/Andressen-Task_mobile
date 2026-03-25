@@ -14,7 +14,6 @@ import { addTaskProgress, getTask, updateTask, getUser } from "@/lib/api";
 import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
 import { useRouter, Stack } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import TaskProgressCard from "./TaskProgressCard";
 import TaskDetailsHeader from "./TaskDetailsHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
@@ -22,6 +21,7 @@ import SingleAvatar from "../../common/label/singleAvatar";
 import Badge from "../../common/label/badge";
 import RecurringBadge from "../../common/label/recurringBadge";
 import SlideToComplete from "../../common/SlideToComplete";
+import TaskProgressCard from "./TaskProgressCard";
 
 interface Props {
   taskId: string;
@@ -85,7 +85,7 @@ export default function UserTaskDetails({ taskId }: Props) {
         quantity_done: Number(value),
         unit: task.unit || undefined,
       });
-      setTask(prev => prev ? { ...prev, current_quantity: (prev.current_quantity ?? 0) + Number(value) } : prev);
+      await fetchTask();
     } catch {
       Alert.alert("Fejl", "Kunne ikke registrere fremskridt");
     } finally {
@@ -149,7 +149,7 @@ export default function UserTaskDetails({ taskId }: Props) {
                       Oprettet af {creator.name}
                     </Text>
                     <Text style={typography.bodyXs}>
-                      {formatRelativeDate(task.created_at)}
+                      {task.created_at ? formatRelativeDate(task.created_at) : ""}
                     </Text>
                   </View>
                 </View>

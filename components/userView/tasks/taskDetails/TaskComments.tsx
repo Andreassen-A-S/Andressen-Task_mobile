@@ -1,4 +1,4 @@
-import { useState, useCallback, useContext, useRef, useEffect } from "react";
+import { useState, useCallback, useContext, useRef } from "react";
 import {
   View,
   Text,
@@ -47,6 +47,9 @@ export default function TaskComments({ taskId }: Props) {
       setError(null);
       const data = await getTaskComments(taskId);
       setComments(data);
+      if (data.length > 0) {
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
+      }
       const uniqueIds = [...new Set(data.map((c) => c.user_id))];
       const authors: Record<string, User> = {};
       await Promise.all(
@@ -68,13 +71,6 @@ export default function TaskComments({ taskId }: Props) {
     const timer = setTimeout(() => inputRef.current?.focus(), 300);
     return () => clearTimeout(timer);
   }, [fetchComments]));
-
-  // Scroll to bottom when comments load
-  useEffect(() => {
-    if (!isLoading && comments.length > 0) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
-    }
-  }, [isLoading]);
 
   const handleSubmit = async () => {
     if (!input.trim()) return;

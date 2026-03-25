@@ -1,40 +1,52 @@
-import { Host, Image } from "@expo/ui/swift-ui";
-import { glassEffect, padding, onTapGesture } from "@expo/ui/swift-ui/modifiers";
+import { View, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { SFSymbol } from "sf-symbols-typescript";
+import { colors } from "@/constants/colors";
 
-type Shape = "circle" | "capsule" | "rectangle" | "ellipse" | "roundedRectangle";
 type Variant = "sm" | "lg";
 
-const VARIANTS: Record<Variant, { size: number; paddingSize: number }> = {
-  sm: { size: 16, paddingSize: 14 }, // 16 + 14*2 = 44px
-  lg: { size: 18, paddingSize: 15 }, // 18 + 15*2 = 48px
+const VARIANTS: Record<Variant, { size: number; hitSize: number }> = {
+  sm: { size: 16, hitSize: 44 },
+  lg: { size: 18, hitSize: 48 },
+};
+
+const SF_TO_IONICON: Partial<Record<SFSymbol, keyof typeof Ionicons.glyphMap>> = {
+  "xmark": "close",
+  "chevron.left": "chevron-back",
+  "camera": "camera",
+  "bubble.right": "chatbubble",
+  "folder": "folder",
+  "square.and.arrow.up": "share-social",
+  "ellipsis": "ellipsis-horizontal",
 };
 
 interface Props {
   systemName: SFSymbol;
   onPress: () => void;
   variant?: Variant;
-  shape?: Shape;
 }
 
-export default function GlassIconButton({
-  systemName,
-  onPress,
-  variant = "sm",
-  shape = "circle",
-}: Props) {
-  const { size, paddingSize } = VARIANTS[variant];
+export default function GlassIconButton({ systemName, onPress, variant = "sm" }: Props) {
+  const { size, hitSize } = VARIANTS[variant];
+  const iconName = SF_TO_IONICON[systemName] ?? "ellipsis-horizontal";
+
   return (
-    <Host matchContents>
-      <Image
-        systemName={systemName}
-        size={size}
-        modifiers={[
-          padding({ all: paddingSize }),
-          glassEffect({ glass: { variant: "regular", interactive: true }, shape }),
-          onTapGesture(onPress),
-        ]}
-      />
-    </Host>
+    <View style={{
+      width: hitSize,
+      height: hitSize,
+      borderRadius: hitSize / 2,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: "hidden",
+    }}>
+      <Pressable
+        onPress={onPress}
+        android_ripple={{ color: colors.border, borderless: false }}
+        style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+      >
+        <Ionicons name={iconName} size={size} color={colors.textPrimary} />
+      </Pressable>
+    </View>
   );
 }
