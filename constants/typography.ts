@@ -1,5 +1,5 @@
 import { StyleSheet, TextStyle } from "react-native";
-import { colors } from "./colors";
+import { colors } from "@/constants/colors";
 
 const base: TextStyle = {
   fontFamily: "Outfit_400Regular",
@@ -176,7 +176,7 @@ export const typography = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     letterSpacing: 0.02 * 10,
-    color: "#2C5FE0",
+    color: colors.blue,
   },
   tag: {
     ...base,

@@ -27,7 +27,7 @@ export default function UserTaskCommentBubble({ comment, author }: Props) {
 
       {/* Comment bubble */}
       <View className="min-w-0 max-w-[75%] self-start">
-        <View className="min-w-0 rounded-lg px-3 py-2 bg-[#F6F5F1]">
+        <View className="min-w-0 rounded-lg px-3 py-2 bg-white">
           <Text style={typography.bodySm}>{comment.message}</Text>
         </View>
       </View>

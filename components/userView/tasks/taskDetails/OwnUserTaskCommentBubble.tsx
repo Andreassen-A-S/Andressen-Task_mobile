@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { TaskComment } from "@/types/comment";
 import { formatCommentDate } from "@/helpers/helpers";
 import { typography } from "@/constants/typography";
+import { colors } from "@/constants/colors";
 
 interface Props {
   comment: TaskComment;
@@ -28,8 +29,8 @@ export default function OwnUserTaskCommentBubble({ comment, onDelete }: Props) {
       </View>
 
       <TouchableOpacity onPress={confirmDelete} className="flex-row items-center gap-1 mt-1 self-end">
-        <Ionicons name="trash-outline" size={12} color="#9DA1B4" />
-        <Text className="text-xs text-[#9DA1B4]">Slet</Text>
+        <Ionicons name="trash-outline" size={12} color={colors.textMuted} />
+        <Text className="text-xs" style={{ color: colors.textMuted }}>Slet</Text>
       </TouchableOpacity>
     </View>
   );

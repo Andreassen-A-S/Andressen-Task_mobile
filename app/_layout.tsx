@@ -40,7 +40,7 @@ function RootGuard() {
     if (!isAuthenticated || isLoading) return;
     const data = lastNotificationResponse?.notification.request.content.data;
     if (typeof data?.taskId === "string") {
-      router.push(`/(tabs)/tasks?taskId=${data.taskId}`);
+      router.push(`/(tabs)/tasks/${data.taskId}`);
     } else if (data?.screen === "tasks") {
       router.push("/(tabs)/tasks");
     }

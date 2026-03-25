@@ -1,5 +1,6 @@
 
 import { typography } from '@/constants/typography';
+import { colors } from '@/constants/colors';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { View, StyleSheet, Text } from 'react-native';
 
@@ -18,7 +19,7 @@ export default function RecurringBadge({ size = "md" }: RecurringBadgeProps) {
     if (size === "sm") {
         return (
             <View style={[styles.container, sizeStyles.sm]}>
-                <FontAwesome6 name="repeat" size={10} color="#2C5FE0" />
+                <FontAwesome6 name="repeat" size={10} color={colors.blue} />
                 <Text style={[typography.badgeRecurring,]}>Gentages</Text>
             </View>
         );
@@ -27,7 +28,7 @@ export default function RecurringBadge({ size = "md" }: RecurringBadgeProps) {
     if (size === "md") {
         return (
             <View style={[styles.container, sizeStyles.md]}>
-                <FontAwesome6 name="repeat" size={12} color="#2C5FE0" />
+                <FontAwesome6 name="repeat" size={12} color={colors.blue} />
                 <Text style={[typography.badgeRecurring]}>Gentages</Text>
             </View>
         );
@@ -36,7 +37,7 @@ export default function RecurringBadge({ size = "md" }: RecurringBadgeProps) {
     if (size === "lg") {
         return (
             <View style={[styles.container, sizeStyles.lg]}>
-                <FontAwesome6 name="repeat" size={14} color="#2C5FE0" />
+                <FontAwesome6 name="repeat" size={14} color={colors.blue} />
                 <Text style={[typography.badgeRecurring]}>Gentages</Text>
             </View>
         );
@@ -51,6 +52,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 6,
         borderRadius: 8,
-        backgroundColor: '#EBF0FD',
+        backgroundColor: colors.blueLight,
     },
 });

@@ -1,5 +1,6 @@
 
 import { typography } from '@/constants/typography';
+import { colors } from '@/constants/colors';
 import { TaskPriority } from '@/types/task';
 import { getPriorityAccentColor, getPriorityColors, translatePriority } from '@/helpers/helpers';
 import { View, StyleSheet, Text } from 'react-native';
@@ -35,6 +36,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 6,
         borderRadius: 8,
-        backgroundColor: '#EBF0FD',
+        backgroundColor: colors.blueLight,
     },
 });

@@ -4,6 +4,7 @@ import { User } from "@/types/users";
 import UserTaskCommentBubble from "./UserTaskCommentBubble";
 import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
 import { typography } from "@/constants/typography";
+import { colors } from "@/constants/colors";
 
 interface Props {
   comments: TaskComment[];
@@ -29,7 +30,7 @@ export default function UserTaskComment({
       </Text>
 
       {isLoading ? (
-        <ActivityIndicator color="#0f6e56" />
+        <ActivityIndicator color={colors.green} />
       ) : error ? (
         <View className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
           <Text className="text-red-600 text-sm">{error}</Text>

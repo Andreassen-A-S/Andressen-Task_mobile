@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext, useRef } from "react";
+import { useEffect, useState, useContext, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
+  Modal,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
@@ -20,47 +21,51 @@ import {
   translateTaskUnit,
 } from "@/helpers/helpers";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter, Stack } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthContext } from "@/contexts/AuthContext";
 import UserTaskComment from "./UserTaskComment";
+import TaskProgressCard from "./TaskProgressCard";
+import TaskDetailsHeader from "./TaskDetailsHeader";
 import { typography } from "@/constants/typography";
-import CloseButton from "../../common/buttons/CloseButton";
 import RecurringBadge from "../../common/label/recurringBadge";
 import Badge from "../../common/label/badge";
-import DetailsPriorityBadge from "../../common/label/DetailsPriorityBadge";
 import { colors } from "@/constants/colors";
 import SingleAvatar from "../../common/label/singleAvatar";
 
 interface Props {
   taskId: string;
-  onBack: () => void;
-  onTaskUpdated?: () => void;
 }
 
-export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props) {
+const TABS = [
+  { key: "comments" as const, label: "Kommentarer" },
+  { key: "images" as const, label: "Billeder" },
+  { key: "files" as const, label: "Filer" },
+];
+
+type TabKey = (typeof TABS)[number]["key"];
+
+export default function UserTaskDetails({ taskId }: Props) {
+  const insets = useSafeAreaInsets();
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
+  const router = useRouter();
 
   const [task, setTask] = useState<Task | null>(null);
   const [creator, setCreator] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [progressDelta, setProgressDelta] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<TabKey>("comments");
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [commentInput, setCommentInput] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  const handleCommentFocus = () => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 300);
-  };
 
   useEffect(() => {
     if (!taskId) return;
@@ -84,33 +89,34 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
     fetchTask();
   }, [taskId]);
 
-  useEffect(() => {
+  const fetchComments = useCallback(async () => {
     if (!taskId) return;
-    const fetchComments = async () => {
-      try {
-        setIsLoadingComments(true);
-        setCommentError(null);
-        const commentsData = await getTaskComments(taskId);
-        setComments(commentsData);
+    try {
+      setIsLoadingComments(true);
+      setCommentError(null);
+      const commentsData = await getTaskComments(taskId);
+      setComments(commentsData);
 
-        const uniqueUserIds = [...new Set(commentsData.map((c) => c.user_id))];
-        const authorsData: Record<string, User> = {};
-        await Promise.all(
-          uniqueUserIds.map(async (userId) => {
-            try {
-              authorsData[userId] = await getUser(userId);
-            } catch { }
-          }),
-        );
-        setCommentAuthors(authorsData);
-      } catch {
-        setCommentError("Kunne ikke hente kommentarer");
-      } finally {
-        setIsLoadingComments(false);
-      }
-    };
-    fetchComments();
+      const uniqueUserIds = [...new Set(commentsData.map((c) => c.user_id))];
+      const authorsData: Record<string, User> = {};
+      await Promise.all(
+        uniqueUserIds.map(async (userId) => {
+          try {
+            authorsData[userId] = await getUser(userId);
+          } catch { }
+        }),
+      );
+      setCommentAuthors(authorsData);
+    } catch {
+      setCommentError("Kunne ikke hente kommentarer");
+    } finally {
+      setIsLoadingComments(false);
+    }
   }, [taskId]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
 
   const handleComplete = async () => {
     if (!task) return;
@@ -120,8 +126,7 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
       const updated = await updateTask(task.task_id, { status: newStatus });
       setTask(updated);
       if (newStatus === TaskStatus.DONE) {
-        onBack();
-        onTaskUpdated?.();
+        router.back();
       }
     } catch {
       Alert.alert("Fejl", "Kunne ikke opdatere opgave");
@@ -130,13 +135,9 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
     }
   };
 
-  const handleAddProgress = async () => {
+  const handleAddProgress = async (value: string) => {
     if (!task) return;
-    const delta = Number(progressDelta);
-    if (!Number.isFinite(delta) || delta <= 0) {
-      Alert.alert("Ugyldigt", "Indtast et gyldigt fremskridt over 0");
-      return;
-    }
+    const delta = Number(value);
     try {
       setIsUpdating(true);
       await addTaskProgress(task.task_id, {
@@ -145,7 +146,6 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
       });
       const updated = await getTask(task.task_id);
       setTask(updated);
-      setProgressDelta("");
     } catch {
       Alert.alert("Fejl", "Kunne ikke registrere fremskridt");
     } finally {
@@ -163,12 +163,11 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
         try {
           const userData = await getUser(newComment.user_id);
           setCommentAuthors((prev) => ({ ...prev, [newComment.user_id]: userData }));
-        } catch (err) {
-          setCommentError("Kunne ikke hente forfatterdata for kommentar");
-        }
+        } catch { }
       }
       setCommentInput("");
       setCommentError(null);
+      setCommentModalVisible(false);
     } catch {
       setCommentError("Kunne ikke tilføje kommentar");
     } finally {
@@ -198,210 +197,142 @@ export default function UserTaskDetails({ taskId, onBack, onTaskUpdated }: Props
     : `${currentQuantity}${unitLabel ? ` ${unitLabel}` : ""}`;
 
   return (
-    <View className="flex-1 bg-white rounded-t-3xl">
-      {/* Handle */}
-      <View className="items-center pt-3 pb-2">
-        <View className="w-9 h-1 rounded-full bg-[#E8E6E1]" />
-      </View>
-
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pb-3">
-        {isLoading ? (
-          <Text className="tracking-widest" style={typography.bodyXs}>HENTER...</Text>
-        ) : error ? (
-          <Text className="tracking-widest" style={[typography.bodyXs, { color: colors.red }]}>FEJL</Text>
-        ) : task ? (
-          /* Badges */
-          <View className="flex-row items-center gap-3">
-            <Badge variant="priority" value={task.priority} size="lg" />
-            <Badge variant="status" value={task.status} size="lg" />
-            {task.recurring_template_id && <RecurringBadge size="lg" />}
-          </View>
-
-
-        ) : null}
-
-        <CloseButton onClick={onBack} />
-      </View>
-
-      {/* Content */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+    <View className="flex-1 bg-[#F6F5F1]">
+      <Stack.Screen options={{ headerShown: false }} />
+      <TaskDetailsHeader title={task?.title} />
+      {/* Scrollable content */}
+      <ScrollView
+        className="flex-1 px-5"
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingTop: insets.top + 56, paddingBottom: 120 }}
       >
-        <ScrollView
-          ref={scrollViewRef}
-          className="flex-1 px-5"
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: 40 }}
-        >
-          {isLoading && (
-            <View className="items-center justify-center py-20">
-              <ActivityIndicator color="#0f6e56" size="large" />
-              <Text className="mt-3" style={typography.bodySm}>Henter opgave...</Text>
-            </View>
-          )}
+        {isLoading && (
+          <View className="items-center justify-center py-20">
+            <ActivityIndicator color="#0f6e56" size="large" />
+            <Text className="mt-3" style={typography.bodySm}>Henter opgave...</Text>
+          </View>
+        )}
 
-          {error && !isLoading && (
-            <View className="bg-red-50 border border-red-300 rounded-lg p-4 my-4">
-              <Text className="text-red-600 text-sm text-center">{error}</Text>
-            </View>
-          )}
+        {error && !isLoading && (
+          <View className="bg-red-50 border border-red-300 rounded-lg p-4 my-4">
+            <Text className="text-red-600 text-sm text-center">{error}</Text>
+          </View>
+        )}
 
-          {task && !isLoading && !error && (
-            <View>
-              {/* Title */}
-              <Text className="mb-4" style={typography.h2}>{task.title}</Text>
-
-              {/* Author */}
-              {creator?.name && (
-                <View className="flex-row items-center mb-4">
-                  <SingleAvatar name={creator.name} size="lg" />
-                  <View className="ml-3">
-                    <Text style={[typography.labelMd, { marginBottom: 2 }]}>
-                      Oprettet af {creator.name}
-                    </Text>
-                    <Text style={typography.bodyXs}>
-                      {formatRelativeDate(task.created_at)}
-                    </Text>
-                  </View>
-                </View>
-              )}
-
-              {/* Progress */}
-              {hasProgress && (
-                <>
-                  <Text className="mb-2" style={typography.overline}>
-                    Fremskridt
-                  </Text>
-                  <View className="flex-row items-baseline justify-between mb-1.5">
-                    {!isPercent && <Text style={typography.monoMd}>{progressLabel}</Text>}
-                    {progressPct !== null && (
-                      <Text style={typography.monoMd}>{progressPct}%</Text>
-                    )}
-                  </View>
-                  <View className="h-2 rounded-full bg-[#E8E6E1] overflow-hidden mb-4">
-                    <View
-                      className="h-full rounded-full bg-[#0f6e56]"
-                      style={{ width: `${progressPct ?? 0}%` }}
-                    />
-                  </View>
-                  <TextInput
-                    keyboardType="numeric"
-                    placeholder={`+ Tilføj ${unitLabel || "enheder"}`}
-                    placeholderTextColor="#9DA1B4"
-                    value={progressDelta}
-                    onChangeText={setProgressDelta}
-                    className="h-12 rounded-lg border border-[#E8E6E1] px-3.5 bg-[#F6F5F1] mb-2 focus:border-[#2D9F6F]"
-                    style={typography.monoSm}
-                  />
-                  <TouchableOpacity
-                    onPress={handleAddProgress}
-                    disabled={isUpdating}
-                    className="h-12 rounded-lg bg-[#0f6e56] items-center justify-center disabled:opacity-50"
-                  >
-                    {isUpdating ? (
-                      <ActivityIndicator color="white" />
-                    ) : (
-                      <Text style={typography.btnMdWhite}>Registrer fremskridt</Text>
-                    )}
-                  </TouchableOpacity>
-                  <View className="h-px bg-[#E8E6E1] my-4" />
-                </>
-              )}
-
-              {/* Description */}
-              <View className="mb-4">
-                <Text className="mb-2" style={typography.overline}>
-                  Beskrivelse
-                </Text>
-                <Text className="leading-relaxed" style={typography.bodySm}>
-                  {task.description}
-                </Text>
-              </View>
-
-
-
-              {/* Comments list */}
-              <UserTaskComment
-                comments={comments}
-                commentAuthors={commentAuthors}
-                isLoading={isLoadingComments}
-                error={commentError}
-                currentUserId={currentUser?.user_id}
-                onDelete={handleDeleteComment}
-              />
-
-            </View>
-          )}
-        </ScrollView>
-
-        {/* Comment input */}
         {task && !isLoading && !error && (
-          <View className="px-5 pt-3 pb-2 border-t border-[#E8E6E1]">
-            <View className="flex-row items-center gap-2 bg-white border border-[#E8E6E1] rounded-xl px-3 py-2">
-              <TextInput
-                value={commentInput}
-                onChangeText={setCommentInput}
-                placeholder="Tilføj en kommentar..."
-                placeholderTextColor="#9DA1B4"
-                multiline
-                editable={!isSubmittingComment}
-                autoCorrect
-                autoCapitalize="sentences"
-                style={[typography.bodyMd, { flex: 1, maxHeight: 96, paddingTop: 0, paddingBottom: 0 }]}
-                onFocus={handleCommentFocus}
-                underlineColorAndroid="transparent"
+          <View>
+            {/* Title */}
+            <Text className="mb-4" style={typography.h2}>{task.title}</Text>
+
+            {/* Author */}
+            {creator?.name && (
+              <View className="flex-row items-center mb-4">
+                <SingleAvatar name={creator.name} size="lg" />
+                <View className="ml-3">
+                  <Text style={[typography.labelMd, { marginBottom: 2 }]}>
+                    Oprettet af {creator.name}
+                  </Text>
+                  <Text style={typography.bodyXs}>
+                    {formatRelativeDate(task.created_at)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Progress */}
+            {hasProgress && progressPct !== null && (
+              <TaskProgressCard
+                progressPct={progressPct}
+                unitLabel={unitLabel}
+                onAddProgress={handleAddProgress}
+                isUpdating={isUpdating}
               />
+            )}
+
+            {/* Description */}
+            <View className="mb-4">
+              <Text className="mb-2" style={typography.overline}>
+                Beskrivelse
+              </Text>
+              <Text className="leading-relaxed" style={typography.bodySm}>
+                {task.description}
+              </Text>
+            </View>
+
+            {/* Complete button */}
+            <View className="mt-4">
               <TouchableOpacity
-                onPress={handleSubmitComment}
-                disabled={!commentInput.trim() || isSubmittingComment}
-                className="w-9 h-9 rounded-lg bg-[#0f6e56] items-center justify-center disabled:opacity-40"
+                onPress={handleComplete}
+                disabled={isUpdating}
+                className={`h-14 rounded-lg flex-row items-center justify-center gap-2 disabled:opacity-50 ${task.status === TaskStatus.DONE ? "bg-[#9DA1B4]" : "bg-[#0f6e56]"}`}
               >
-                {isSubmittingComment ? (
-                  <ActivityIndicator color="white" size="small" />
+                {isUpdating ? (
+                  <ActivityIndicator color="white" />
                 ) : (
-                  <Ionicons name="send" size={18} color="white" />
+                  <>
+                    <Ionicons
+                      name={task.status === TaskStatus.DONE ? "refresh" : "checkmark"}
+                      size={20}
+                      color="white"
+                    />
+                    <Text style={typography.btnMdWhite}>
+                      {task.status === TaskStatus.DONE ? "Marker som ikke færdig" : "Marker som færdig"}
+                    </Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
           </View>
         )}
+      </ScrollView>
 
-        {/* Footer */}
-        {task && !isLoading && !error && (
-          <View className="px-5 pb-8 pt-3 border-t border-[#E8E6E1]">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text style={typography.monoXs}>
-                Oprettet af: {creator?.name || task.created_by}
-              </Text>
-              <Text style={typography.monoXs}>{formatDaDate(task.created_at)}</Text>
-            </View>
+      {/* FABs */}
+      {task && !isLoading && !error && (
+        <View style={{ position: "absolute", right: 20, bottom: 40, alignItems: "flex-end", gap: 10 }}>
+          <GlassIconButton systemName="camera" onPress={() => Alert.alert("Foto", "Kommer snart")} variant="lg" />
+          <GlassIconButton systemName="bubble.right" onPress={() => setCommentModalVisible(true)} variant="lg" />
+          <GlassIconButton systemName="folder" onPress={() => Alert.alert("Filer", "Kommer snart")} variant="lg" />
+        </View>
+      )}
 
+      {/* Comment modal */}
+      <Modal
+        visible={commentModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setCommentModalVisible(false)}
+      >
+        <SafeAreaView className="flex-1 bg-white">
+          <View className="flex-row items-center justify-between px-5 py-3 border-b border-[#E8E6E1]">
+            <TouchableOpacity onPress={() => setCommentModalVisible(false)}>
+              <Text className="text-2xl text-gray-500">×</Text>
+            </TouchableOpacity>
+            <Text style={typography.h5}>Ny kommentar</Text>
             <TouchableOpacity
-              onPress={handleComplete}
-              disabled={isUpdating}
-              className={`h-14 rounded-lg flex-row items-center justify-center gap-2 disabled:opacity-50 ${task.status === TaskStatus.DONE ? "bg-[#9DA1B4]" : "bg-[#0f6e56]"}`}
+              onPress={handleSubmitComment}
+              disabled={!commentInput.trim() || isSubmittingComment}
             >
-              {isUpdating ? (
-                <ActivityIndicator color="white" />
+              {isSubmittingComment ? (
+                <ActivityIndicator color={colors.green} size="small" />
               ) : (
-                <>
-                  <Ionicons
-                    name={task.status === TaskStatus.DONE ? "refresh" : "checkmark"}
-                    size={20}
-                    color="white"
-                  />
-                  <Text style={typography.btnMdWhite}>
-                    {task.status === TaskStatus.DONE ? "Marker som ikke færdig" : "Marker som færdig"}
-                  </Text>
-                </>
+                <Text style={[typography.labelLg, { color: colors.green }]}>Send</Text>
               )}
             </TouchableOpacity>
           </View>
-        )}
-      </KeyboardAvoidingView>
+          <TextInput
+            value={commentInput}
+            onChangeText={setCommentInput}
+            placeholder="Skriv en kommentar..."
+            multiline
+            autoFocus
+            autoCorrect
+            autoCapitalize="sentences"
+            style={[typography.bodyMd, { flex: 1, padding: 20, textAlignVertical: "top" }]}
+          />
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
+
