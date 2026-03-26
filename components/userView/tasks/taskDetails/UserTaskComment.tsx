@@ -1,9 +1,10 @@
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
 import UserTaskCommentBubble from "./UserTaskCommentBubble";
 import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
 import { typography } from "@/constants/typography";
+import { colors } from "@/constants/colors";
 
 interface Props {
   comments: TaskComment[];
@@ -12,11 +13,6 @@ interface Props {
   error: string | null;
   currentUserId?: string;
   onDelete: (commentId: string) => void;
-  commentInput: string;
-  onCommentChange: (text: string) => void;
-  onSubmit: () => void;
-  isSubmitting: boolean;
-  onInputFocus?: () => void;
 }
 
 export default function UserTaskComment({
@@ -26,11 +22,6 @@ export default function UserTaskComment({
   error,
   currentUserId,
   onDelete,
-  commentInput,
-  onCommentChange,
-  onSubmit,
-  isSubmitting,
-  onInputFocus,
 }: Props) {
   return (
     <View>
@@ -39,7 +30,7 @@ export default function UserTaskComment({
       </Text>
 
       {isLoading ? (
-        <ActivityIndicator color="#0f6e56" />
+        <ActivityIndicator color={colors.green} />
       ) : error ? (
         <View className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
           <Text className="text-red-600 text-sm">{error}</Text>
@@ -58,31 +49,6 @@ export default function UserTaskComment({
           })}
         </View>
       )}
-
-      {/* Composer */}
-      <TextInput
-        value={commentInput}
-        onChangeText={onCommentChange}
-        placeholder="Tilføj en kommentar..."
-        placeholderTextColor="#9DA1B4"
-        multiline
-        editable={!isSubmitting}
-        style={[typography.bodyMd, { maxHeight: 96 }]}
-        className="bg-white border border-[#E8E6E1] rounded-lg px-4 h-24 focus:border-[#2D9F6F]"
-        onFocus={onInputFocus}
-        textAlignVertical="top"
-      />
-      <TouchableOpacity
-        onPress={onSubmit}
-        disabled={!commentInput.trim() || isSubmitting}
-        className="self-end mt-2 px-5 py-2.5 rounded-lg bg-[#0f6e56] disabled:opacity-50"
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="white" size="small" />
-        ) : (
-          <Text className="text-white font-semibold text-sm">Kommenter</Text>
-        )}
-      </TouchableOpacity>
     </View>
   );
 }

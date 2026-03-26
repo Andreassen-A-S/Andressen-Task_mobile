@@ -1,16 +1,16 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
   SectionList,
   TouchableOpacity,
   ActivityIndicator,
-  Modal,
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments } from "@/lib/api";
 import { Task, TaskGoalType, TaskPriority, TaskStatus } from "@/types/task";
@@ -18,7 +18,6 @@ import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
 import UserTaskDateNavigator from "./UserTaskDateNavigator";
 import UserTaskCard from "./UserTaskCard";
-import UserTaskDetails from "./taskDetails/UserTaskDetails";
 import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
@@ -32,7 +31,6 @@ const FILTERS = [
 
 export default function UserTaskPage() {
   const { user } = useAuth();
-  const { taskId: deepLinkTaskId } = useLocalSearchParams<{ taskId?: string }>();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,13 +38,6 @@ export default function UserTaskPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!deepLinkTaskId) return;
-    setSelectedTaskId(deepLinkTaskId);
-    router.setParams({ taskId: undefined });
-  }, [deepLinkTaskId]);
 
   const fetchTasks = useCallback(async (refresh = false) => {
     if (!user?.user_id) return;
@@ -62,9 +53,11 @@ export default function UserTaskPage() {
     }
   }, [user?.user_id]);
 
-  useEffect(() => {
-    if (user?.user_id) fetchTasks();
-  }, [user?.user_id, fetchTasks]);
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.user_id) fetchTasks();
+    }, [user?.user_id, fetchTasks])
+  );
 
   const selectedDateKey = toLocalDateKey(selectedDate);
 
@@ -113,10 +106,12 @@ export default function UserTaskPage() {
     return (
       <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
         <View className="flex-1 bg-[#F6F5F1] items-center justify-center px-6">
-          <View className="bg-[#FEF2F2] border-2 border-[#FECACA] rounded-xl p-4 w-full items-center">
-            <Text className="text-[#991B1B] font-semibold text-center mb-3">{error}</Text>
-            <TouchableOpacity onPress={() => fetchTasks()} className="px-4 py-2.5 bg-[#DC2626] rounded-[10px]">
-              <Text className="text-white font-semibold">Prøv igen</Text>
+          <View className="rounded-xl p-4 w-full items-center border-2"
+            style={{ backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
+            <Text className="font-semibold text-center mb-3" style={{ color: colors.redText }}>{error}</Text>
+            <TouchableOpacity onPress={() => fetchTasks()} className="px-4 py-2.5 rounded-[10px]"
+              style={{ backgroundColor: colors.red }}>
+              <Text style={typography.btnMdWhite}>Prøv igen</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -128,12 +123,12 @@ export default function UserTaskPage() {
     <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["left", "right"]}>
       <View className="flex-1 bg-[#F6F5F1]">
         <UserHeader variant="user" user={user} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
-        <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} />
+        {/* <UserTaskDateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} /> */}
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.task_id}
           renderItem={({ item }) => (
-            <UserTaskCard task={item} onClick={() => setSelectedTaskId(item.task_id)} />
+            <UserTaskCard task={item} onClick={() => router.push(`/(tabs)/tasks/${item.task_id}`)} />
           )}
           renderSectionHeader={({ section: { title, count } }) => {
             if (title === "Planlagt" && !hasBothSections) return null;
@@ -190,12 +185,13 @@ export default function UserTaskPage() {
               </View>
             ) : (
               <View className="px-6 pt-6">
-                <View className="bg-white rounded-2xl border-2 border-[#E5E7EB] p-6 items-center">
-                  <Ionicons name="checkmark-circle-outline" size={48} color="#d1d5db" />
-                  <Text className="mt-4 text-base font-semibold text-[#4B5563] text-center">
+                <View className="rounded-2xl border-2 p-6 items-center"
+                  style={{ backgroundColor: colors.white, borderColor: colors.border }}>
+                  <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
+                  <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
                     Ingen opgaver planlagt for denne dag
                   </Text>
-                  <Text className="mt-2 text-[13px] text-[#9CA3AF] text-center">
+                  <Text className="mt-2 text-center" style={typography.bodyXs}>
                     Nye opgaver vil blive vist her
                   </Text>
                 </View>
@@ -204,16 +200,6 @@ export default function UserTaskPage() {
           }
         />
 
-        <Modal
-          visible={!!selectedTaskId}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setSelectedTaskId(null)}
-        >
-          {selectedTaskId && (
-            <UserTaskDetails taskId={selectedTaskId} onBack={() => setSelectedTaskId(null)} onTaskUpdated={fetchTasks} />
-          )}
-        </Modal>
       </View>
     </SafeAreaView>
   );

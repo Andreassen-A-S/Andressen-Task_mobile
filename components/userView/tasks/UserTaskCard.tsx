@@ -9,6 +9,7 @@ import {
 } from "@/helpers/helpers";
 import { Ionicons } from "@expo/vector-icons";
 import { typography } from "@/constants/typography";
+import { colors } from "@/constants/colors";
 import RecurringBadge from "../common/label/recurringBadge";
 import Badge from "../common/label/badge";
 
@@ -37,7 +38,7 @@ export default function UserTaskCard({ task, onClick }: Props) {
       onPress={onClick}
       style={[
         styles.card,
-        { backgroundColor: isCompleted ? "#FAFAF7" : "#FFFFFF", opacity: isCompleted ? 0.6 : 1 }
+        { backgroundColor: isCompleted ? colors.surfaceHover : colors.white, opacity: isCompleted ? 0.6 : 1 }
       ]}
     >
       {/* Priority bar */}
@@ -94,7 +95,7 @@ export default function UserTaskCard({ task, onClick }: Props) {
             {/* Done */}
             {isCompleted && (
               <View style={styles.doneBadge}>
-                <Ionicons name="checkmark" size={10} color="#2D9F6F" />
+                <Ionicons name="checkmark" size={10} color={colors.greenMid} />
                 <Text style={[typography.badge, styles.doneBadgeText]}>FÆRDIG</Text>
               </View>
             )}
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     borderWidth: 1,
-    borderColor: "#E8E6E1",
+    borderColor: colors.border,
     borderRadius: 12,
     overflow: "hidden",
   },
@@ -145,14 +146,14 @@ const styles = StyleSheet.create({
   progressBarBg: {
     height: 4,
     borderRadius: 999,
-    backgroundColor: "#E8E6E1",
+    backgroundColor: colors.border,
     overflow: "hidden",
     marginBottom: 8,
   },
   progressBarFill: {
     height: "100%",
     borderRadius: 999,
-    backgroundColor: "#0f6e56",
+    backgroundColor: colors.green,
   },
   footer: {
     flexDirection: "row",
@@ -173,14 +174,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
-    backgroundColor: "#E8F7F0",
+    backgroundColor: colors.greenLight,
   },
   doneBadgeText: {
     textTransform: "uppercase",
     letterSpacing: 1,
-    color: "#2D9F6F",
+    color: colors.greenMid,
   },
   progressLabel: {
-    color: "#0f6e56",
+    color: colors.green,
   },
 });

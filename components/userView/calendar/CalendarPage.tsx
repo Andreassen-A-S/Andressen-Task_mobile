@@ -5,17 +5,16 @@ import {
   TouchableOpacity,
   SectionList,
   ActivityIndicator,
-  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { getUserAssignments } from "@/lib/api";
 import { Task, TaskStatus } from "@/types/task";
 import { useAuth } from "@/hooks/useAuth";
 import { formatLocalDate, toLocalDateKey } from "@/helpers/helpers";
 import CalendarMonthNavigator from "./CalendarMonthNavigator";
 import CalendarTaskCard from "./CalendarTaskCard";
-import UserTaskDetails from "../tasks/taskDetails/UserTaskDetails";
 import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
@@ -24,11 +23,11 @@ const WEEKDAYS = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
 
 export default function CalendarPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -164,13 +163,13 @@ export default function CalendarPage() {
           </Text>
 
           {isLoading ? (
-            <ActivityIndicator color="#0f6e56" size="large" />
+            <ActivityIndicator color={colors.green} size="large" />
           ) : (
             <SectionList
               sections={sections}
               keyExtractor={(item) => item.task_id}
               renderItem={({ item }) => (
-                <CalendarTaskCard task={item} onClick={() => setSelectedTaskId(item.task_id)} />
+                <CalendarTaskCard task={item} onClick={() => router.push(`/(tabs)/calendar/${item.task_id}`)} />
               )}
               renderSectionHeader={({ section: { title, data } }) => {
                 if (title === "Planlagt" && !hasBothSections) return null;
@@ -197,7 +196,7 @@ export default function CalendarPage() {
               ListEmptyComponent={
                 <View className="flex-1 items-center justify-center pb-20">
                   <View className="w-14 h-14 bg-white border border-[#E8E6E1] rounded-lg items-center justify-center mb-3">
-                    <Ionicons name="clipboard-outline" size={24} color="#6B7084" />
+                    <Ionicons name="clipboard-outline" size={24} color={colors.textSecondary} />
                   </View>
                   <Text style={typography.bodyMd}>Ingen opgaver</Text>
                   <Text style={typography.bodyXs}>Der er ingen planlagte opgaver denne dag</Text>
@@ -207,17 +206,6 @@ export default function CalendarPage() {
           )}
         </View>
 
-        {/* Task Details Modal */}
-        <Modal
-          visible={!!selectedTaskId}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setSelectedTaskId(null)}
-        >
-          {selectedTaskId && (
-            <UserTaskDetails taskId={selectedTaskId} onBack={() => setSelectedTaskId(null)} />
-          )}
-        </Modal>
       </View>
     </SafeAreaView>
   );

@@ -19,6 +19,7 @@ import {
   IBMPlexMono_500Medium,
 } from "@expo-google-fonts/ibm-plex-mono";
 import { colors } from "@/constants/colors";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 function RootGuard() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -40,11 +41,19 @@ function RootGuard() {
     if (!isAuthenticated || isLoading) return;
     const data = lastNotificationResponse?.notification.request.content.data;
     if (typeof data?.taskId === "string") {
-      router.push(`/(tabs)/tasks?taskId=${data.taskId}`);
+      router.push(`/(tabs)/tasks/${data.taskId}`);
     } else if (data?.screen === "tasks") {
       router.push("/(tabs)/tasks");
     }
   }, [lastNotificationResponse, isAuthenticated, isLoading]);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.eggWhite }}>
+        <ActivityIndicator size="large" color={colors.green} />
+      </View>
+    );
+  }
 
   return <Slot />;
 }
@@ -69,11 +78,11 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.charcoal }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.charcoal }}>
       <StatusBar style="light" />
       <AuthProvider>
         <RootGuard />
       </AuthProvider>
-    </View>
+    </GestureHandlerRootView>
   );
 }
