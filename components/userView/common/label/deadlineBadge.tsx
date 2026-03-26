@@ -23,7 +23,6 @@ export default function DeadlineBadge({ deadline, size = "md" }: DeadlineBadgePr
 
   return (
     <View className={containerClass[size]}>
-      {/* <Ionicons name="calendar-clear" size={24} color="black" /> */}
       <Ionicons name="calendar-outline" size={iconSize[size]} color={color} />
       <Text style={[typography.badge, { color }]} numberOfLines={1}>
         {formatRelativeDate(deadline)}

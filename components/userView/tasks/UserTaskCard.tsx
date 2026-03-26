@@ -1,10 +1,8 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { Task, TaskGoalType, TaskStatus } from "@/types/task";
 import {
-  formatRelativeDate,
   getPriorityAccentColor,
   translateTaskUnit,
-  getPriorityColors,
 } from "@/helpers/helpers";
 import { Ionicons } from "@expo/vector-icons";
 import { typography } from "@/constants/typography";
@@ -93,8 +91,6 @@ export default function UserTaskCard({ task, projectName, onClick }: Props) {
         {/* Footer */}
         <View className="flex-row items-center justify-between mt-1">
           <View className="flex-row items-center flex-wrap gap-2">
-            {/* Planned date */}
-            {/* <Text style={typography.monoXs}>{formatRelativeDate(task.scheduled_date)}</Text> */}
 
             {/* Done */}
             {isCompleted && (
