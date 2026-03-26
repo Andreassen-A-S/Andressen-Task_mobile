@@ -1,11 +1,10 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-import { TaskUnit } from "@/types/task";
 
 interface Props {
   progressPct: number;
-  unitLabel?: TaskUnit;
+  unitLabel?: string;
   onAddProgress: (value: string) => void;
   isUpdating: boolean;
 }

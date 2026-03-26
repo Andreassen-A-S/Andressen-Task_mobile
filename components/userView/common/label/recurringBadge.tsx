@@ -1,57 +1,23 @@
-
-import { typography } from '@/constants/typography';
-import { colors } from '@/constants/colors';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { View, StyleSheet, Text } from 'react-native';
+import { View } from "react-native";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { colors } from "@/constants/colors";
 
 interface RecurringBadgeProps {
-    size?: "sm" | "md" | "lg";
-
+  size?: "sm" | "md" | "lg";
 }
 
-const sizeStyles = StyleSheet.create({
-    sm: { paddingHorizontal: 8, paddingVertical: 2 },
-    md: { paddingHorizontal: 10, paddingVertical: 4 },
-    lg: { paddingHorizontal: 12, paddingVertical: 6 },
-});
+const containerClass = {
+  sm: "flex-row items-center rounded-lg px-1.5 py-1 bg-[#EBF0FD]",
+  md: "flex-row items-center rounded-lg px-2.5 py-1 bg-[#EBF0FD]",
+  lg: "flex-row items-center rounded-lg px-3 py-1.5 bg-[#EBF0FD]",
+};
+
+const iconSize = { sm: 10, md: 12, lg: 14 };
 
 export default function RecurringBadge({ size = "md" }: RecurringBadgeProps) {
-    if (size === "sm") {
-        return (
-            <View style={[styles.container, sizeStyles.sm]}>
-                <FontAwesome6 name="repeat" size={10} color={colors.blue} />
-                <Text style={[typography.badgeRecurring,]}>Gentages</Text>
-            </View>
-        );
-    }
-
-    if (size === "md") {
-        return (
-            <View style={[styles.container, sizeStyles.md]}>
-                <FontAwesome6 name="repeat" size={12} color={colors.blue} />
-                <Text style={[typography.badgeRecurring]}>Gentages</Text>
-            </View>
-        );
-    }
-
-    if (size === "lg") {
-        return (
-            <View style={[styles.container, sizeStyles.lg]}>
-                <FontAwesome6 name="repeat" size={14} color={colors.blue} />
-                <Text style={[typography.badgeRecurring]}>Gentages</Text>
-            </View>
-        );
-    }
-
-    return null;
+  return (
+    <View className={containerClass[size]}>
+      <FontAwesome6 name="repeat" size={iconSize[size]} color={colors.blue} />
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        borderRadius: 8,
-        backgroundColor: colors.blueLight,
-    },
-});
