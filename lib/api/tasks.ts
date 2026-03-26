@@ -26,13 +26,11 @@ export interface AddTaskProgressInput {
   note?: string;
 }
 
-export async function addTaskProgress(taskId: string, payload: AddTaskProgressInput): Promise<Task> {
+export async function addTaskProgress(taskId: string, payload: AddTaskProgressInput): Promise<void> {
   const res = await fetch(`${API_URL}/tasks/${taskId}/progress`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Failed to add task progress");
-  const data = await res.json();
-  return data.data;
 }
