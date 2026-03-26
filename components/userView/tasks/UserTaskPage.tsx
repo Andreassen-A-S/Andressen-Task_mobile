@@ -46,12 +46,15 @@ export default function UserTaskPage() {
     try {
       refresh ? setIsRefreshing(true) : setIsLoading(true);
       setError(null);
-      const [assignments, projects] = await Promise.all([
+      const [assignmentsResult, projectsResult] = await Promise.allSettled([
         getUserAssignments(user.user_id),
         getProjects(),
       ]);
-      setTasks(sortTasks(assignments.map((a) => a.task)));
-      setProjectMap(Object.fromEntries(projects.map((p) => [p.project_id, p])));
+      if (assignmentsResult.status === "rejected") throw assignmentsResult.reason;
+      setTasks(sortTasks(assignmentsResult.value.map((a) => a.task)));
+      if (projectsResult.status === "fulfilled") {
+        setProjectMap(Object.fromEntries(projectsResult.value.map((p) => [p.project_id, p])));
+      }
     } catch {
       setError("Kunne ikke hente opgaver. Prøv igen senere.");
     } finally {

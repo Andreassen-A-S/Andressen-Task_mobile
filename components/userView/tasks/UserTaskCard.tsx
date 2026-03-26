@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import { Task, TaskGoalType, TaskStatus } from "@/types/task";
+import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
 import {
   getPriorityAccentColor,
   translateTaskUnit,
@@ -24,7 +24,7 @@ export default function UserTaskCard({ task, projectName, onClick }: Props) {
   const progress = task.current_quantity ?? 0;
   const target = task.target_quantity ?? null;
   const unit = translateTaskUnit(task.unit);
-  const isPercent = task.unit === "NONE";
+  const isPercent = task.unit === TaskUnit.NONE;
   const hasProgress = task.current_quantity != null && task.goal_type === TaskGoalType.FIXED;
   const progressPct = target ? Math.min(Math.round((progress / target) * 100), 100) : null;
   const progressLabel = isPercent
