@@ -5,7 +5,7 @@ import { TaskUnit } from "@/types/task";
 
 interface Props {
   progressPct: number;
-  unitLabel?: TaskUnit;
+  unitLabel?: string | undefined;
   onAddProgress: (value: string) => void;
   isUpdating: boolean;
 }

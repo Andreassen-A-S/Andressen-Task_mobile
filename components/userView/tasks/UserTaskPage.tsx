@@ -12,8 +12,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@/hooks/useAuth";
-import { getUserAssignments } from "@/lib/api";
+import { getUserAssignments, getProjects } from "@/lib/api";
 import { Task, TaskGoalType, TaskPriority, TaskStatus } from "@/types/task";
+import { Project } from "@/types/project";
 import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
 import UserTaskDateNavigator from "./UserTaskDateNavigator";
@@ -33,6 +34,7 @@ export default function UserTaskPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [projectMap, setProjectMap] = useState<Record<string, Project>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +46,12 @@ export default function UserTaskPage() {
     try {
       refresh ? setIsRefreshing(true) : setIsLoading(true);
       setError(null);
-      const assignments = await getUserAssignments(user.user_id);
+      const [assignments, projects] = await Promise.all([
+        getUserAssignments(user.user_id),
+        getProjects(),
+      ]);
       setTasks(sortTasks(assignments.map((a) => a.task)));
+      setProjectMap(Object.fromEntries(projects.map((p) => [p.project_id, p])));
     } catch {
       setError("Kunne ikke hente opgaver. Prøv igen senere.");
     } finally {
@@ -128,7 +134,11 @@ export default function UserTaskPage() {
           sections={sections}
           keyExtractor={(item) => item.task_id}
           renderItem={({ item }) => (
-            <UserTaskCard task={item} onClick={() => router.push(`/(tabs)/tasks/${item.task_id}`)} />
+            <UserTaskCard
+              task={item}
+              projectName={projectMap[item.project_id]?.name}
+              onClick={() => router.push(`/(tabs)/tasks/${item.task_id}`)}
+            />
           )}
           renderSectionHeader={({ section: { title, count } }) => {
             if (title === "Planlagt" && !hasBothSections) return null;
@@ -155,29 +165,29 @@ export default function UserTaskPage() {
           refreshing={isRefreshing}
           onRefresh={() => fetchTasks(true)}
           stickySectionHeadersEnabled={false}
-          ListHeaderComponent={
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerClassName="gap-2"
-              className="py-1"
-            >
-              {FILTERS.map(({ key, label }) => (
-                <TouchableOpacity
-                  key={key}
-                  onPress={() => setFilter(key)}
-                  className={`px-4 py-2 rounded-2xl border ${filter === key
-                    ? "bg-[#1B1D22] border-[#1B1D22]"
-                    : "border-[#E8E6E1]"
-                    }`}
-                >
-                  <Text style={filter === key ? typography.labelLgWhite : typography.labelLgGray}>
-                    {key === "all" ? `${label} (${tasksForDay.length})` : label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          }
+          // ListHeaderComponent={
+          //   <ScrollView
+          //     horizontal
+          //     showsHorizontalScrollIndicator={false}
+          //     contentContainerClassName="gap-2"
+          //     className="py-1"
+          //   >
+          //     {FILTERS.map(({ key, label }) => (
+          //       <TouchableOpacity
+          //         key={key}
+          //         onPress={() => setFilter(key)}
+          //         className={`px-4 py-2 rounded-2xl border ${filter === key
+          //           ? "bg-[#1B1D22] border-[#1B1D22]"
+          //           : "border-[#E8E6E1]"
+          //           }`}
+          //       >
+          //         <Text style={filter === key ? typography.labelLgWhite : typography.labelLgGray}>
+          //           {key === "all" ? `${label} (${tasksForDay.length})` : label}
+          //         </Text>
+          //       </TouchableOpacity>
+          //     ))}
+          //   </ScrollView>
+          // }
           ListEmptyComponent={
             isLoading ? (
               <View className="flex-1 items-center justify-center">
@@ -189,7 +199,7 @@ export default function UserTaskPage() {
                   style={{ backgroundColor: colors.white, borderColor: colors.border }}>
                   <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
                   <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
-                    Ingen opgaver planlagt for denne dag
+                    Ingen opgaver planlagt i dag
                   </Text>
                   <Text className="mt-2 text-center" style={typography.bodyXs}>
                     Nye opgaver vil blive vist her

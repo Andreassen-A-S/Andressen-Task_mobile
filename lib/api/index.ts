@@ -4,3 +4,4 @@ export * from "./users";
 export * from "./assignments";
 export * from "./comments";
 export * from "./stats";
+export * from "./projects";

@@ -33,6 +33,7 @@ export enum TaskGoalType {
 
 export interface Task {
   task_id: string;
+  project_id: string;
   created_by: string;
   title: string;
   description: string;
