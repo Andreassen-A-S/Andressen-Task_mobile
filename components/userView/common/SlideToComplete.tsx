@@ -37,8 +37,8 @@ export default function SlideToComplete({ onComplete, isCompleted = false, isUpd
     .onUpdate(({ translationX }) => {
       translateX.value = Math.max(0, Math.min(translationX, maxSlide.value));
     })
-    .onEnd(({ translationX }) => {
-      if (translationX / maxSlide.value >= THRESHOLD) {
+    .onEnd(() => {
+      if (translateX.value / maxSlide.value >= THRESHOLD) {
         translateX.value = withSpring(maxSlide.value, { overshootClamping: true }, () => runOnJS(onComplete)());
       } else {
         translateX.value = withSpring(0, { damping: 15, overshootClamping: true });

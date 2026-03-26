@@ -1,10 +1,11 @@
 import { View } from "react-native";
+import { type ReactNode } from "react";
 import { Stack } from "expo-router";
 import ModalHeader from "./ModalHeader";
 
 interface Props {
   title?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function ModalScreen({ title, children }: Props) {

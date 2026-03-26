@@ -37,14 +37,15 @@ export default function TaskComments({ taskId }: Props) {
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [inlineError, setInlineError] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchComments = useCallback(async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      setFetchError(null);
       const data = await getTaskComments(taskId);
       setComments(data);
       if (data.length > 0) {
@@ -59,7 +60,7 @@ export default function TaskComments({ taskId }: Props) {
       );
       setCommentAuthors(authors);
     } catch {
-      setError("Kunne ikke hente kommentarer");
+      setFetchError("Kunne ikke hente kommentarer");
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +68,6 @@ export default function TaskComments({ taskId }: Props) {
 
   useFocusEffect(useCallback(() => {
     fetchComments();
-    // Open keyboard on arrival
     const timer = setTimeout(() => inputRef.current?.focus(), 300);
     return () => clearTimeout(timer);
   }, [fetchComments]));
@@ -76,6 +76,7 @@ export default function TaskComments({ taskId }: Props) {
     if (!input.trim()) return;
     try {
       setIsSubmitting(true);
+      setInlineError(null);
       const newComment = await createComment(taskId, { message: input.trim() });
       if (!commentAuthors[newComment.user_id]) {
         try {
@@ -87,7 +88,7 @@ export default function TaskComments({ taskId }: Props) {
       setInput("");
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
     } catch {
-      setError("Kunne ikke tilføje kommentar");
+      setInlineError("Kunne ikke tilføje kommentar");
     } finally {
       setIsSubmitting(false);
     }
@@ -95,10 +96,11 @@ export default function TaskComments({ taskId }: Props) {
 
   const handleDelete = async (commentId: string) => {
     try {
+      setInlineError(null);
       await deleteComment(commentId);
       setComments((prev) => prev.filter((c) => c.comment_id !== commentId));
     } catch {
-      setError("Kunne ikke slette kommentar");
+      setInlineError("Kunne ikke slette kommentar");
     }
   };
 
@@ -112,6 +114,15 @@ export default function TaskComments({ taskId }: Props) {
         {isLoading ? (
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator color={colors.green} size="large" />
+          </View>
+        ) : fetchError ? (
+          <View className="flex-1 items-center justify-center px-6">
+            <View className="rounded-xl p-4 w-full items-center border" style={{ backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
+              <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
+              <TouchableOpacity onPress={fetchComments} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
+                <Text style={typography.btnMdWhite}>Prøv igen</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <FlatList
@@ -142,6 +153,12 @@ export default function TaskComments({ taskId }: Props) {
             }
             ItemSeparatorComponent={() => <View className="h-2" />}
           />
+        )}
+
+        {inlineError && (
+          <View className="px-4 py-2" style={{ backgroundColor: colors.redLight }}>
+            <Text style={[typography.bodyXs, { color: colors.redText, textAlign: "center" }]}>{inlineError}</Text>
+          </View>
         )}
 
         {/* Input bar */}

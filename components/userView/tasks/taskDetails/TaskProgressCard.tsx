@@ -22,21 +22,26 @@ interface Props {
 export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress, isUpdating }: Props) {
   const [visible, setVisible] = useState(false);
   const [value, setValue] = useState("");
+  const [inputError, setInputError] = useState(false);
 
   const clampedPct = Math.min(100, Math.max(0, progressPct));
 
   const handleConfirm = () => {
     const num = Number(value);
-    if (Number.isFinite(num) && num > 0) {
-      onAddProgress(value);
+    if (!Number.isFinite(num) || num <= 0) {
+      setInputError(true);
+      return;
     }
+    onAddProgress(value);
     setVisible(false);
     setValue("");
+    setInputError(false);
   };
 
   const handleCancel = () => {
     setVisible(false);
     setValue("");
+    setInputError(false);
   };
 
   return (
@@ -84,19 +89,22 @@ export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress
               autoFocus
               keyboardType="numeric"
               value={value}
-              onChangeText={setValue}
+              onChangeText={(v) => { setValue(v); setInputError(false); }}
               onSubmitEditing={handleConfirm}
               placeholder="0"
               placeholderTextColor={colors.textMuted}
               style={[typography.bodyMd, {
                 borderWidth: 1,
-                borderColor: colors.border,
+                borderColor: inputError ? colors.redBorder : colors.border,
                 borderRadius: 10,
                 paddingHorizontal: 12,
                 paddingVertical: 10,
                 color: colors.textPrimary,
               }]}
             />
+            {inputError && (
+              <Text style={[typography.bodyXs, { color: colors.redText }]}>Indtast et gyldigt tal større end 0</Text>
+            )}
 
             <View style={{ flexDirection: "row", gap: 10 }}>
               <TouchableOpacity

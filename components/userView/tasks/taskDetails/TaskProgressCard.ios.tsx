@@ -1,10 +1,11 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
+import { TaskUnit } from "@/types/task";
 
 interface Props {
   progressPct: number;
-  unitLabel?: string;
+  unitLabel?: TaskUnit;
   onAddProgress: (value: string) => void;
   isUpdating: boolean;
 }
@@ -12,17 +13,24 @@ interface Props {
 export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress, isUpdating }: Props) {
   const clampedPct = Math.min(100, Math.max(0, progressPct));
 
-  const handlePress = () => {
+  const handlePress = (message = "") => {
     Alert.prompt(
       `Tilføj ${unitLabel || "fremskridt"}`,
-      undefined,
-      (value) => {
-        const num = Number(value);
-        if (Number.isFinite(num) && num > 0) onAddProgress(value);
-      },
-      "plain-text",
-      undefined,
-      "numeric"
+      message,
+      [
+        { text: "Annuller", style: "cancel" },
+        {
+          text: "Tilføj",
+          onPress: (value?: string) => {
+            const num = Number(value ?? "");
+            if (Number.isFinite(num) && num > 0) {
+              onAddProgress(value ?? "");
+            } else {
+              handlePress("Indtast et tal større end 0");
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -34,7 +42,7 @@ export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress
             {clampedPct}%
           </Text>
           <TouchableOpacity
-            onPress={handlePress}
+            onPress={() => handlePress()}
             disabled={isUpdating}
             className="rounded-xl px-3.5 justify-center disabled:opacity-50"
             style={{ backgroundColor: "rgba(15,110,86,0.12)" }}
