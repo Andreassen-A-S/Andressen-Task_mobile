@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   ActionSheetIOS,
   Platform,
   Alert,
@@ -43,6 +44,7 @@ export default function AddTaskForm() {
   const headerHeight = usePathHeaderHeight(true);
   const toolbarHeight = insets.bottom + 10 + 36 + 10;
 
+  const descriptionRef = useRef<TextInput>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.MEDIUM);
@@ -118,7 +120,7 @@ export default function AddTaskForm() {
           modal
           title="Tilføj en ny opgave"
           path={projectName}
-          rightContent={<GlassTextButton label="Tilføj" onPress={handleSubmit} />}
+          rightContent={<GlassTextButton variant={title.trim() && description.trim() ? "active" : "inactive"} label="Tilføj" onPress={handleSubmit} />}
         />
       }
     >
@@ -134,20 +136,24 @@ export default function AddTaskForm() {
           onChangeText={setTitle}
           placeholder="Titel"
           placeholderTextColor={colors.textMuted}
-          style={[typography.h3, { color: colors.textPrimary, marginBottom: 8 }]}
+          style={[typography.h3, { color: colors.textPrimary, marginBottom: 22 }]}
           multiline
           autoFocus
         />
-        <TextInput
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Tilføj en beskrivelse"
-          placeholderTextColor={colors.textMuted}
-          style={[typography.bodyMd, { color: colors.textPrimary }]}
-          multiline
-          textAlignVertical="top"
-          scrollEnabled={false}
-        />
+        <Pressable style={{ flex: 1, minHeight: 300 }} onPress={() => descriptionRef.current?.focus()}>
+          <TextInput
+            ref={descriptionRef}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Tilføj en beskrivelse"
+            placeholderTextColor={colors.textMuted}
+            style={[typography.bodyMd, { color: colors.textPrimary }]}
+            multiline
+            textAlignVertical="top"
+            scrollEnabled={false}
+            pointerEvents="none"
+          />
+        </Pressable>
         {error ? (
           <View style={{
             marginTop: 12,
@@ -164,74 +170,74 @@ export default function AddTaskForm() {
 
       {/* Bottom toolbar */}
       <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
-      <View style={{
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-        paddingHorizontal: 12,
-        paddingTop: 10,
-        paddingBottom: insets.bottom + 10,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-        backgroundColor: colors.white,
-      }}>
-        <TouchableOpacity
-          onPress={showPriorityPicker}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 20,
-            borderWidth: 1,
-            ...priorityColors.container,
-          }}
-        >
-          <Ionicons name="flag-outline" size={13} color={priorityColors.text.color as string} />
-          <Text style={[typography.btnSm, priorityColors.text]}>{translatePriority(priority)}</Text>
-        </TouchableOpacity>
+        <View style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: 8,
+          paddingHorizontal: 12,
+          paddingTop: 10,
+          paddingBottom: insets.bottom + 10,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          backgroundColor: colors.white,
+        }}>
+          <TouchableOpacity
+            onPress={showPriorityPicker}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 20,
+              borderWidth: 1,
+              ...priorityColors.container,
+            }}
+          >
+            <Ionicons name="flag-outline" size={13} color={priorityColors.text.color as string} />
+            <Text style={[typography.btnSm, priorityColors.text]}>{translatePriority(priority)}</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => showDatePicker("scheduled")}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 20,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.white,
-          }}
-        >
-          <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
-          <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
-            {formatRelativeDate(scheduledDate)}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => showDatePicker("scheduled")}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.white,
+            }}
+          >
+            <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
+            <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
+              {formatRelativeDate(scheduledDate)}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => showDatePicker("deadline")}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 4,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 20,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.white,
-          }}
-        >
-          <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
-          <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
-            {formatRelativeDate(deadline)}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            onPress={() => showDatePicker("deadline")}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.white,
+            }}
+          >
+            <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
+            <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
+              {formatRelativeDate(deadline)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </KeyboardStickyView>
     </ModalScreen>
   );

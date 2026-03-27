@@ -15,7 +15,7 @@ interface Props {
 
 export function useModalHeaderHeight(hasSub = false): number {
   const insets = useSafeAreaInsets();
-  const topSpacing = Platform.OS === "ios" ? 20 : insets.top;
+  const topSpacing = Platform.OS === "ios" ? 12 : insets.top;
   return topSpacing + (hasSub ? 68 : 56);
 }
 

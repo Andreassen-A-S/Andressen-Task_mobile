@@ -18,7 +18,7 @@ interface Props {
 export default function ModalHeader({ title, sub, rightContent }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const topSpacing = Platform.OS === "ios" ? 20 : insets.top;
+  const topSpacing = Platform.OS === "ios" ? 12 : insets.top;
   const headerHeight = topSpacing + (sub ? 68 : 56);
 
   return (

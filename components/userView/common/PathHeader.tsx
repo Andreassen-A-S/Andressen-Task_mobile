@@ -18,14 +18,14 @@ interface Props {
 
 export function usePathHeaderHeight(modal = false): number {
   const insets = useSafeAreaInsets();
-  const topSpacing = modal ? (Platform.OS === "ios" ? 20 : insets.top) : insets.top;
+  const topSpacing = modal ? (Platform.OS === "ios" ? 12 : insets.top) : insets.top;
   return topSpacing + 56;
 }
 
 export default function PathHeader({ title, path, rightContent, modal = false }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const topSpacing = modal ? (Platform.OS === "ios" ? 20 : insets.top) : insets.top;
+  const topSpacing = modal ? (Platform.OS === "ios" ? 12 : insets.top) : insets.top;
   const headerHeight = topSpacing + 56;
 
   return (
