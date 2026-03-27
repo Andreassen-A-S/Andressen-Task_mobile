@@ -18,6 +18,9 @@ const SF_TO_IONICON: Partial<Record<SFSymbol, keyof typeof Ionicons.glyphMap>> =
   "folder": "folder",
   "square.and.arrow.up": "share-social",
   "ellipsis": "ellipsis-horizontal",
+  "magnifyingglass": "search",
+  "plus": "add",
+  "checkmark": "checkmark",
 };
 
 interface Props {
