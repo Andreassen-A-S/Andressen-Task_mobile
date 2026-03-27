@@ -7,9 +7,8 @@ import {
   ActionSheetIOS,
   Platform,
   Alert,
-  KeyboardAvoidingView,
-  ScrollView,
 } from "react-native";
+import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,7 +19,8 @@ import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { formatRelativeDate, getPriorityColors, translatePriority } from "@/helpers/helpers";
 import GlassTextButton from "@/components/userView/common/buttons/GlassTextButton";
-import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
+import ModalScreen from "@/components/userView/common/ModalScreen";
+import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
 
 function addDays(date: Date, days: number): Date {
   const d = new Date(date);
@@ -39,7 +39,9 @@ export default function AddTaskForm() {
   const { user } = useAuth();
   const { projectId, projectName } = useLocalSearchParams<{ projectId: string; projectName: string }>();
   const insets = useSafeAreaInsets();
-  const headerHeight = useModalHeaderHeight();
+
+  const headerHeight = usePathHeaderHeight(true);
+  const toolbarHeight = insets.bottom + 10 + 36 + 10;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -111,134 +113,126 @@ export default function AddTaskForm() {
 
   return (
     <ModalScreen
-      title="Tilføj en ny opgave"
-      rightContent={<GlassTextButton label="Tilføj" onPress={handleSubmit} />}
+      header={
+        <PathHeader
+          modal
+          title="Tilføj en ny opgave"
+          path={projectName}
+          rightContent={<GlassTextButton label="Tilføj" onPress={handleSubmit} />}
+        />
+      }
     >
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        contentContainerStyle={{ paddingTop: headerHeight + 16, paddingHorizontal: 16, paddingBottom: 16 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bottomOffset={toolbarHeight}
       >
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingTop: headerHeight + 16, paddingBottom: 16 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-            <Text style={[typography.labelSmUppercase]}>{projectName}</Text>
-          </View>
-          <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>
-            <TextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Opgavetitel..."
-              placeholderTextColor={colors.textMuted}
-              style={[typography.h5, { color: colors.textPrimary }]}
-              autoFocus
-            />
-          </View>
+        <TextInput
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Titel"
+          placeholderTextColor={colors.textMuted}
+          style={[typography.h3, { color: colors.textPrimary, marginBottom: 8 }]}
+          multiline
+          autoFocus
+        />
+        <TextInput
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Tilføj en beskrivelse"
+          placeholderTextColor={colors.textMuted}
+          style={[typography.bodyMd, { color: colors.textPrimary }]}
+          multiline
+          textAlignVertical="top"
+          scrollEnabled={false}
+        />
+        {error ? (
           <View style={{
-            height: 1,
-            marginHorizontal: 16,
-            marginVertical: 12,
-            backgroundColor: colors.border,
-          }} />
-          <View style={{ paddingHorizontal: 16 }}>
-            <TextInput
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Tilføj en beskrivelse..."
-              placeholderTextColor={colors.textMuted}
-              style={[typography.bodyMd, { color: colors.textPrimary, minHeight: 80 }]}
-              multiline
-              textAlignVertical="top"
-            />
+            marginTop: 12,
+            padding: 12,
+            borderRadius: 10,
+            backgroundColor: colors.redLight,
+            borderWidth: 1,
+            borderColor: colors.redBorder,
+          }}>
+            <Text style={[typography.bodySm, { color: colors.redText }]}>{error}</Text>
           </View>
-          {error ? (
-            <View style={{
-              marginHorizontal: 16,
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 10,
-              backgroundColor: colors.redLight,
-              borderWidth: 1,
-              borderColor: colors.redBorder,
-            }}>
-              <Text style={[typography.bodySm, { color: colors.redText }]}>{error}</Text>
-            </View>
-          ) : null}
-        </ScrollView>
+        ) : null}
+      </KeyboardAwareScrollView>
 
-        {/* Bottom toolbar */}
-        <View style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          gap: 8,
-          paddingHorizontal: 12,
-          paddingTop: 10,
-          paddingBottom: insets.bottom + 10,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          backgroundColor: colors.white,
-        }}>
-          <TouchableOpacity
-            onPress={showPriorityPicker}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 20,
-              borderWidth: 1,
-              ...priorityColors.container,
-            }}
-          >
-            <Ionicons name="flag-outline" size={13} color={priorityColors.text.color as string} />
-            <Text style={[typography.btnSm, priorityColors.text]}>{translatePriority(priority)}</Text>
-          </TouchableOpacity>
+      {/* Bottom toolbar */}
+      <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
+      <View style={{
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingTop: 10,
+        paddingBottom: insets.bottom + 10,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        backgroundColor: colors.white,
+      }}>
+        <TouchableOpacity
+          onPress={showPriorityPicker}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 20,
+            borderWidth: 1,
+            ...priorityColors.container,
+          }}
+        >
+          <Ionicons name="flag-outline" size={13} color={priorityColors.text.color as string} />
+          <Text style={[typography.btnSm, priorityColors.text]}>{translatePriority(priority)}</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => showDatePicker("scheduled")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.white,
-            }}
-          >
-            <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
-            <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
-              {formatRelativeDate(scheduledDate)}
-            </Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => showDatePicker("scheduled")}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.white,
+          }}
+        >
+          <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
+          <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
+            {formatRelativeDate(scheduledDate)}
+          </Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => showDatePicker("deadline")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.white,
-            }}
-          >
-            <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
-            <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
-              {formatRelativeDate(deadline)}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+        <TouchableOpacity
+          onPress={() => showDatePicker("deadline")}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.white,
+          }}
+        >
+          <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
+          <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
+            {formatRelativeDate(deadline)}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      </KeyboardStickyView>
     </ModalScreen>
   );
 }

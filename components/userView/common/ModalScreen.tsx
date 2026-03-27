@@ -9,6 +9,7 @@ interface Props {
   title?: string;
   sub?: string;
   rightContent?: ReactNode;
+  header?: ReactNode;
   children: ReactNode;
 }
 
@@ -18,11 +19,11 @@ export function useModalHeaderHeight(hasSub = false): number {
   return topSpacing + (hasSub ? 68 : 56);
 }
 
-export default function ModalScreen({ title, sub, rightContent, children }: Props) {
+export default function ModalScreen({ title, sub, rightContent, header, children }: Props) {
   return (
     <View className="flex-1" style={{ backgroundColor: colors.eggWhite }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <ModalHeader title={title} sub={sub} rightContent={rightContent} />
+      {header ?? <ModalHeader title={title} sub={sub} rightContent={rightContent} />}
       {children}
     </View>
   );
