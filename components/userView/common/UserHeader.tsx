@@ -46,8 +46,8 @@ export default function UserHeader({ variant, user, heading, sub, position, onAd
                     <Text style={typography.caption}>{sub || "Admin oversigt"}</Text>
                 </View>
                 <View className="flex-row gap-2">
-                    <GlassIconButton systemName="plus" onPress={onAdd ?? (() => {})} variant="lg" />
-                    <GlassIconButton systemName="magnifyingglass" onPress={onSearch ?? (() => {})} variant="lg" />
+                    <GlassIconButton systemName="plus" onPress={onAdd ?? (() => {})} size="lg" />
+                    <GlassIconButton systemName="magnifyingglass" onPress={onSearch ?? (() => {})} size="lg" />
                 </View>
             </View>
         );

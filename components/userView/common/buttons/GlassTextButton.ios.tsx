@@ -1,5 +1,6 @@
-import { Host, Text } from "@expo/ui/swift-ui";
-import { glassEffect, padding, onTapGesture, foregroundStyle, font } from "@expo/ui/swift-ui/modifiers";
+import { useRef } from "react";
+import { Host, VStack, HStack, Text } from "@expo/ui/swift-ui";
+import { glassEffect, padding, onTapGesture, foregroundStyle, font, fixedSize } from "@expo/ui/swift-ui/modifiers";
 import { colors } from "@/constants/colors";
 
 type Variant = "default" | "active" | "inactive";
@@ -18,19 +19,27 @@ interface Props {
 
 export default function GlassTextButton({ label, onPress, variant = "default" }: Props) {
   const tint = TINTS[variant];
+  const onPressRef = useRef(onPress);
+  onPressRef.current = onPress;
   return (
-    <Host style={{ width: 71 }}>
-      <Text
+    <Host matchContents>
+      <HStack
         modifiers={[
-          ...(variant !== "default" ? [foregroundStyle(`${colors.white}99`)] : []),
-          font({ weight: "bold" }),
+          fixedSize({ horizontal: true }),
           padding({ horizontal: 15, vertical: 13 }),
-          glassEffect({ glass: { variant: "regular", interactive: variant !== "inactive", tint }, shape: "capsule" }),
-          ...(variant !== "inactive" ? [onTapGesture(onPress)] : []),
+          glassEffect({ glass: { variant: "regular", interactive: true, tint }, shape: "capsule" }),
+          onTapGesture(() => onPressRef.current()),
         ]}
       >
-        {label}
-      </Text>
+        <Text
+          modifiers={[
+            font({ weight: "bold", size: 14 }),
+            ...(variant !== "default" ? [foregroundStyle(`${colors.white}99`)] : []),
+          ]}
+        >
+          {label}
+        </Text>
+      </HStack>
     </Host>
   );
 }

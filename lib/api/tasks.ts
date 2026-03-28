@@ -1,6 +1,6 @@
 import { API_URL } from "@/constants/api";
 import { getAuthHeaders } from "@/helpers/helpers";
-import { Task, TaskPriority, TaskStatus, TaskUnit, UpdateTaskInput } from "@/types/task";
+import { Task, TaskGoalType, TaskPriority, TaskStatus, TaskUnit, UpdateTaskInput } from "@/types/task";
 
 export interface CreateTaskInput {
   title: string;
@@ -12,6 +12,9 @@ export interface CreateTaskInput {
   scheduled_date: string;
   created_by: string;
   assigned_users: string[];
+  goal_type?: TaskGoalType;
+  target_quantity?: number | null;
+  unit?: TaskUnit;
 }
 
 export async function createTask(input: CreateTaskInput): Promise<Task> {

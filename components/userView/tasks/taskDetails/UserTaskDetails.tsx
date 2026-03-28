@@ -203,9 +203,9 @@ export default function UserTaskDetails({ taskId }: Props) {
 
       {task && !isLoading && !error && (
         <View style={{ position: "absolute", right: 20, bottom: 40, alignItems: "flex-end", gap: 10 }}>
-          <GlassIconButton systemName="camera" onPress={() => router.push(`/(tabs)/tasks/${taskId}/photos`)} variant="lg" />
-          <GlassIconButton systemName="bubble.right" onPress={() => router.push(`/(tabs)/tasks/${taskId}/comments`)} variant="lg" />
-          <GlassIconButton systemName="folder" onPress={() => router.push(`/(tabs)/tasks/${taskId}/files`)} variant="lg" />
+          <GlassIconButton systemName="camera" onPress={() => router.push(`/(tabs)/tasks/${taskId}/photos`)} size="lg" />
+          <GlassIconButton systemName="bubble.right" onPress={() => router.push(`/(tabs)/tasks/${taskId}/comments`)} size="lg" />
+          <GlassIconButton systemName="folder" onPress={() => router.push(`/(tabs)/tasks/${taskId}/files`)} size="lg" />
         </View>
       )}
     </View>

@@ -13,9 +13,10 @@ interface Props {
   title?: string;
   sub?: string;
   rightContent?: ReactNode;
+  onClose?: () => void;
 }
 
-export default function ModalHeader({ title, sub, rightContent }: Props) {
+export default function ModalHeader({ title, sub, rightContent, onClose }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const topSpacing = Platform.OS === "ios" ? 12 : insets.top;
@@ -43,7 +44,7 @@ export default function ModalHeader({ title, sub, rightContent }: Props) {
         style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       />
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, height: 56, marginTop: topSpacing }}>
-        <GlassIconButton systemName="xmark" onPress={() => router.back()} variant="lg" />
+        <GlassIconButton systemName="xmark" onPress={onClose ?? (() => router.back())} size="lg" />
         <View style={{ position: "absolute", left: 0, right: 0, alignItems: "center" }} pointerEvents="none">
           <Text style={typography.h4} numberOfLines={1}>{title ?? ""}</Text>
           {sub ? <Text style={typography.bodyXs}>{sub}</Text> : null}

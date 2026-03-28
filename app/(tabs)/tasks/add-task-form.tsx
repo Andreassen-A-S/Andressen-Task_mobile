@@ -3,37 +3,34 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   Pressable,
-  ActionSheetIOS,
-  Platform,
-  Alert,
+  FlatList,
 } from "react-native";
 import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/hooks/useAuth";
 import { createTask } from "@/lib/api";
 import { TaskPriority, TaskStatus } from "@/types/task";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-import { formatRelativeDate, getPriorityColors, translatePriority } from "@/helpers/helpers";
+import { formatRelativeDate, getPriorityAccentColor, toDateParam, parseDateParam, translatePriority, translateTaskUnit } from "@/helpers/helpers";
+import { pickerStore } from "@/lib/pickerStore";
+import { assigneesStore } from "@/lib/assigneesStore";
+import { goalStore, type GoalData } from "@/lib/goalStore";
+import ToolbarGlassButton from "@/components/userView/common/buttons/ToolbarGlassButton";
 import GlassTextButton from "@/components/userView/common/buttons/GlassTextButton";
 import ModalScreen from "@/components/userView/common/ModalScreen";
 import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
+import { type ListModalOption } from "@/components/userView/common/ListModal";
 
-function addDays(date: Date, days: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
 
-function toDateParam(date: Date): string {
-  return date.toISOString().split("T")[0];
-}
+const PRIORITY_OPTIONS: ListModalOption[] = [
+  { label: "Lav", value: TaskPriority.LOW, accent: getPriorityAccentColor(TaskPriority.LOW) },
+  { label: "Mellem", value: TaskPriority.MEDIUM, accent: getPriorityAccentColor(TaskPriority.MEDIUM) },
+  { label: "Høj", value: TaskPriority.HIGH, accent: getPriorityAccentColor(TaskPriority.HIGH) },
+];
 
-const DATE_OFFSETS = [0, 0, 1, 3, 7];
 
 export default function AddTaskForm() {
   const router = useRouter();
@@ -48,8 +45,10 @@ export default function AddTaskForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.MEDIUM);
-  const [scheduledDate, setScheduledDate] = useState(new Date());
-  const [deadline, setDeadline] = useState(addDays(new Date(), 7));
+  const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
+  const [deadline, setDeadline] = useState<Date | null>(null);
+  const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
+  const [goal, setGoal] = useState<GoalData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,10 +63,11 @@ export default function AddTaskForm() {
         project_id: projectId,
         priority,
         status: TaskStatus.PENDING,
-        deadline: toDateParam(deadline),
-        scheduled_date: toDateParam(scheduledDate),
+        deadline: (deadline ?? new Date()).toISOString(),
+        scheduled_date: (scheduledDate ?? new Date()).toISOString(),
         created_by: user.user_id,
-        assigned_users: [],
+        assigned_users: assignedUsers,
+        ...(goal ? { goal_type: goal.goal_type, target_quantity: goal.target_quantity, unit: goal.unit } : {}),
       });
       router.dismiss(2);
     } catch {
@@ -76,42 +76,19 @@ export default function AddTaskForm() {
     }
   };
 
-  const showPriorityPicker = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: ["Annuller", "Lav", "Medium", "Høj"], cancelButtonIndex: 0 },
-        (index) => {
-          if (index === 1) setPriority(TaskPriority.LOW);
-          if (index === 2) setPriority(TaskPriority.MEDIUM);
-          if (index === 3) setPriority(TaskPriority.HIGH);
-        },
-      );
-    } else {
-      Alert.alert("Prioritet", "", [
-        { text: "Lav", onPress: () => setPriority(TaskPriority.LOW) },
-        { text: "Medium", onPress: () => setPriority(TaskPriority.MEDIUM) },
-        { text: "Høj", onPress: () => setPriority(TaskPriority.HIGH) },
-        { text: "Annuller", style: "cancel" },
-      ]);
-    }
+  const openPicker = (
+    title: string,
+    options: ListModalOption[],
+    selected: string,
+    onSelect: (value: string) => void,
+  ) => {
+    pickerStore.set(onSelect);
+    router.push({
+      pathname: "/(tabs)/tasks/list-picker",
+      params: { title, optionsJson: JSON.stringify(options), selected },
+    });
   };
 
-  const showDatePicker = (field: "scheduled" | "deadline") => {
-    const today = new Date();
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: ["Annuller", "I dag", "I morgen", "Om 3 dage", "Om en uge"], cancelButtonIndex: 0 },
-        (index) => {
-          if (index === 0) return;
-          const date = addDays(today, DATE_OFFSETS[index]);
-          if (field === "scheduled") setScheduledDate(date);
-          else setDeadline(date);
-        },
-      );
-    }
-  };
-
-  const priorityColors = getPriorityColors(priority);
 
   return (
     <ModalScreen
@@ -120,7 +97,7 @@ export default function AddTaskForm() {
           modal
           title="Tilføj en ny opgave"
           path={projectName}
-          rightContent={<GlassTextButton variant={title.trim() && description.trim() ? "active" : "inactive"} label="Tilføj" onPress={handleSubmit} />}
+          rightContent={<GlassTextButton variant={title.trim() ? "active" : "inactive"} label="Tilføj" onPress={handleSubmit} />}
         />
       }
     >
@@ -170,74 +147,23 @@ export default function AddTaskForm() {
 
       {/* Bottom toolbar */}
       <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
-        <View style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          gap: 8,
-          paddingHorizontal: 12,
-          paddingTop: 10,
-          paddingBottom: insets.bottom + 10,
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          backgroundColor: colors.white,
-        }}>
-          <TouchableOpacity
-            onPress={showPriorityPicker}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 20,
-              borderWidth: 1,
-              ...priorityColors.container,
-            }}
-          >
-            <Ionicons name="flag-outline" size={13} color={priorityColors.text.color as string} />
-            <Text style={[typography.btnSm, priorityColors.text]}>{translatePriority(priority)}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => showDatePicker("scheduled")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.white,
-            }}
-          >
-            <Ionicons name="calendar-outline" size={13} color={colors.textSecondary} />
-            <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
-              {formatRelativeDate(scheduledDate)}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => showDatePicker("deadline")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 20,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: colors.white,
-            }}
-          >
-            <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
-            <Text style={[typography.btnSm, { color: colors.textSecondary }]}>
-              {formatRelativeDate(deadline)}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={[
+              { id: `priority-${priority}`, icon: "flag" as const, label: translatePriority(priority).charAt(0) + translatePriority(priority).slice(1).toLowerCase(), tint: priority ? "#007AFF" : undefined, onPress: () => openPicker("Prioritet", PRIORITY_OPTIONS, priority, (v) => setPriority(v as TaskPriority)) },
+              { id: `scheduled-${scheduledDate?.toISOString()}`, icon: "calendar" as const, label: scheduledDate ? formatRelativeDate(scheduledDate) : "Planlagt", tint: scheduledDate ? "#007AFF" : undefined, onPress: () => { pickerStore.set((v) => setScheduledDate(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Planlagt dato", selected: toDateParam(scheduledDate ?? new Date()) } }); } },
+              { id: `deadline-${deadline?.toISOString()}`, icon: "clock" as const, label: deadline ? formatRelativeDate(deadline) : "Deadline", tint: deadline ? "#007AFF" : undefined, onPress: () => { pickerStore.set((v) => setDeadline(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Deadline", selected: toDateParam(deadline ?? new Date()) } }); } },
+              { id: `goal-${goal?.target_quantity}-${goal?.unit}`, icon: "target" as const, label: goal?.target_quantity ? translateTaskUnit(goal.unit).replace(/^./, (c) => c.toUpperCase()) : "Mål", tint: goal ? "#007AFF" : undefined, onPress: () => { goalStore.set(setGoal, goal); router.push({ pathname: "/(tabs)/tasks/add-goal-picker" }); } },
+              { id: `assignees-${assignedUsers.length}`, icon: "person" as const, label: assignedUsers.length > 0 ? `${assignedUsers.length} Tildelt${assignedUsers.length === 1 ? "" : "e"}` : "Tildelte", tint: assignedUsers.length > 0 ? "#007AFF" : undefined, onPress: () => { assigneesStore.set(setAssignedUsers, assignedUsers); router.push({ pathname: "/(tabs)/tasks/add-assignees-picker" }); } },
+            ]}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ToolbarGlassButton icon={item.icon} label={item.label} tint={item.tint} onPress={item.onPress} />
+            )}
+            ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
+            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 20, paddingBottom: insets.bottom + 10 }}
+          />
       </KeyboardStickyView>
     </ModalScreen>
   );

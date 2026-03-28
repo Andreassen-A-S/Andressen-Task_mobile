@@ -191,6 +191,18 @@ export const getPriorityAccentColor = (priority: TaskPriority): string => {
   return colors[priority];
 };
 
+export function toDateParam(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function parseDateParam(s: string): Date {
+  const [y, mo, d] = s.split("-").map(Number);
+  return new Date(y, mo - 1, d);
+}
+
 export function getInitials(name: string): string {
   return name
     .split(" ")

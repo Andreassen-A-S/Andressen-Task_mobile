@@ -53,7 +53,7 @@ export default function PathHeader({ title, path, rightContent, modal = false }:
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, height: 56, marginTop: topSpacing }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
-          <GlassIconButton systemName="chevron.left" onPress={() => router.back()} variant="lg" />
+          <GlassIconButton systemName="chevron.left" onPress={() => router.back()} size="lg" />
           <View style={{ flex: 1 }}>
             <Text style={typography.h6} numberOfLines={1}>{title ?? ""}</Text>
             {path ? <Text style={typography.bodyXs} numberOfLines={1}>{path}</Text> : null}
