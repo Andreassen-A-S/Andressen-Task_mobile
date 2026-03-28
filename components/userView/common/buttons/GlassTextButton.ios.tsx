@@ -27,8 +27,8 @@ export default function GlassTextButton({ label, onPress, variant = "default" }:
         modifiers={[
           fixedSize({ horizontal: true }),
           padding({ horizontal: 15, vertical: 13 }),
-          glassEffect({ glass: { variant: "regular", interactive: true, tint }, shape: "capsule" }),
-          onTapGesture(() => onPressRef.current()),
+          glassEffect({ glass: { variant: "regular", interactive: variant !== "inactive", tint }, shape: "capsule" }),
+          ...(variant !== "inactive" ? [onTapGesture(() => onPressRef.current())] : []),
         ]}
       >
         <Text

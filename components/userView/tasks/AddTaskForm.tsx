@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   FlatList,
 } from "react-native";
 import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
@@ -60,6 +59,10 @@ export default function AddTaskForm() {
 
   const handleSubmit = async () => {
     if (!title.trim() || isSubmitting || !user) return;
+    if (!projectId) {
+      setError("Intet projekt valgt. Luk og prøv igen.");
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     try {
@@ -125,20 +128,17 @@ export default function AddTaskForm() {
           style={[typography.h3, { color: colors.textPrimary, marginBottom: 22 }]}
           multiline
         />
-        <Pressable style={{ flex: 1, minHeight: 300 }} onPress={() => descriptionRef.current?.focus()}>
-          <TextInput
-            ref={descriptionRef}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Tilføj en beskrivelse"
-            placeholderTextColor={colors.textMuted}
-            style={[typography.bodyMd, { color: colors.textPrimary }]}
-            multiline
-            textAlignVertical="top"
-            scrollEnabled={false}
-            pointerEvents="none"
-          />
-        </Pressable>
+        <TextInput
+          ref={descriptionRef}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Tilføj en beskrivelse"
+          placeholderTextColor={colors.textMuted}
+          style={[typography.bodyMd, { color: colors.textPrimary, minHeight: 300 }]}
+          multiline
+          textAlignVertical="top"
+          scrollEnabled={false}
+        />
         {error ? (
           <View style={{
             marginTop: 12,

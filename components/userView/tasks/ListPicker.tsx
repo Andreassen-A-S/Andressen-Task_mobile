@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ListModal, { type ListModalOption } from "@/components/userView/common/ListModal";
 import { pickerStore } from "@/lib/pickerStore";
@@ -12,7 +13,12 @@ export default function ListPicker() {
     searchable?: string;
   }>();
 
-  const options: ListModalOption[] = JSON.parse(optionsJson ?? "[]");
+  useEffect(() => () => pickerStore.clear(), []);
+
+  let options: ListModalOption[] = [];
+  try {
+    options = JSON.parse(optionsJson ?? "[]");
+  } catch {}
 
   const handleSelect = (value: string) => {
     pickerStore.call(value);
