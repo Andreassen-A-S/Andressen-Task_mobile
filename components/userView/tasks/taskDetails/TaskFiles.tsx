@@ -3,11 +3,7 @@ import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 
-interface Props {
-  taskId: string;
-}
-
-export default function TaskFiles({ taskId }: Props) {
+export default function TaskFiles() {
   const headerHeight = useModalHeaderHeight();
   return (
     <ModalScreen title="Filer">

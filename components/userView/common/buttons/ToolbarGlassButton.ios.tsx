@@ -1,9 +1,7 @@
 import { Host, HStack, Image, Text, GlassEffectContainer } from "@expo/ui/swift-ui";
 import { glassEffect, padding, onTapGesture, foregroundStyle, font, fixedSize } from "@expo/ui/swift-ui/modifiers";
-import type { SFSymbol } from "sf-symbols-typescript";
-
 interface Props {
-  icon: SFSymbol;
+  icon: string;
   label: string;
   tint?: string;
   onPress: () => void;

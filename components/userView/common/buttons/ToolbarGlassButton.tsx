@@ -3,8 +3,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 
+const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
+  flag: "flag",
+  calendar: "calendar",
+  clock: "time",
+  target: "locate",
+  person: "person",
+};
+
 interface Props {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: string;
   label: string;
   tint?: string;
   onPress: () => void;
@@ -12,6 +20,7 @@ interface Props {
 
 export default function ToolbarGlassButton({ icon, label, tint, onPress }: Props) {
   const active = !!tint;
+  const ionicon = (ICON_MAP[icon] ?? icon) as keyof typeof Ionicons.glyphMap;
   return (
     <View style={{
       borderRadius: 999,
@@ -25,8 +34,9 @@ export default function ToolbarGlassButton({ icon, label, tint, onPress }: Props
         android_ripple={{ color: colors.border, borderless: false }}
         style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 8 }}
       >
-        <Ionicons name={icon} size={13} color={active ? colors.white : colors.textSecondary} />
+        <Ionicons name={ionicon} size={13} color={active ? colors.white : colors.textSecondary} />
         <Text style={[typography.btnSm, { color: active ? colors.white : colors.textSecondary }]}>{label}</Text>
+        {active && <Ionicons name="chevron-down" size={9} color={colors.white} />}
       </Pressable>
     </View>
   );

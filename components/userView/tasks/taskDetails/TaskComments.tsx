@@ -10,6 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthContext } from "@/contexts/AuthContext";
 import { getTaskComments, createComment, deleteComment, getUser } from "@/lib/api";
@@ -22,11 +23,8 @@ import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/
 import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
 import UserTaskCommentBubble from "./UserTaskCommentBubble";
 
-interface Props {
-  taskId: string;
-}
-
-export default function TaskComments({ taskId }: Props) {
+export default function TaskComments() {
+  const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const insets = useSafeAreaInsets();
   const headerHeight = useModalHeaderHeight();
   const authContext = useContext(AuthContext);

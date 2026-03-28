@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { View, Text, FlatList, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
+import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 import Badge from "@/components/userView/common/label/badge";
@@ -19,17 +21,22 @@ interface Props {
   options: ListModalOption[];
   selected: string;
   onSelect: (value: string) => void;
+  searchable?: boolean;
 }
 
-export default function ListModal({ title, sub, options, selected, onSelect }: Props) {
+export default function ListModal({ title, sub, options, selected, onSelect, searchable }: Props) {
   const insets = useSafeAreaInsets();
   const headerHeight = useModalHeaderHeight(!!sub) + 20;
+  const [search, setSearch] = useState("");
+
+  const filtered = search.trim()
+    ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
+    : options;
 
   return (
     <ModalScreen title={title} sub={sub}>
       <FlatList
-
-        data={options}
+        data={filtered}
         keyExtractor={(item) => item.value}
         contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
@@ -38,6 +45,11 @@ export default function ListModal({ title, sub, options, selected, onSelect }: P
         )}
         ListFooterComponent={() => (
           <View style={{ height: 1, backgroundColor: colors.border }} />
+        )}
+        ListEmptyComponent={() => (
+          <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
+            <Text style={[typography.bodySm, { color: colors.textMuted }]}>Ingen resultater</Text>
+          </View>
         )}
         ItemSeparatorComponent={() => (
           <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 16 }} />
@@ -67,6 +79,7 @@ export default function ListModal({ title, sub, options, selected, onSelect }: P
           );
         }}
       />
+      {searchable && <NativeSearchBar placeholder="Søg" onChangeText={setSearch} />}
     </ModalScreen>
   );
 }
