@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,7 +31,9 @@ const UNIT_OPTIONS: ListModalOption[] = [
 export default function AddGoalPicker() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const headerHeight = useModalHeaderHeight(true);
+  const headerHeight = useModalHeaderHeight();
+
+  useEffect(() => () => goalStore.clear(), []);
 
   const initial = goalStore.getInitial();
   const [quantity, setQuantity] = useState(initial?.target_quantity?.toString() ?? "");

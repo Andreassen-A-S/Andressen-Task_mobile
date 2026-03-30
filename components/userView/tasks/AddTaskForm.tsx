@@ -84,8 +84,8 @@ export default function AddTaskForm() {
         project_id: projectId,
         priority,
         status: TaskStatus.PENDING,
-        deadline: (deadline ?? new Date()).toISOString(),
-        scheduled_date: (scheduledDate ?? new Date()).toISOString(),
+        deadline: toDateParam(deadline ?? new Date()),
+        scheduled_date: toDateParam(scheduledDate ?? new Date()),
         created_by: user.user_id,
         assigned_users: assignedUsers,
         ...(goal ? { goal_type: goal.goal_type, target_quantity: goal.target_quantity, unit: goal.unit } : {}),
@@ -93,7 +93,6 @@ export default function AddTaskForm() {
       router.dismissAll();
     } catch {
       setError("Kunne ikke oprette opgaven. Prøv igen.");
-      setIsSubmitting(false);
     } finally {
       setIsSubmitting(false);
     }

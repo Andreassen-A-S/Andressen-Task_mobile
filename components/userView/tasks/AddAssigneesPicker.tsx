@@ -11,6 +11,8 @@ export default function AddAssigneesPicker() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => () => assigneesStore.clear(), []);
+
   useEffect(() => {
     getUsers()
       .then((users) => setOptions(users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position ?? undefined }))))
