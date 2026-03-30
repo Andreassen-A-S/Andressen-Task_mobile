@@ -1,3 +1,4 @@
+import { useIsFocused } from "@react-navigation/native";
 import { Host, Image, HStack } from "@expo/ui/swift-ui";
 import { glassEffect, padding, onTapGesture } from "@expo/ui/swift-ui/modifiers";
 import type { SFSymbol } from "sf-symbols-typescript";
@@ -21,11 +22,12 @@ interface Props {
 
 export default function GlassPillButton({ items, variant = "sm" }: Props) {
   const { size, paddingSize } = VARIANTS[variant];
+  const isFocused = useIsFocused();
   return (
     <Host matchContents>
       <HStack
         spacing={0}
-        modifiers={[glassEffect({ glass: { variant: "regular", interactive: true }, shape: "capsule" })]}
+        modifiers={[glassEffect({ glass: { variant: "regular", interactive: isFocused }, shape: "capsule" })]}
       >
         {items.map((item, index) => (
           <Image

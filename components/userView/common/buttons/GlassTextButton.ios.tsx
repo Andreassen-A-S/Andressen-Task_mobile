@@ -1,6 +1,7 @@
-import { useRef } from "react";
-import { Host, VStack, HStack, Text } from "@expo/ui/swift-ui";
-import { glassEffect, padding, onTapGesture, foregroundStyle, font, fixedSize } from "@expo/ui/swift-ui/modifiers";
+import { useRef, useCallback } from "react";
+import { useIsFocused } from "@react-navigation/native";
+import { Host, Button, Text } from "@expo/ui/swift-ui";
+import { buttonStyle, glassEffect, padding, foregroundStyle, font, fixedSize, disabled } from "@expo/ui/swift-ui/modifiers";
 import { colors } from "@/constants/colors";
 
 type Variant = "default" | "active" | "inactive";
@@ -19,16 +20,21 @@ interface Props {
 
 export default function GlassTextButton({ label, onPress, variant = "default" }: Props) {
   const tint = TINTS[variant];
+  const isFocused = useIsFocused();
   const onPressRef = useRef(onPress);
   onPressRef.current = onPress;
+  const handlePress = useCallback(() => onPressRef.current(), []);
+
   return (
     <Host matchContents>
-      <HStack
+      <Button
+        onPress={handlePress}
         modifiers={[
+          buttonStyle("plain"),
           fixedSize({ horizontal: true }),
           padding({ horizontal: 15, vertical: 13 }),
-          glassEffect({ glass: { variant: "regular", interactive: variant !== "inactive", tint }, shape: "capsule" }),
-          ...(variant !== "inactive" ? [onTapGesture(() => onPressRef.current())] : []),
+          glassEffect({ glass: { variant: "regular", interactive: isFocused && variant !== "inactive", tint }, shape: "capsule" }),
+          ...(variant === "inactive" ? [disabled(true)] : []),
         ]}
       >
         <Text
@@ -39,7 +45,7 @@ export default function GlassTextButton({ label, onPress, variant = "default" }:
         >
           {label}
         </Text>
-      </HStack>
+      </Button>
     </Host>
   );
 }

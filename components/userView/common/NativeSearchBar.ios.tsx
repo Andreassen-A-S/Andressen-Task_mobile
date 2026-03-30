@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
-import { View, Animated } from "react-native";
+import { Animated } from "react-native";
+import { useKeyboardAnimation } from "react-native-keyboard-controller";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import MaskedView from "@react-native-masked-view/masked-view";
@@ -18,15 +19,27 @@ export default function NativeSearchBar({ placeholder = "Søg...", onChangeText 
   const textFieldRef = useRef<TextFieldRef>(null);
   const [focused, setFocused] = useState(false);
   const [text, setText] = useState("");
+  const { height: keyboardHeight } = useKeyboardAnimation();
   const paddingAnim = useRef(new Animated.Value(30)).current;
+  const focusOffsetAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(paddingAnim, {
-      toValue: focused ? 16 : insets.bottom,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
+    Animated.parallel([
+      Animated.timing(paddingAnim, {
+        toValue: focused ? 16 : 30,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(focusOffsetAnim, {
+        toValue: focused ? 20 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [focused]);
+
+  const liftStyle = { transform: [{ translateY: Animated.add(keyboardHeight, focusOffsetAnim) }] };
+  const paddingStyle = { paddingHorizontal: paddingAnim };
 
   const searchBarHeight = 48 + insets.bottom;
 
@@ -46,87 +59,88 @@ export default function NativeSearchBar({ placeholder = "Søg...", onChangeText 
 
   return (
     <>
-      <MaskedView
-        style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: searchBarHeight }}
-        maskElement={
-          <LinearGradient
-            colors={["transparent", "black", "black"]}
-            locations={[0, 0.7, 1]}
-            style={{ flex: 1 }}
-          />
-        }
+      <Animated.View style={[{ position: "absolute", bottom: 0, left: 0, right: 0, height: searchBarHeight }, liftStyle]}>
+        <MaskedView
+          style={{ flex: 1 }}
+          maskElement={
+            <LinearGradient
+              colors={["transparent", "black", "black"]}
+              locations={[0, 0.7, 1]}
+              style={{ flex: 1 }}
+            />
+          }
+        >
+          <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} />
+        </MaskedView>
+      </Animated.View>
+      <Animated.View
+        style={[{ position: "absolute", bottom: 0, left: 0, right: 0, height: searchBarHeight }, liftStyle]}
+        pointerEvents="none"
       >
-        <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} />
-      </MaskedView>
-      <LinearGradient
-        colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
-        style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: searchBarHeight }}
-      />
+        <LinearGradient
+          colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
+          style={{ flex: 1 }}
+        />
+      </Animated.View>
 
-      <Animated.View style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: paddingAnim,
-        paddingTop: 8,
-        paddingBottom: insets.bottom,
-      }}>
-        <Host style={{ height: 48, alignSelf: "stretch" }}>
-          <GlassEffectContainer spacing={8}>
-            <HStack spacing={8} alignment="center">
-              <HStack
-                spacing={0}
-                alignment="center"
-                modifiers={[
-                  frame({ maxWidth: 99999 }),
-                  glassEffect({ glass: { variant: "regular", interactive: true }, shape: "capsule" }),
-                ]}
-              >
-                <Image
-                  systemName="magnifyingglass"
-                  size={16}
-                  color="gray"
-                  modifiers={[padding({ vertical: 12, leading: 16, trailing: 8 })]}
-                />
-                <TextField
-                  ref={textFieldRef}
-                  placeholder={placeholder}
-                  onChangeText={(t) => { setText(t); onChangeText(t); }}
-                  onChangeFocus={setFocused}
+      <Animated.View style={[{ position: "absolute", bottom: 0, left: 0, right: 0 }, liftStyle]}>
+        <Animated.View style={[{ paddingTop: 8, paddingBottom: insets.bottom }, paddingStyle]}>
+          <Host style={{ height: 48, alignSelf: "stretch" }}>
+            <GlassEffectContainer spacing={8}>
+              <HStack spacing={8} alignment="center">
+                <HStack
+                  spacing={0}
+                  alignment="center"
                   modifiers={[
-                    textFieldStyle("plain"),
                     frame({ maxWidth: 99999 }),
-                    padding({ vertical: 12, trailing: focused && text.length > 0 ? 8 : 16 }),
+                    glassEffect({ glass: { variant: "regular", interactive: true }, shape: "capsule" }),
                   ]}
-                />
-                {focused && text.length > 0 && (
+                >
                   <Image
-                    systemName="xmark.circle.fill"
-                    size={18}
+                    systemName="magnifyingglass"
+                    size={16}
                     color="gray"
+                    modifiers={[padding({ vertical: 12, leading: 16, trailing: 8 })]}
+                  />
+                  <TextField
+                    ref={textFieldRef}
+                    placeholder={placeholder}
+                    onChangeText={(t) => { setText(t); onChangeText(t); }}
+                    onChangeFocus={setFocused}
                     modifiers={[
-                      padding({ vertical: 12, trailing: 16 }),
-                      onTapGesture(handleClearText),
+                      textFieldStyle("plain"),
+                      frame({ maxWidth: 99999 }),
+                      padding({ vertical: 12, trailing: focused && text.length > 0 ? 8 : 16 }),
+                    ]}
+                  />
+                  {focused && text.length > 0 && (
+                    <Image
+                      systemName="xmark.circle.fill"
+                      size={18}
+                      color="gray"
+                      modifiers={[
+                        padding({ vertical: 12, trailing: 16 }),
+                        onTapGesture(handleClearText),
+                      ]}
+                    />
+                  )}
+                </HStack>
+
+                {focused && (
+                  <Image
+                    systemName="xmark"
+                    size={16}
+                    modifiers={[
+                      padding({ all: 16 }),
+                      glassEffect({ glass: { variant: "regular", interactive: true }, shape: "circle" }),
+                      onTapGesture(handleClose),
                     ]}
                   />
                 )}
               </HStack>
-
-              {focused && (
-                <Image
-                  systemName="xmark"
-                  size={16}
-                  modifiers={[
-                    padding({ all: 16 }),
-                    glassEffect({ glass: { variant: "regular", interactive: true }, shape: "circle" }),
-                    onTapGesture(handleClose),
-                  ]}
-                />
-              )}
-            </HStack>
-          </GlassEffectContainer>
-        </Host>
+            </GlassEffectContainer>
+          </Host>
+        </Animated.View>
       </Animated.View>
     </>
   );
