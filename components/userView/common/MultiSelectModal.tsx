@@ -41,7 +41,7 @@ export default function MultiSelectModal({ title, options, selected: initialSele
   const [selected, setSelected] = useState<string[]>(initialSelected);
   const [search, setSearch] = useState("");
 
-  const add = (value: string) => setSelected((prev) => [...prev, value]);
+  const add = (value: string) => setSelected((prev) => prev.includes(value) ? prev : [...prev, value]);
   const remove = (value: string) => setSelected((prev) => prev.filter((v) => v !== value));
 
   const selectedOptions = options.filter((o) => selected.includes(o.value));
