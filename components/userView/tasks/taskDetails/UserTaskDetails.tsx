@@ -12,7 +12,7 @@ import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
 import { User } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser } from "@/lib/api";
 import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
-import { useRouter, Stack } from "expo-router";
+import { useRouter, Stack, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import TaskDetailsHeader from "./TaskDetailsHeader";
 import { typography } from "@/constants/typography";
@@ -23,11 +23,8 @@ import RecurringBadge from "../../common/label/recurringBadge";
 import SlideToComplete from "../../common/SlideToComplete";
 import TaskProgressCard from "./TaskProgressCard";
 
-interface Props {
-  taskId: string;
-}
-
-export default function UserTaskDetails({ taskId }: Props) {
+export default function UserTaskDetails() {
+  const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -203,9 +200,9 @@ export default function UserTaskDetails({ taskId }: Props) {
 
       {task && !isLoading && !error && (
         <View style={{ position: "absolute", right: 20, bottom: 40, alignItems: "flex-end", gap: 10 }}>
-          <GlassIconButton systemName="camera" onPress={() => router.push(`/(tabs)/tasks/${taskId}/photos`)} variant="lg" />
-          <GlassIconButton systemName="bubble.right" onPress={() => router.push(`/(tabs)/tasks/${taskId}/comments`)} variant="lg" />
-          <GlassIconButton systemName="folder" onPress={() => router.push(`/(tabs)/tasks/${taskId}/files`)} variant="lg" />
+          <GlassIconButton systemName="camera" onPress={() => router.push(`/(tabs)/tasks/${taskId}/photos`)} size="lg" />
+          <GlassIconButton systemName="bubble.right" onPress={() => router.push(`/(tabs)/tasks/${taskId}/comments`)} size="lg" />
+          <GlassIconButton systemName="folder" onPress={() => router.push(`/(tabs)/tasks/${taskId}/files`)} size="lg" />
         </View>
       )}
     </View>

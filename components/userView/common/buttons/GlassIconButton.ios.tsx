@@ -1,40 +1,55 @@
-import { Host, Image } from "@expo/ui/swift-ui";
-import { glassEffect, padding, onTapGesture } from "@expo/ui/swift-ui/modifiers";
+import { useRef, useCallback } from "react";
+import { useIsFocused } from "@react-navigation/native";
+import { Host, ZStack, Image } from "@expo/ui/swift-ui";
+import { glassEffect, frame, onTapGesture, contentShape, shapes, disabled } from "@expo/ui/swift-ui/modifiers";
 import type { SFSymbol } from "sf-symbols-typescript";
+import { colors } from "@/constants/colors";
 
-type Shape = "circle" | "capsule" | "rectangle" | "ellipse" | "roundedRectangle";
-type Variant = "sm" | "lg";
+type Size = "sm" | "lg";
+type Variant = "default" | "active" | "inactive";
+const SIZES: Record<Size, { iconSize: number; buttonSize: number }> = {
+  sm: { iconSize: 16, buttonSize: 44 },
+  lg: { iconSize: 18, buttonSize: 48 },
+};
 
-const VARIANTS: Record<Variant, { size: number; paddingSize: number }> = {
-  sm: { size: 16, paddingSize: 14 }, // 16 + 14*2 = 44px
-  lg: { size: 18, paddingSize: 15 }, // 18 + 15*2 = 48px
+const TINTS: Record<Variant, string | undefined> = {
+  default: undefined,
+  active: "#007AFF",
+  inactive: colors.textMuted,
 };
 
 interface Props {
   systemName: SFSymbol;
   onPress: () => void;
+  size?: Size;
   variant?: Variant;
-  shape?: Shape;
 }
 
 export default function GlassIconButton({
   systemName,
   onPress,
-  variant = "sm",
-  shape = "circle",
+  size = "sm",
+  variant = "default",
 }: Props) {
-  const { size, paddingSize } = VARIANTS[variant];
+  const { iconSize, buttonSize } = SIZES[size];
+  const tint = TINTS[variant];
+  const isFocused = useIsFocused();
+  const onPressRef = useRef(onPress);
+  onPressRef.current = onPress;
+  const handlePress = useCallback(() => onPressRef.current(), []);
+
   return (
     <Host matchContents>
-      <Image
-        systemName={systemName}
-        size={size}
+      <ZStack
         modifiers={[
-          padding({ all: paddingSize }),
-          glassEffect({ glass: { variant: "regular", interactive: true }, shape }),
-          onTapGesture(onPress),
+          frame({ width: buttonSize, height: buttonSize }),
+          glassEffect({ glass: { variant: "regular", interactive: isFocused && variant !== "inactive", tint }, shape: "circle" }),
+          contentShape(shapes.circle()),
+          ...(variant !== "inactive" ? [onTapGesture(handlePress)] : [disabled(true)]),
         ]}
-      />
+      >
+        <Image systemName={systemName} size={iconSize} color={variant === "active" ? `${colors.white}99` : tint} />
+      </ZStack>
     </Host>
   );
 }

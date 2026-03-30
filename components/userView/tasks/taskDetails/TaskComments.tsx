@@ -10,6 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthContext } from "@/contexts/AuthContext";
 import { getTaskComments, createComment, deleteComment, getUser } from "@/lib/api";
@@ -18,16 +19,14 @@ import { User } from "@/types/users";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
-import ModalScreen from "@/components/userView/common/ModalScreen";
+import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
 import UserTaskCommentBubble from "./UserTaskCommentBubble";
 
-interface Props {
-  taskId: string;
-}
-
-export default function TaskComments({ taskId }: Props) {
+export default function TaskComments() {
+  const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const insets = useSafeAreaInsets();
+  const headerHeight = useModalHeaderHeight();
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
 
@@ -130,7 +129,7 @@ export default function TaskComments({ taskId }: Props) {
             data={comments}
             keyExtractor={(item) => item.comment_id}
             contentContainerStyle={{
-              paddingTop: 56 + 16,
+              paddingTop: headerHeight + 16,
               paddingBottom: 16,
               paddingHorizontal: 16,
               flexGrow: 1,

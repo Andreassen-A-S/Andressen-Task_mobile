@@ -1,17 +1,20 @@
 import { View, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SingleAvatar from "./label/singleAvatar";
+import GlassIconButton from "./buttons/GlassIconButton";
 import { typography } from "@/constants/typography";
 
 type UserHeaderProps = {
-    variant: "user" | "profile";
+    variant: "user" | "profile" | "admin";
     user?: { name?: string; email?: string } | null;
     heading?: string;
     sub?: string;
     position?: string;
+    onAdd?: () => void;
+    onSearch?: () => void;
 };
 
-export default function UserHeader({ variant, user, heading, sub, position }: UserHeaderProps) {
+export default function UserHeader({ variant, user, heading, sub, position, onAdd, onSearch }: UserHeaderProps) {
     const { top } = useSafeAreaInsets();
 
     if (variant === "profile") {
@@ -30,6 +33,21 @@ export default function UserHeader({ variant, user, heading, sub, position }: Us
                             {position || "Ukendt position"}
                         </Text>
                     </View>
+                </View>
+            </View>
+        );
+    }
+
+    if (variant === "admin") {
+        return (
+            <View style={{ paddingTop: top }} className="flex-row items-center bg-[#1B1D22] border-b border-[#E8E6E1] px-4 pb-3 gap-3">
+                <View className="flex-1">
+                    <Text style={typography.h3White}>{heading || "Alle opgaver"}</Text>
+                    <Text style={typography.caption}>{sub || "Admin oversigt"}</Text>
+                </View>
+                <View className="flex-row gap-2">
+                    <GlassIconButton systemName="plus" onPress={onAdd ?? (() => {})} size="lg" />
+                    <GlassIconButton systemName="magnifyingglass" onPress={onSearch ?? (() => {})} size="lg" />
                 </View>
             </View>
         );
