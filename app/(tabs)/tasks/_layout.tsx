@@ -10,6 +10,8 @@ export default function TasksLayout() {
       <Stack.Screen name="date-picker" options={{ presentation: "modal" }} />
       <Stack.Screen name="add-assignees-picker" options={{ presentation: "modal" }} />
       <Stack.Screen name="add-goal-picker" options={{ presentation: "modal" }} />
+      <Stack.Screen name="multi-picker" options={{ presentation: "modal" }} />
+      <Stack.Screen name="grouped-picker" options={{ presentation: "modal" }} />
     </Stack>
   );
 }

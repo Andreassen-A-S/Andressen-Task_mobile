@@ -10,7 +10,7 @@ import { TaskGoalType, TaskUnit } from "@/types/task";
 import { translateTaskUnit } from "@/helpers/helpers";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
-import { type ListModalOption } from "@/components/userView/common/ListModal";
+import { type ListModalOption } from "@/components/userView/common/ListPicker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ClearButton from "@/components/userView/common/buttons/ClearButton";
 

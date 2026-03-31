@@ -1,18 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
 import SingleAvatar from "@/components/userView/common/label/singleAvatar";
-import { typography } from "@/constants/typography";
+import ProjectAvatar from "@/components/userView/common/label/ProjectAvatar";
+import { multiSelectStore } from "@/lib/multiSelectStore";
 import { colors } from "@/constants/colors";
+import { typography } from "@/constants/typography";
 
 export interface MultiSelectOption {
   label: string;
   value: string;
   subtitle?: string;
+  color?: string;
 }
 
 type ListItem =
@@ -26,23 +30,34 @@ type ListItem =
 interface Props {
   title: string;
   options: MultiSelectOption[];
-  selected: string[];
-  onConfirm: (selected: string[]) => void;
-  onClose: () => void;
-  searchable?: boolean;
   isLoading?: boolean;
   error?: string | null;
+  searchable?: boolean;
 }
 
-export default function MultiSelectModal({ title, options, selected: initialSelected, onConfirm, onClose, searchable = true, isLoading, error }: Props) {
+export default function MultiPicker({ title, options, isLoading, error, searchable = true }: Props) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const headerHeight = useModalHeaderHeight(true);
 
-  const [selected, setSelected] = useState<string[]>(initialSelected);
+  const [selected, setSelected] = useState<string[]>(multiSelectStore.getInitial());
   const [search, setSearch] = useState("");
+
+  useEffect(() => () => multiSelectStore.clear(), []);
 
   const add = (value: string) => setSelected((prev) => prev.includes(value) ? prev : [...prev, value]);
   const remove = (value: string) => setSelected((prev) => prev.filter((v) => v !== value));
+
+  const handleConfirm = () => {
+    multiSelectStore.call(selected);
+    multiSelectStore.clear();
+    router.back();
+  };
+
+  const handleClose = () => {
+    multiSelectStore.clear();
+    router.back();
+  };
 
   const selectedOptions = options.filter((o) => selected.includes(o.value));
   const unselectedOptions = options
@@ -99,7 +114,9 @@ export default function MultiSelectModal({ title, options, selected: initialSele
         style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.white }}
       >
         <View style={{ marginRight: 16 }}>
-          <SingleAvatar name={option.label} size="lg" />
+          {option.color
+            ? <ProjectAvatar name={option.label} color={option.color} size="sm" />
+            : <SingleAvatar name={option.label} size="lg" />}
         </View>
         <View style={{ flex: 1 }}>
           <Text style={typography.h6} numberOfLines={1}>{option.label}</Text>
@@ -107,8 +124,7 @@ export default function MultiSelectModal({ title, options, selected: initialSele
         </View>
         {isSelected
           ? <Ionicons name="close-circle" size={22} color={colors.textMuted} />
-          : <Ionicons name="add-circle-outline" size={22} color={colors.green} />
-        }
+          : <Ionicons name="add-circle-outline" size={22} color={colors.green} />}
       </TouchableOpacity>
     );
   };
@@ -122,9 +138,9 @@ export default function MultiSelectModal({ title, options, selected: initialSele
   return (
     <ModalScreen
       title={title}
-      onClose={onClose}
+      onClose={handleClose}
       rightContent={
-        <GlassIconButton variant="active" systemName="checkmark" onPress={() => onConfirm(selected)} />
+        <GlassIconButton variant="active" systemName="checkmark" onPress={handleConfirm} />
       }
     >
       <View style={{ flex: 1 }}>

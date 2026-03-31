@@ -34,7 +34,9 @@ export enum TaskGoalType {
 export interface Task {
   task_id: string;
   project_id: string;
+  project?: { name: string; color?: string | null };
   created_by: string;
+  assigned_users?: string[];
   title: string;
   description: string;
   priority: TaskPriority;
