@@ -15,7 +15,7 @@ import { getTasks, getProjects, getUsers } from "@/lib/api";
 import { Task, TaskStatus } from "@/types/task";
 import { Project } from "@/types/project";
 import { User } from "@/types/users";
-import { toLocalDateKey, translateStatus } from "@/helpers/helpers";
+import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks, type TaskSortKey } from "@/helpers/sort";
 import { pickerStore } from "@/lib/pickerStore";
 import { multiSelectStore } from "@/lib/multiSelectStore";
@@ -24,27 +24,35 @@ import { type MultiSelectOption } from "@/components/userView/common/MultiPicker
 import { type GroupedSelectGroup } from "@/components/userView/common/GroupedSelectModal";
 import UserTaskCard from "./UserTaskCard";
 import UserHeader from "../common/UserHeader";
-import FilterToolbar, { type FilterToolbarItem } from "../common/FilterToolbar";
+import FilterToolbar from "../common/FilterToolbar";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
 const SORT_GROUPS: GroupedSelectGroup[] = [
-  { options: [
-    { label: "Deadline (nærmest)", value: "deadline_asc" },
-    { label: "Deadline (fjernest)", value: "deadline_desc" },
-  ]},
-  { options: [
-    { label: "Prioritet (høj til lav)", value: "priority_asc" },
-    { label: "Prioritet (lav til høj)", value: "priority_desc" },
-  ]},
-  { options: [
-    { label: "Planlagt (nyeste)", value: "scheduled_desc" },
-    { label: "Planlagt (ældste)", value: "scheduled_asc" },
-  ]},
-  { options: [
-    { label: "Nyeste", value: "created_desc" },
-    { label: "Ældste", value: "created_asc" },
-  ]},
+  {
+    options: [
+      { label: "Deadline (nærmest)", value: "deadline_asc" },
+      { label: "Deadline (fjernest)", value: "deadline_desc" },
+    ]
+  },
+  {
+    options: [
+      { label: "Prioritet (høj til lav)", value: "priority_asc" },
+      { label: "Prioritet (lav til høj)", value: "priority_desc" },
+    ]
+  },
+  {
+    options: [
+      { label: "Planlagt (nyeste)", value: "scheduled_desc" },
+      { label: "Planlagt (ældste)", value: "scheduled_asc" },
+    ]
+  },
+  {
+    options: [
+      { label: "Nyeste", value: "created_desc" },
+      { label: "Ældste", value: "created_asc" },
+    ]
+  },
 ];
 
 const SORT_LABELS: Record<TaskSortKey, string> = {
@@ -125,18 +133,17 @@ export default function AdminTaskPage() {
 
   const filteredTasks = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    const base = hasFilters
-      ? tasks.filter((task) => {
-          if (filterStatus && task.status !== filterStatus) return false;
-          if (filterProjectIds.length && !filterProjectIds.includes(task.project_id)) return false;
-          if (filterAssigneeIds.length && !task.assigned_users?.some((id) => filterAssigneeIds.includes(id))) return false;
-          if (filterCreatedById && task.created_by !== filterCreatedById) return false;
-          return true;
-        })
-      : tasks.filter((t) => t.status !== TaskStatus.ARCHIVED && t.status !== TaskStatus.REJECTED);
-    if (!q) return base;
-    return base.filter((t) => t.title.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q));
-  }, [tasks, hasFilters, filterStatus, filterProjectIds, filterAssigneeIds, filterCreatedById, searchQuery, selectedDateKey]);
+    let base = tasks.filter((task) => {
+      if (!filterStatus && (task.status === TaskStatus.ARCHIVED || task.status === TaskStatus.REJECTED)) return false;
+      if (filterStatus && task.status !== filterStatus) return false;
+      if (filterProjectIds.length && !filterProjectIds.includes(task.project_id)) return false;
+      if (filterAssigneeIds.length && !task.assigned_users?.some((id) => filterAssigneeIds.includes(id))) return false;
+      if (filterCreatedById && task.created_by !== filterCreatedById) return false;
+      return true;
+    });
+    if (q) base = base.filter((t) => t.title.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q));
+    return base;
+  }, [tasks, filterStatus, filterProjectIds, filterAssigneeIds, filterCreatedById, searchQuery]);
 
   const sortedTasks = useMemo(() => sortTasks(filteredTasks, sortKey), [filteredTasks, sortKey]);
 
@@ -155,10 +162,10 @@ export default function AdminTaskPage() {
   const sections = hasFilters
     ? (todayTasksList.length > 0 ? [{ title: "Resultater", data: todayTasksList, count: todayTasksList.length }] : [])
     : [
-        ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", data: overdueTasksList, count: overdueTasksList.length }] : []),
-        ...(todayTasksList.length > 0 ? [{ title: "I dag", data: todayTasksList, count: todayTasksList.length }] : []),
-        ...(upcomingTasksList.length > 0 ? [{ title: "Kommende", data: upcomingTasksList, count: upcomingTasksList.length }] : []),
-      ];
+      ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", data: overdueTasksList, count: overdueTasksList.length }] : []),
+      ...(todayTasksList.length > 0 ? [{ title: "I dag", data: todayTasksList, count: todayTasksList.length }] : []),
+      ...(upcomingTasksList.length > 0 ? [{ title: "Kommende", data: upcomingTasksList, count: upcomingTasksList.length }] : []),
+    ];
 
   const userOptions: MultiSelectOption[] = users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position ?? undefined }));
   const projectOptions: MultiSelectOption[] = Object.values(projectMap).map((p) => ({ label: p.name, value: p.project_id, color: p.color ?? undefined }));
