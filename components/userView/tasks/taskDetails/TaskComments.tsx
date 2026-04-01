@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import { useKeyboardHandler } from "react-native-keyboard-controller";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,9 +29,9 @@ export default function TaskComments() {
   const headerHeight = useModalHeaderHeight();
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
-
-  const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
+  const flatListRef = useRef<FlatList>(null);
+  const isNearBottomRef = useRef(true);
 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
@@ -41,22 +41,35 @@ export default function TaskComments() {
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const keyboardHeight = useSharedValue(0);
+
+  useKeyboardHandler({
+    onMove: (e) => {
+      "worklet";
+      keyboardHeight.value = e.height;
+    },
+    onInteractive: (e) => {
+      "worklet";
+      keyboardHeight.value = e.height;
+    },
+  }, []);
+
+  const spacerStyle = useAnimatedStyle(() => ({
+    height: keyboardHeight.value || insets.bottom,
+  }));
+
   const fetchComments = useCallback(async () => {
     try {
       setIsLoading(true);
       setFetchError(null);
       const data = await getTaskComments(taskId);
       setComments(data);
-      if (data.length > 0) {
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
-      }
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
       const uniqueIds = [...new Set(data.map((c) => c.user_id))];
       const authors: Record<string, User> = {};
-      await Promise.all(
-        uniqueIds.map(async (id) => {
-          try { authors[id] = await getUser(id); } catch { }
-        })
-      );
+      await Promise.all(uniqueIds.map(async (id) => {
+        try { authors[id] = await getUser(id); } catch { }
+      }));
       setCommentAuthors(authors);
     } catch {
       setFetchError("Kunne ikke hente kommentarer");
@@ -105,18 +118,14 @@ export default function TaskComments() {
 
   return (
     <ModalScreen title="Kommentarer">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
-      >
+      <View style={{ flex: 1 }}>
         {isLoading ? (
-          <View className="flex-1 items-center justify-center">
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
             <ActivityIndicator color={colors.green} size="large" />
           </View>
         ) : fetchError ? (
-          <View className="flex-1 items-center justify-center px-6">
-            <View className="rounded-xl p-4 w-full items-center border" style={{ backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+            <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
               <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
               <TouchableOpacity onPress={fetchComments} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
                 <Text style={typography.btnMdWhite}>Prøv igen</Text>
@@ -128,43 +137,43 @@ export default function TaskComments() {
             ref={flatListRef}
             data={comments}
             keyExtractor={(item) => item.comment_id}
+            keyboardShouldPersistTaps="handled"
+            onLayout={() => { if (isNearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
+            onScroll={(e) => {
+              const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+              isNearBottomRef.current = contentSize.height - layoutMeasurement.height - contentOffset.y < 80;
+            }}
+            scrollEventThrottle={100}
             contentContainerStyle={{
-              paddingTop: headerHeight + 16,
-              paddingBottom: 16,
-              paddingHorizontal: 16,
               flexGrow: 1,
-              justifyContent: comments.length === 0 ? "center" : "flex-start",
+              justifyContent: "flex-end",
+              paddingTop: headerHeight + 16,
+              paddingHorizontal: 16,
             }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
-              <View className="items-center">
+              <View style={{ alignItems: "center" }}>
                 <Text style={[typography.bodySm, { color: colors.textMuted, textAlign: "center" }]}>
                   Ingen kommentarer endnu.{"\n"}Skriv den første!
                 </Text>
               </View>
             }
             renderItem={({ item }) =>
-              currentUser?.user_id === item.user_id ? (
-                <OwnUserTaskCommentBubble comment={item} onDelete={handleDelete} />
-              ) : (
-                <UserTaskCommentBubble comment={item} author={commentAuthors[item.user_id]} />
-              )
+              currentUser?.user_id === item.user_id
+                ? <OwnUserTaskCommentBubble comment={item} onDelete={handleDelete} />
+                : <UserTaskCommentBubble comment={item} author={commentAuthors[item.user_id]} />
             }
-            ItemSeparatorComponent={() => <View className="h-2" />}
+            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           />
         )}
 
         {inlineError && (
-          <View className="px-4 py-2" style={{ backgroundColor: colors.redLight }}>
+          <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.redLight }}>
             <Text style={[typography.bodyXs, { color: colors.redText, textAlign: "center" }]}>{inlineError}</Text>
           </View>
         )}
 
-        {/* Input bar */}
-        <View
-          className="flex-row items-end gap-2 px-4 py-3"
-          style={{ paddingBottom: insets.bottom + 8, backgroundColor: colors.white }}
-        >
+        <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.white }}>
           <TextInput
             ref={inputRef}
             value={input}
@@ -174,39 +183,21 @@ export default function TaskComments() {
             multiline
             autoCorrect
             autoCapitalize="sentences"
-            style={[
-              typography.bodyMd,
-              {
-                flex: 1,
-                maxHeight: 100,
-                backgroundColor: colors.muted,
-                borderRadius: 20,
-                paddingHorizontal: 16,
-                paddingVertical: 8,
-              },
-            ]}
+            style={[typography.bodyMd, { flex: 1, maxHeight: 100, backgroundColor: colors.muted, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 }]}
           />
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={!input.trim() || isSubmitting}
-            className="mb-1 disabled:opacity-40"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 18,
-              backgroundColor: input.trim() ? colors.green : colors.muted,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            style={{ width: 37, height: 37, borderRadius: 20, marginBottom: 2, opacity: !input.trim() || isSubmitting ? 0.4 : 1, backgroundColor: input.trim() ? colors.green : colors.muted, alignItems: "center", justifyContent: "center" }}
           >
-            {isSubmitting ? (
-              <ActivityIndicator color={colors.white} size="small" />
-            ) : (
-              <Ionicons name="arrow-up" size={18} color={input.trim() ? colors.white : colors.textMuted} />
-            )}
+            {isSubmitting
+              ? <ActivityIndicator color={colors.white} size="small" />
+              : <Ionicons name="arrow-up" size={18} color={input.trim() ? colors.white : colors.textMuted} />
+            }
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+        <Animated.View style={spacerStyle} />
+      </View>
     </ModalScreen>
   );
 }

@@ -1,8 +1,10 @@
-import { View, Text } from "react-native";
+import { useRef, useState, useEffect } from "react";
+import { View, Text, TextInput, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SingleAvatar from "./label/singleAvatar";
 import GlassIconButton from "./buttons/GlassIconButton";
 import { typography } from "@/constants/typography";
+import { colors } from "@/constants/colors";
 
 type UserHeaderProps = {
     variant: "user" | "profile" | "admin";
@@ -11,11 +13,38 @@ type UserHeaderProps = {
     sub?: string;
     position?: string;
     onAdd?: () => void;
-    onSearch?: () => void;
+    onSearchChange?: (query: string) => void;
+    searchResetKey?: number;
 };
 
-export default function UserHeader({ variant, user, heading, sub, position, onAdd, onSearch }: UserHeaderProps) {
+export default function UserHeader({ variant, user, heading, sub, position, onAdd, onSearchChange, searchResetKey }: UserHeaderProps) {
     const { top } = useSafeAreaInsets();
+    const [searchActive, setSearchActive] = useState(false);
+    const [query, setQuery] = useState("");
+    const searchAnim = useRef(new Animated.Value(0)).current;
+    const inputRef = useRef<TextInput>(null);
+
+    const activateSearch = () => {
+        setSearchActive(true);
+        Animated.timing(searchAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start(() => {
+            inputRef.current?.focus();
+        });
+    };
+
+    const deactivateSearch = () => {
+        inputRef.current?.blur();
+        Animated.timing(searchAnim, { toValue: 0, duration: 160, useNativeDriver: true }).start(() => {
+            setSearchActive(false);
+            setQuery("");
+            onSearchChange?.("");
+        });
+    };
+
+    const titleOpacity = searchAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+
+    useEffect(() => {
+        if (searchResetKey !== undefined && searchActive) deactivateSearch();
+    }, [searchResetKey]);
 
     if (variant === "profile") {
         return (
@@ -41,14 +70,42 @@ export default function UserHeader({ variant, user, heading, sub, position, onAd
     if (variant === "admin") {
         return (
             <View style={{ paddingTop: top }} className="flex-row items-center bg-[#1B1D22] border-b border-[#E8E6E1] px-4 pb-3 gap-3">
-                <View className="flex-1">
-                    <Text style={typography.h3White}>{heading || "Alle opgaver"}</Text>
-                    <Text style={typography.caption}>{sub || "Admin oversigt"}</Text>
+                <View style={{ flex: 1, height: 40, justifyContent: "center" }}>
+                    {/* Default state: title + plus — fades out together */}
+                    <Animated.View
+                        style={{ opacity: titleOpacity, position: "absolute", left: 0, right: 0, flexDirection: "row", alignItems: "center" }}
+                        pointerEvents={searchActive ? "none" : "auto"}
+                    >
+                        <View style={{ flex: 1 }}>
+                            <Text style={typography.h3White}>{heading || "Alle opgaver"}</Text>
+                            <Text style={typography.caption}>{sub || "Admin oversigt"}</Text>
+                        </View>
+                        <GlassIconButton systemName="plus" onPress={onAdd ?? (() => {})} size="lg" />
+                    </Animated.View>
+                    {/* Search state: text input — fades in */}
+                    <Animated.View
+                        style={{ opacity: searchAnim, position: "absolute", left: 0, right: 0 }}
+                        pointerEvents={searchActive ? "auto" : "none"}
+                    >
+                        <TextInput
+                            ref={inputRef}
+                            value={query}
+                            onChangeText={(text) => { setQuery(text); onSearchChange?.(text); }}
+                            placeholder="Søg opgaver..."
+                            placeholderTextColor={colors.textMuted}
+                            style={[typography.h3White, { padding: 0 }]}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                            returnKeyType="search"
+                        />
+                    </Animated.View>
                 </View>
-                <View className="flex-row gap-2">
-                    <GlassIconButton systemName="plus" onPress={onAdd ?? (() => {})} size="lg" />
-                    <GlassIconButton systemName="magnifyingglass" onPress={onSearch ?? (() => {})} size="lg" />
-                </View>
+                <GlassIconButton
+                    systemName={searchActive ? "xmark" : "magnifyingglass"}
+                    variant={searchActive ? "active" : "default"}
+                    onPress={searchActive ? deactivateSearch : activateSearch}
+                    size="lg"
+                />
             </View>
         );
     }

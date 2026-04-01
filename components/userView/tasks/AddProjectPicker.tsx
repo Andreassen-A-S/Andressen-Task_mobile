@@ -9,6 +9,7 @@ import { getProjects } from "@/lib/api";
 import { Project } from "@/types/project";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
+import ProjectAvatar from "@/components/userView/common/label/ProjectAvatar";
 
 export default function AddProjectPicker() {
   const router = useRouter();
@@ -71,18 +72,8 @@ export default function AddProjectPicker() {
                   paddingVertical: 12,
                 }}
               >
-                <View style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  backgroundColor: item.color ?? colors.green,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 12,
-                }}>
-                  <Text style={[typography.h6, { color: colors.white }]}>
-                    {item.name.charAt(0).toUpperCase()}
-                  </Text>
+                <View style={{ marginRight: 12 }}>
+                  <ProjectAvatar name={item.name} color={item.color} size="md" />
                 </View>
                 <View style={{ flex: 1 }}>
                   {item.description ? (

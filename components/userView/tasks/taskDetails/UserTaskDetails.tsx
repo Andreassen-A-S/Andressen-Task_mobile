@@ -9,10 +9,11 @@ import {
 } from "react-native";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
-import { User } from "@/types/users";
+import { User, UserRole } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
-import { useRouter, Stack, useLocalSearchParams } from "expo-router";
+import { useRouter, Stack, useLocalSearchParams, usePathname } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import TaskDetailsHeader from "./TaskDetailsHeader";
 import { typography } from "@/constants/typography";
@@ -27,6 +28,8 @@ export default function UserTaskDetails() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const pathname = usePathname();
+  const { user } = useAuth();
 
   const [task, setTask] = useState<Task | null>(null);
   const [creator, setCreator] = useState<User | null>(null);
@@ -75,9 +78,16 @@ export default function UserTaskDetails() {
   };
 
   const handleAddProgress = async (value: string) => {
-    if (!task) return;
+    if (!task || !user) return;
     try {
       setIsUpdating(true);
+      const isAssigned = task.assigned_users?.includes(user.user_id) ?? false;
+      if (user.role === UserRole.ADMIN && !isAssigned) {
+        const updated = await updateTask(task.task_id, {
+          assigned_users: [...(task.assigned_users ?? []), user.user_id],
+        });
+        setTask(updated);
+      }
       await addTaskProgress(task.task_id, {
         quantity_done: Number(value),
         unit: task.unit || undefined,
@@ -92,7 +102,7 @@ export default function UserTaskDetails() {
 
   const unitLabel = task ? translateTaskUnit(task.unit) : "";
   const currentQuantity = task?.current_quantity ?? 0;
-  const hasProgress = task?.current_quantity != null && task?.goal_type === TaskGoalType.FIXED;
+  const hasProgress = task?.goal_type === TaskGoalType.FIXED && task?.target_quantity != null;
   const progressPct = task?.target_quantity
     ? Math.min(100, Math.round((currentQuantity / task.target_quantity) * 100))
     : null;
@@ -100,7 +110,7 @@ export default function UserTaskDetails() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.eggWhite }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <TaskDetailsHeader title={task?.title} />
+      <TaskDetailsHeader title={task?.title} path={task?.project?.name} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -200,9 +210,9 @@ export default function UserTaskDetails() {
 
       {task && !isLoading && !error && (
         <View style={{ position: "absolute", right: 20, bottom: 40, alignItems: "flex-end", gap: 10 }}>
-          <GlassIconButton systemName="camera" onPress={() => router.push(`/(tabs)/tasks/${taskId}/photos`)} size="lg" />
-          <GlassIconButton systemName="bubble.right" onPress={() => router.push(`/(tabs)/tasks/${taskId}/comments`)} size="lg" />
-          <GlassIconButton systemName="folder" onPress={() => router.push(`/(tabs)/tasks/${taskId}/files`)} size="lg" />
+          <GlassIconButton systemName="camera" onPress={() => router.push(`${pathname}/photos`)} size="lg" />
+          <GlassIconButton systemName="bubble.right" onPress={() => router.push(`${pathname}/comments`)} size="lg" />
+          <GlassIconButton systemName="folder" onPress={() => router.push(`${pathname}/files`)} size="lg" />
         </View>
       )}
     </View>

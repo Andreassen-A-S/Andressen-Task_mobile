@@ -9,6 +9,8 @@ const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
   clock: "time",
   target: "locate",
   person: "person",
+  folder: "folder-outline",
+  "person.badge.plus": "person-add-outline",
 };
 
 interface Props {
