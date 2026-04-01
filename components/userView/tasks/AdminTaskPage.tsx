@@ -86,9 +86,10 @@ export default function AdminTaskPage() {
   const [filterCreatedById, setFilterCreatedById] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<TaskSortKey>("deadline_asc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResetKey, setSearchResetKey] = useState(0);
 
   const hasFilters = !!(filterStatus || filterProjectIds.length || filterAssigneeIds.length || filterCreatedById || searchQuery);
-  const activeFilterCount = [filterStatus, filterProjectIds.length ? 1 : 0, filterAssigneeIds.length ? 1 : 0, filterCreatedById ? 1 : 0, sortKey !== "deadline_asc" ? 1 : 0].filter(Boolean).length;
+  const activeFilterCount = [filterStatus, filterProjectIds.length ? 1 : 0, filterAssigneeIds.length ? 1 : 0, filterCreatedById ? 1 : 0, sortKey !== "deadline_asc" ? 1 : 0, searchQuery ? 1 : 0].filter(Boolean).length;
 
   const fetchData = useCallback(async (refresh = false) => {
     try {
@@ -226,6 +227,7 @@ export default function AdminTaskPage() {
             sub="Admin oversigt"
             onAdd={() => router.push("/(tabs)/tasks/add-project-picker")}
             onSearchChange={setSearchQuery}
+            searchResetKey={searchResetKey}
           />
         </View>
         {headerHeight > 0 && (
@@ -233,7 +235,7 @@ export default function AdminTaskPage() {
             <FilterToolbar
               height={TOOLBAR_HEIGHT}
               activeCount={activeFilterCount || undefined}
-              onClearAll={() => { setFilterStatus(null); setFilterProjectIds([]); setFilterAssigneeIds([]); setFilterCreatedById(null); setSortKey("deadline_asc"); }}
+              onClearAll={() => { setFilterStatus(null); setFilterProjectIds([]); setFilterAssigneeIds([]); setFilterCreatedById(null); setSortKey("deadline_asc"); setSearchQuery(""); setSearchResetKey(k => k + 1); }}
               items={[
                 { icon: "flag", label: statusLabel, variant: filterStatus ? "active" : "regular", onPress: openStatusFilter },
                 { icon: "folder", label: projectLabel, variant: filterProjectIds.length ? "active" : "regular", count: filterProjectIds.length || undefined, onPress: openProjectFilter },

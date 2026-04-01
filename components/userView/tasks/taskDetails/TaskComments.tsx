@@ -31,6 +31,7 @@ export default function TaskComments() {
   const currentUser = authContext?.user;
   const inputRef = useRef<TextInput>(null);
   const flatListRef = useRef<FlatList>(null);
+  const isNearBottomRef = useRef(true);
 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
@@ -137,7 +138,12 @@ export default function TaskComments() {
             data={comments}
             keyExtractor={(item) => item.comment_id}
             keyboardShouldPersistTaps="handled"
-            onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+            onLayout={() => { if (isNearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
+            onScroll={(e) => {
+              const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+              isNearBottomRef.current = contentSize.height - layoutMeasurement.height - contentOffset.y < 80;
+            }}
+            scrollEventThrottle={100}
             contentContainerStyle={{
               flexGrow: 1,
               justifyContent: "flex-end",

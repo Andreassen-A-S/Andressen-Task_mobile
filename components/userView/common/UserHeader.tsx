@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { View, Text, TextInput, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SingleAvatar from "./label/singleAvatar";
@@ -14,9 +14,10 @@ type UserHeaderProps = {
     position?: string;
     onAdd?: () => void;
     onSearchChange?: (query: string) => void;
+    searchResetKey?: number;
 };
 
-export default function UserHeader({ variant, user, heading, sub, position, onAdd, onSearchChange }: UserHeaderProps) {
+export default function UserHeader({ variant, user, heading, sub, position, onAdd, onSearchChange, searchResetKey }: UserHeaderProps) {
     const { top } = useSafeAreaInsets();
     const [searchActive, setSearchActive] = useState(false);
     const [query, setQuery] = useState("");
@@ -40,6 +41,10 @@ export default function UserHeader({ variant, user, heading, sub, position, onAd
     };
 
     const titleOpacity = searchAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
+
+    useEffect(() => {
+        if (searchResetKey !== undefined && searchActive) deactivateSearch();
+    }, [searchResetKey]);
 
     if (variant === "profile") {
         return (
