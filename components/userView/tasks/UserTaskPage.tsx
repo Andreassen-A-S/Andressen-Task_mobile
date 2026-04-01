@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments, getProjects } from "@/lib/api";
-import { Task, TaskStatus } from "@/types/task";
+import { Task, TaskStatus, INACTIVE_STATUSES } from "@/types/task";
 import { Project } from "@/types/project";
 import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
@@ -20,8 +20,6 @@ import UserTaskCard from "./UserTaskCard";
 import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-
-const INACTIVE_STATUSES = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
 
 const FILTERS = [
   { key: "all", label: "Alle" },
@@ -38,8 +36,7 @@ export default function UserTaskPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
+  const [selectedDate] = useState(new Date());
 
   const fetchTasks = useCallback(async (refresh = false) => {
     if (!user?.user_id) return;
@@ -173,7 +170,7 @@ export default function UserTaskPage() {
                   style={{ backgroundColor: colors.white, borderColor: colors.border }}>
                   <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
                   <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
-                    Ingen opgaver planlagt i dag
+                    Ingen aktive eller overskredet opgaver
                   </Text>
                   <Text className="mt-2 text-center" style={typography.bodyXs}>
                     Nye opgaver vil blive vist her

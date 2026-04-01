@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@/hooks/useAuth";
 import { getTasks, getProjects, getUsers } from "@/lib/api";
-import { Task, TaskStatus } from "@/types/task";
+import { Task, TaskStatus, INACTIVE_STATUSES } from "@/types/task";
 import { Project } from "@/types/project";
 import { User } from "@/types/users";
 import { toLocalDateKey } from "@/helpers/helpers";
@@ -27,8 +27,6 @@ import UserHeader from "../common/UserHeader";
 import FilterToolbar from "../common/FilterToolbar";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-
-const INACTIVE_STATUSES = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
 
 const SORT_GROUPS: GroupedSelectGroup[] = [
   {
@@ -301,7 +299,7 @@ export default function AdminTaskPage() {
                   style={{ backgroundColor: colors.white, borderColor: colors.border }}>
                   <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
                   <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
-                    {hasFilters ? "Ingen opgaver matcher filteret" : "Ingen opgaver planlagt i dag"}
+                    {hasFilters ? "Ingen opgaver matcher filteret" : "Ingen overskredet, aktive eller kommende opgaver"}
                   </Text>
                   <Text className="mt-2 text-center" style={typography.bodyXs}>
                     {hasFilters ? "Prøv at ændre eller fjerne et filter" : "Nye opgaver vil blive vist her"}
