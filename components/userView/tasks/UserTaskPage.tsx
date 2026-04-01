@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments, getProjects } from "@/lib/api";
-import { Task, TaskStatus, INACTIVE_STATUSES } from "@/types/task";
+import { Task, INACTIVE_STATUSES } from "@/types/task";
 import { Project } from "@/types/project";
 import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
@@ -21,12 +21,6 @@ import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
-const FILTERS = [
-  { key: "all", label: "Alle" },
-  { key: "highPriority", label: "Høj prioritet" },
-  { key: "pending", label: "Mangler" },
-  { key: "fixedGoal", label: "Mål-opgaver" },
-] as const;
 
 export default function UserTaskPage() {
   const { user } = useAuth();
@@ -170,7 +164,7 @@ export default function UserTaskPage() {
                   style={{ backgroundColor: colors.white, borderColor: colors.border }}>
                   <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
                   <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
-                    Ingen aktive eller overskredet opgaver
+                    Ingen aktive eller overskredne opgaver
                   </Text>
                   <Text className="mt-2 text-center" style={typography.bodyXs}>
                     Nye opgaver vil blive vist her

@@ -299,7 +299,7 @@ export default function AdminTaskPage() {
                   style={{ backgroundColor: colors.white, borderColor: colors.border }}>
                   <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
                   <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
-                    {hasFilters ? "Ingen opgaver matcher filteret" : "Ingen overskredet, aktive eller kommende opgaver"}
+                    {hasFilters ? "Ingen opgaver matcher filteret" : "Ingen overskredne, aktive eller kommende opgaver"}
                   </Text>
                   <Text className="mt-2 text-center" style={typography.bodyXs}>
                     {hasFilters ? "Prøv at ændre eller fjerne et filter" : "Nye opgaver vil blive vist her"}
