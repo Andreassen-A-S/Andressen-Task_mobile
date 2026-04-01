@@ -150,20 +150,24 @@ export default function AdminTaskPage() {
   const INACTIVE_STATUSES = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
 
   const overdueTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
-    toLocalDateKey(t.scheduled_date) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
+    toLocalDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
   );
-  const todayTasksList = hasFilters
+  const activeTasksList = hasFilters
     ? sortedTasks
-    : sortedTasks.filter((t) => toLocalDateKey(t.scheduled_date) === selectedDateKey);
+    : sortedTasks.filter((t) =>
+        toLocalDateKey(t.scheduled_date) <= selectedDateKey &&
+        toLocalDateKey(t.deadline) >= selectedDateKey &&
+        !INACTIVE_STATUSES.includes(t.status)
+      );
   const upcomingTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
     toLocalDateKey(t.scheduled_date) > selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
   );
 
   const sections = hasFilters
-    ? (todayTasksList.length > 0 ? [{ title: "Resultater", data: todayTasksList, count: todayTasksList.length }] : [])
+    ? (activeTasksList.length > 0 ? [{ title: "Resultater", data: activeTasksList, count: activeTasksList.length }] : [])
     : [
       ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", data: overdueTasksList, count: overdueTasksList.length }] : []),
-      ...(todayTasksList.length > 0 ? [{ title: "I dag", data: todayTasksList, count: todayTasksList.length }] : []),
+      ...(activeTasksList.length > 0 ? [{ title: "Aktive", data: activeTasksList, count: activeTasksList.length }] : []),
       ...(upcomingTasksList.length > 0 ? [{ title: "Kommende", data: upcomingTasksList, count: upcomingTasksList.length }] : []),
     ];
 

@@ -5,7 +5,6 @@ import {
   SectionList,
   TouchableOpacity,
   ActivityIndicator,
-  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,11 +12,10 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments, getProjects } from "@/lib/api";
-import { Task, TaskGoalType, TaskPriority, TaskStatus } from "@/types/task";
+import { Task, TaskStatus } from "@/types/task";
 import { Project } from "@/types/project";
 import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
-import UserTaskDateNavigator from "./UserTaskDateNavigator";
 import UserTaskCard from "./UserTaskCard";
 import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
@@ -51,7 +49,7 @@ export default function UserTaskPage() {
         getProjects(),
       ]);
       if (assignmentsResult.status === "rejected") throw assignmentsResult.reason;
-      setTasks(sortTasks(assignmentsResult.value.map((a) => a.task)));
+      setTasks(sortTasks(assignmentsResult.value.map((a) => a.task), "priority_asc"));
       if (projectsResult.status === "fulfilled") {
         setProjectMap(Object.fromEntries(projectsResult.value.map((p) => [p.project_id, p])));
       }
@@ -70,45 +68,21 @@ export default function UserTaskPage() {
 
   const selectedDateKey = toLocalDateKey(selectedDate);
 
-  const tasksForDay = useMemo(() => {
-    return tasks.filter((task) => {
-      const isDone = task.status === TaskStatus.DONE;
-      const scheduledKey = toLocalDateKey(task.scheduled_date);
-      const deadlineKey = toLocalDateKey(task.deadline);
+  const INACTIVE_STATUSES = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
 
-      const isScheduledToday = scheduledKey === selectedDateKey;
-      const isCarryOverScheduled = scheduledKey < selectedDateKey && !isDone;
-      const isDueToday = deadlineKey === selectedDateKey;
-      const isOverdue = deadlineKey < selectedDateKey && !isDone;
+  const overdueTasksList = useMemo(() => tasks.filter((t) =>
+    toLocalDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
+  ), [tasks, selectedDateKey]);
 
-      return isScheduledToday || isCarryOverScheduled || isDueToday || isOverdue;
-    });
-  }, [tasks, selectedDateKey]);
+  const activeTasksList = useMemo(() => tasks.filter((t) =>
+    toLocalDateKey(t.scheduled_date) <= selectedDateKey &&
+    toLocalDateKey(t.deadline) >= selectedDateKey &&
+    !INACTIVE_STATUSES.includes(t.status)
+  ), [tasks, selectedDateKey]);
 
-  const filteredTasks = useMemo(() => {
-    return tasksForDay.filter((task) => {
-      if (filter === "highPriority") return task.priority === TaskPriority.HIGH;
-      if (filter === "pending")
-        return task.status === TaskStatus.PENDING || task.status === TaskStatus.IN_PROGRESS;
-      if (filter === "fixedGoal") return task.goal_type === TaskGoalType.FIXED;
-      return true;
-    });
-  }, [tasksForDay, filter]);
-
-  const scheduledFilteredTasks = filteredTasks.filter(
-    (t) => toLocalDateKey(t.scheduled_date) >= selectedDateKey,
-  );
-  const carriedOverFilteredTasks = filteredTasks.filter(
-    (t) => toLocalDateKey(t.scheduled_date) < selectedDateKey,
-  );
-  const hasBothSections = scheduledFilteredTasks.length > 0 && carriedOverFilteredTasks.length > 0;
   const sections = [
-    ...(scheduledFilteredTasks.length > 0
-      ? [{ title: "Planlagt", data: scheduledFilteredTasks, count: scheduledFilteredTasks.length }]
-      : []),
-    ...(carriedOverFilteredTasks.length > 0
-      ? [{ title: "Overført", data: carriedOverFilteredTasks, count: carriedOverFilteredTasks.length }]
-      : []),
+    ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", data: overdueTasksList, count: overdueTasksList.length }] : []),
+    ...(activeTasksList.length > 0 ? [{ title: "Aktive", data: activeTasksList, count: activeTasksList.length }] : []),
   ];
 
   if (error) {
@@ -144,16 +118,13 @@ export default function UserTaskPage() {
             />
           )}
           renderSectionHeader={({ section: { title, count } }) => {
-            if (title === "Planlagt" && !hasBothSections) return null;
-            const isCarriedOver = title === "Overført";
+            const isOverdue = title === "Overskredet";
             return (
               <View>
-                <View className="flex-row items-center justify-between pt-2.5  bg-[#F6F5F1]">
+                <View className="flex-row items-center justify-between pt-2.5 bg-[#F6F5F1]">
                   <Text style={typography.labelSmUppercase}>{title}</Text>
-                  <View className="bg-[#E5E7EB] rounded-2xl px-2 py-0.5"
-                    style={{
-                      backgroundColor: isCarriedOver ? colors.redLight : colors.border,
-                    }}
+                  <View className="rounded-2xl px-2 py-0.5"
+                    style={{ backgroundColor: isOverdue ? colors.redLight : colors.border }}
                   >
                     <Text style={typography.labelSmUppercase}>{count}</Text>
                   </View>
