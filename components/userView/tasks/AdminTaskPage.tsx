@@ -28,6 +28,8 @@ import FilterToolbar from "../common/FilterToolbar";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
+const INACTIVE_STATUSES = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
+
 const SORT_GROUPS: GroupedSelectGroup[] = [
   {
     options: [
@@ -147,8 +149,6 @@ export default function AdminTaskPage() {
 
   const sortedTasks = useMemo(() => sortTasks(filteredTasks, sortKey), [filteredTasks, sortKey]);
 
-  const INACTIVE_STATUSES = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
-
   const overdueTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
     toLocalDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
   );
@@ -160,7 +160,9 @@ export default function AdminTaskPage() {
         !INACTIVE_STATUSES.includes(t.status)
       );
   const upcomingTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
-    toLocalDateKey(t.scheduled_date) > selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
+    toLocalDateKey(t.scheduled_date) > selectedDateKey &&
+    toLocalDateKey(t.deadline) >= selectedDateKey &&
+    !INACTIVE_STATUSES.includes(t.status)
   );
 
   const sections = hasFilters

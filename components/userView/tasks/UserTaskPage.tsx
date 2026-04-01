@@ -21,6 +21,8 @@ import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
+const INACTIVE_STATUSES = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
+
 const FILTERS = [
   { key: "all", label: "Alle" },
   { key: "highPriority", label: "Høj prioritet" },
@@ -67,8 +69,6 @@ export default function UserTaskPage() {
   );
 
   const selectedDateKey = toLocalDateKey(selectedDate);
-
-  const INACTIVE_STATUSES = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
 
   const overdueTasksList = useMemo(() => tasks.filter((t) =>
     toLocalDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
