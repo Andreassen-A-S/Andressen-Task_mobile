@@ -52,6 +52,7 @@ export default function ListPicker() {
 
   const handleSelect = (value: string) => {
     pickerStore.call(value);
+    pickerStore.clear();
     router.back();
   };
 

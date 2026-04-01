@@ -11,7 +11,7 @@ const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 interface Props {
-  icon: string;
+  icon?: string;
   label: string;
   variant: "regular" | "active";
   count?: number;
@@ -40,7 +40,7 @@ export default function GlassFilterButton({ icon, label, variant, count, onPress
           <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#007AFF", alignItems: "center", justifyContent: "center" }}>
             <Text style={[typography.btnSm, { color: colors.white, fontSize: 11 }]}>{count}</Text>
           </View>
-        ) : active ? (
+        ) : active && icon ? (
           <Ionicons name={ionicon} size={13} color={colors.white} />
         ) : null}
         <Text style={[typography.btnSm, { color: isMulti ? "#007AFF" : active ? colors.white : colors.textSecondary }]}>{label}</Text>

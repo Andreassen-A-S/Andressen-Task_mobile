@@ -4,7 +4,7 @@ import { Host, Button, HStack, Image, Text } from "@expo/ui/swift-ui";
 import { buttonStyle, glassEffect, padding, fixedSize, tint as t, font, foregroundStyle, frame, background, clipShape } from "@expo/ui/swift-ui/modifiers";
 
 interface Props {
-  icon: string;
+  icon?: string;
   label: string;
   variant: "regular" | "active";
   count?: number;
@@ -45,8 +45,8 @@ export default function GlassFilterButton({ icon, label, variant, count, onPress
             ]}>
               {String(count)}
             </Text>
-          ) : isActive ? (
-            <Image systemName={icon} size={12} color={isActive ? "#007AFF" : "gray"} />
+          ) : isActive && icon ? (
+            <Image systemName={icon} size={12} color="#007AFF" />
           ) : null}
           <Text modifiers={[font({ weight: "medium", size: 12 }), foregroundStyle(isActive ? "#007AFF" : "secondary")]}>
             {label}

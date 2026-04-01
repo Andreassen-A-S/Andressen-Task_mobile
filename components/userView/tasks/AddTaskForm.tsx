@@ -84,7 +84,7 @@ export default function AddTaskForm() {
         project_id: projectId,
         priority,
         status: TaskStatus.PENDING,
-        deadline: toDateParam(deadline ?? new Date()) + "T23:59:59.000Z",
+        deadline: toDateParam(deadline ?? scheduledDate ?? new Date()) + "T23:59:59.000Z",
         scheduled_date: toDateParam(scheduledDate ?? new Date()) + "T00:00:00.000Z",
         created_by: user.user_id,
         assigned_users: assignedUsers,

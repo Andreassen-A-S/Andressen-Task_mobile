@@ -4,7 +4,7 @@ import ClearFiltersButton from "@/components/userView/common/buttons/ClearFilter
 import { colors } from "@/constants/colors";
 
 export interface FilterToolbarItem {
-  icon: string;
+  icon?: string;
   label: string;
   variant: "regular" | "active";
   count?: number;

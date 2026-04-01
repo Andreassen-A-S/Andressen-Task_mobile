@@ -35,6 +35,7 @@ export default function GroupedSelectModal({ title, groups, selected: initialSel
   const handleSelect = (value: string) => {
     setSelected(value);
     pickerStore.call(value);
+    pickerStore.clear();
     router.back();
   };
 

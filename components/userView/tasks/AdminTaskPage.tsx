@@ -249,7 +249,7 @@ export default function AdminTaskPage() {
                 { icon: "person", label: assigneeLabel, variant: filterAssigneeIds.length ? "active" : "regular", count: filterAssigneeIds.length || undefined, onPress: openAssigneeFilter },
                 { icon: "person.badge.plus", label: createdByLabel, variant: filterCreatedById ? "active" : "regular", onPress: openCreatedByFilter },
               ]}
-              sortItem={{ icon: "list", label: `Sorter: ${SORT_LABELS[sortKey]}`, variant: sortKey !== "deadline_asc" ? "active" : "regular", onPress: openSortPicker }}
+              sortItem={{ label: `Sorter: ${SORT_LABELS[sortKey]}`, variant: sortKey !== "deadline_asc" ? "active" : "regular", onPress: openSortPicker }}
             />
           </View>
         )}
