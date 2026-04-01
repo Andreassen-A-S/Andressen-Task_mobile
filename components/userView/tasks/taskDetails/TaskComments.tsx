@@ -150,6 +150,7 @@ export default function TaskComments() {
               paddingTop: headerHeight + 16,
               paddingHorizontal: 16,
             }}
+            ListFooterComponent={() => <View style={{ height: 12 }} />}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={{ alignItems: "center" }}>

@@ -43,6 +43,10 @@ function RootGuard() {
     const data = lastNotificationResponse?.notification.request.content.data;
     if (typeof data?.taskId === "string") {
       router.push(`/(tabs)/tasks/${data.taskId}`);
+      if (data?.screen === "comments") {
+        const timer = setTimeout(() => router.push(`/(tabs)/tasks/${data.taskId}/comments`), 500);
+        return () => clearTimeout(timer);
+      }
     } else if (data?.screen === "tasks") {
       router.push("/(tabs)/tasks");
     }
