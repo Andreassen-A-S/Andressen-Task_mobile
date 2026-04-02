@@ -117,29 +117,6 @@ export default function UserTaskPage() {
           refreshing={isRefreshing}
           onRefresh={() => fetchTasks(true)}
           stickySectionHeadersEnabled={false}
-          // ListHeaderComponent={
-          //   <ScrollView
-          //     horizontal
-          //     showsHorizontalScrollIndicator={false}
-          //     contentContainerClassName="gap-2"
-          //     className="py-1"
-          //   >
-          //     {FILTERS.map(({ key, label }) => (
-          //       <TouchableOpacity
-          //         key={key}
-          //         onPress={() => setFilter(key)}
-          //         className={`px-4 py-2 rounded-2xl border ${filter === key
-          //           ? "bg-[#1B1D22] border-[#1B1D22]"
-          //           : "border-[#E8E6E1]"
-          //           }`}
-          //       >
-          //         <Text style={filter === key ? typography.labelLgWhite : typography.labelLgGray}>
-          //           {key === "all" ? `${label} (${tasksForDay.length})` : label}
-          //         </Text>
-          //       </TouchableOpacity>
-          //     ))}
-          //   </ScrollView>
-          // }
           ListEmptyComponent={
             isLoading ? (
               <View className="flex-1 items-center justify-center">
