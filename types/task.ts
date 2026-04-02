@@ -31,6 +31,8 @@ export enum TaskGoalType {
   FIXED = "FIXED",
 }
 
+export const INACTIVE_STATUSES: TaskStatus[] = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
+
 export interface Task {
   task_id: string;
   project_id: string;

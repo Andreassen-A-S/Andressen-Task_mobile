@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@/hooks/useAuth";
 import { getTasks, getProjects, getUsers } from "@/lib/api";
-import { Task, TaskStatus } from "@/types/task";
+import { Task, TaskStatus, INACTIVE_STATUSES } from "@/types/task";
 import { Project } from "@/types/project";
 import { User } from "@/types/users";
 import { toLocalDateKey } from "@/helpers/helpers";
@@ -23,6 +23,7 @@ import { type ListModalOption } from "@/components/userView/common/ListPicker";
 import { type MultiSelectOption } from "@/components/userView/common/MultiPicker";
 import { type GroupedSelectGroup } from "@/components/userView/common/GroupedSelectModal";
 import UserTaskCard from "./UserTaskCard";
+import SectionHeader from "./SectionHeader";
 import UserHeader from "../common/UserHeader";
 import FilterToolbar from "../common/FilterToolbar";
 import { typography } from "@/constants/typography";
@@ -85,7 +86,6 @@ export default function AdminTaskPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate] = useState(new Date());
   const [headerHeight, setHeaderHeight] = useState(0);
 
   const [filterStatus, setFilterStatus] = useState<TaskStatus | null>(null);
@@ -129,7 +129,7 @@ export default function AdminTaskPage() {
     }, [fetchData])
   );
 
-  const selectedDateKey = toLocalDateKey(selectedDate);
+  const selectedDateKey = toLocalDateKey(new Date());
 
   const filteredTasks = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -147,24 +147,28 @@ export default function AdminTaskPage() {
 
   const sortedTasks = useMemo(() => sortTasks(filteredTasks, sortKey), [filteredTasks, sortKey]);
 
-  const INACTIVE_STATUSES = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
-
   const overdueTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
-    toLocalDateKey(t.scheduled_date) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
+    toLocalDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
   );
-  const todayTasksList = hasFilters
+  const activeTasksList = hasFilters
     ? sortedTasks
-    : sortedTasks.filter((t) => toLocalDateKey(t.scheduled_date) === selectedDateKey);
+    : sortedTasks.filter((t) =>
+        toLocalDateKey(t.scheduled_date) <= selectedDateKey &&
+        toLocalDateKey(t.deadline) >= selectedDateKey &&
+        !INACTIVE_STATUSES.includes(t.status)
+      );
   const upcomingTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
-    toLocalDateKey(t.scheduled_date) > selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
+    toLocalDateKey(t.scheduled_date) > selectedDateKey &&
+    toLocalDateKey(t.deadline) >= selectedDateKey &&
+    !INACTIVE_STATUSES.includes(t.status)
   );
 
   const sections = hasFilters
-    ? (todayTasksList.length > 0 ? [{ title: "Resultater", data: todayTasksList, count: todayTasksList.length }] : [])
+    ? (activeTasksList.length > 0 ? [{ title: "Resultater", variant: "default" as const, data: activeTasksList, count: activeTasksList.length }] : [])
     : [
-      ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", data: overdueTasksList, count: overdueTasksList.length }] : []),
-      ...(todayTasksList.length > 0 ? [{ title: "I dag", data: todayTasksList, count: todayTasksList.length }] : []),
-      ...(upcomingTasksList.length > 0 ? [{ title: "Kommende", data: upcomingTasksList, count: upcomingTasksList.length }] : []),
+      ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", variant: "overdue" as const, data: overdueTasksList, count: overdueTasksList.length }] : []),
+      ...(activeTasksList.length > 0 ? [{ title: "Aktive", variant: "default" as const, data: activeTasksList, count: activeTasksList.length }] : []),
+      ...(upcomingTasksList.length > 0 ? [{ title: "Kommende", variant: "default" as const, data: upcomingTasksList, count: upcomingTasksList.length }] : []),
     ];
 
   const userOptions: MultiSelectOption[] = users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position ?? undefined }));
@@ -263,20 +267,9 @@ export default function AdminTaskPage() {
               onClick={() => router.push(`/(tabs)/tasks/${item.task_id}`)}
             />
           )}
-          renderSectionHeader={({ section: { title, count } }) => {
-            const isOverdue = title === "Overskredet";
-            return (
-              <View>
-                <View className="flex-row items-center justify-between pt-2.5 bg-[#F6F5F1]">
-                  <Text style={typography.labelSmUppercase}>{title}</Text>
-                  <View className="rounded-2xl px-2 py-0.5"
-                    style={{ backgroundColor: isOverdue ? colors.redLight : colors.border }}>
-                    <Text style={typography.labelSmUppercase}>{count}</Text>
-                  </View>
-                </View>
-              </View>
-            );
-          }}
+          renderSectionHeader={({ section: { title, count, variant } }) => (
+            <SectionHeader title={title} count={count} variant={variant} />
+          )}
           ItemSeparatorComponent={() => <View className="h-3" />}
           SectionSeparatorComponent={() => <View className="h-3" />}
           showsVerticalScrollIndicator={false}
@@ -295,7 +288,7 @@ export default function AdminTaskPage() {
                   style={{ backgroundColor: colors.white, borderColor: colors.border }}>
                   <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
                   <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
-                    {hasFilters ? "Ingen opgaver matcher filteret" : "Ingen opgaver planlagt i dag"}
+                    {hasFilters ? "Ingen opgaver matcher filteret" : "Ingen overskredne, aktive eller kommende opgaver"}
                   </Text>
                   <Text className="mt-2 text-center" style={typography.bodyXs}>
                     {hasFilters ? "Prøv at ændre eller fjerne et filter" : "Nye opgaver vil blive vist her"}

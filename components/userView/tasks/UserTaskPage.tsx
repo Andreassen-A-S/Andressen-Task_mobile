@@ -5,7 +5,6 @@ import {
   SectionList,
   TouchableOpacity,
   ActivityIndicator,
-  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,22 +12,16 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments, getProjects } from "@/lib/api";
-import { Task, TaskGoalType, TaskPriority, TaskStatus } from "@/types/task";
+import { Task, INACTIVE_STATUSES } from "@/types/task";
 import { Project } from "@/types/project";
 import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
-import UserTaskDateNavigator from "./UserTaskDateNavigator";
 import UserTaskCard from "./UserTaskCard";
+import SectionHeader from "./SectionHeader";
 import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
-const FILTERS = [
-  { key: "all", label: "Alle" },
-  { key: "highPriority", label: "Høj prioritet" },
-  { key: "pending", label: "Mangler" },
-  { key: "fixedGoal", label: "Mål-opgaver" },
-] as const;
 
 export default function UserTaskPage() {
   const { user } = useAuth();
@@ -38,9 +31,6 @@ export default function UserTaskPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]["key"]>("all");
-
   const fetchTasks = useCallback(async (refresh = false) => {
     if (!user?.user_id) return;
     try {
@@ -51,7 +41,7 @@ export default function UserTaskPage() {
         getProjects(),
       ]);
       if (assignmentsResult.status === "rejected") throw assignmentsResult.reason;
-      setTasks(sortTasks(assignmentsResult.value.map((a) => a.task)));
+      setTasks(sortTasks(assignmentsResult.value.map((a) => a.task), "priority_asc"));
       if (projectsResult.status === "fulfilled") {
         setProjectMap(Object.fromEntries(projectsResult.value.map((p) => [p.project_id, p])));
       }
@@ -68,47 +58,21 @@ export default function UserTaskPage() {
     }, [user?.user_id, fetchTasks])
   );
 
-  const selectedDateKey = toLocalDateKey(selectedDate);
+  const selectedDateKey = toLocalDateKey(new Date());
 
-  const tasksForDay = useMemo(() => {
-    return tasks.filter((task) => {
-      const isDone = task.status === TaskStatus.DONE;
-      const scheduledKey = toLocalDateKey(task.scheduled_date);
-      const deadlineKey = toLocalDateKey(task.deadline);
+  const overdueTasksList = useMemo(() => tasks.filter((t) =>
+    toLocalDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
+  ), [tasks, selectedDateKey]);
 
-      const isScheduledToday = scheduledKey === selectedDateKey;
-      const isCarryOverScheduled = scheduledKey < selectedDateKey && !isDone;
-      const isDueToday = deadlineKey === selectedDateKey;
-      const isOverdue = deadlineKey < selectedDateKey && !isDone;
+  const activeTasksList = useMemo(() => tasks.filter((t) =>
+    toLocalDateKey(t.scheduled_date) <= selectedDateKey &&
+    toLocalDateKey(t.deadline) >= selectedDateKey &&
+    !INACTIVE_STATUSES.includes(t.status)
+  ), [tasks, selectedDateKey]);
 
-      return isScheduledToday || isCarryOverScheduled || isDueToday || isOverdue;
-    });
-  }, [tasks, selectedDateKey]);
-
-  const filteredTasks = useMemo(() => {
-    return tasksForDay.filter((task) => {
-      if (filter === "highPriority") return task.priority === TaskPriority.HIGH;
-      if (filter === "pending")
-        return task.status === TaskStatus.PENDING || task.status === TaskStatus.IN_PROGRESS;
-      if (filter === "fixedGoal") return task.goal_type === TaskGoalType.FIXED;
-      return true;
-    });
-  }, [tasksForDay, filter]);
-
-  const scheduledFilteredTasks = filteredTasks.filter(
-    (t) => toLocalDateKey(t.scheduled_date) >= selectedDateKey,
-  );
-  const carriedOverFilteredTasks = filteredTasks.filter(
-    (t) => toLocalDateKey(t.scheduled_date) < selectedDateKey,
-  );
-  const hasBothSections = scheduledFilteredTasks.length > 0 && carriedOverFilteredTasks.length > 0;
   const sections = [
-    ...(scheduledFilteredTasks.length > 0
-      ? [{ title: "Planlagt", data: scheduledFilteredTasks, count: scheduledFilteredTasks.length }]
-      : []),
-    ...(carriedOverFilteredTasks.length > 0
-      ? [{ title: "Overført", data: carriedOverFilteredTasks, count: carriedOverFilteredTasks.length }]
-      : []),
+    ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", variant: "overdue" as const, data: overdueTasksList, count: overdueTasksList.length }] : []),
+    ...(activeTasksList.length > 0 ? [{ title: "Aktive", variant: "default" as const, data: activeTasksList, count: activeTasksList.length }] : []),
   ];
 
   if (error) {
@@ -143,24 +107,9 @@ export default function UserTaskPage() {
               onClick={() => router.push(`/(tabs)/tasks/${item.task_id}`)}
             />
           )}
-          renderSectionHeader={({ section: { title, count } }) => {
-            if (title === "Planlagt" && !hasBothSections) return null;
-            const isCarriedOver = title === "Overført";
-            return (
-              <View>
-                <View className="flex-row items-center justify-between pt-2.5  bg-[#F6F5F1]">
-                  <Text style={typography.labelSmUppercase}>{title}</Text>
-                  <View className="bg-[#E5E7EB] rounded-2xl px-2 py-0.5"
-                    style={{
-                      backgroundColor: isCarriedOver ? colors.redLight : colors.border,
-                    }}
-                  >
-                    <Text style={typography.labelSmUppercase}>{count}</Text>
-                  </View>
-                </View>
-              </View>
-            );
-          }}
+          renderSectionHeader={({ section: { title, count, variant } }) => (
+            <SectionHeader title={title} count={count} variant={variant} />
+          )}
           ItemSeparatorComponent={() => <View className="h-3" />}
           SectionSeparatorComponent={() => <View className="h-3" />}
           showsVerticalScrollIndicator={false}
@@ -168,29 +117,6 @@ export default function UserTaskPage() {
           refreshing={isRefreshing}
           onRefresh={() => fetchTasks(true)}
           stickySectionHeadersEnabled={false}
-          // ListHeaderComponent={
-          //   <ScrollView
-          //     horizontal
-          //     showsHorizontalScrollIndicator={false}
-          //     contentContainerClassName="gap-2"
-          //     className="py-1"
-          //   >
-          //     {FILTERS.map(({ key, label }) => (
-          //       <TouchableOpacity
-          //         key={key}
-          //         onPress={() => setFilter(key)}
-          //         className={`px-4 py-2 rounded-2xl border ${filter === key
-          //           ? "bg-[#1B1D22] border-[#1B1D22]"
-          //           : "border-[#E8E6E1]"
-          //           }`}
-          //       >
-          //         <Text style={filter === key ? typography.labelLgWhite : typography.labelLgGray}>
-          //           {key === "all" ? `${label} (${tasksForDay.length})` : label}
-          //         </Text>
-          //       </TouchableOpacity>
-          //     ))}
-          //   </ScrollView>
-          // }
           ListEmptyComponent={
             isLoading ? (
               <View className="flex-1 items-center justify-center">
@@ -202,7 +128,7 @@ export default function UserTaskPage() {
                   style={{ backgroundColor: colors.white, borderColor: colors.border }}>
                   <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
                   <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
-                    Ingen opgaver planlagt i dag
+                    Ingen aktive eller overskredne opgaver
                   </Text>
                   <Text className="mt-2 text-center" style={typography.bodyXs}>
                     Nye opgaver vil blive vist her
