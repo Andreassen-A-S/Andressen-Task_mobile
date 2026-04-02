@@ -85,7 +85,6 @@ export default function AdminTaskPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate] = useState(new Date());
   const [headerHeight, setHeaderHeight] = useState(0);
 
   const [filterStatus, setFilterStatus] = useState<TaskStatus | null>(null);
@@ -129,7 +128,7 @@ export default function AdminTaskPage() {
     }, [fetchData])
   );
 
-  const selectedDateKey = toLocalDateKey(selectedDate);
+  const selectedDateKey = toLocalDateKey(new Date());
 
   const filteredTasks = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();

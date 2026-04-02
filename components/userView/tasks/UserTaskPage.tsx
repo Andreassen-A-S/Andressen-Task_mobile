@@ -30,8 +30,6 @@ export default function UserTaskPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate] = useState(new Date());
-
   const fetchTasks = useCallback(async (refresh = false) => {
     if (!user?.user_id) return;
     try {
@@ -59,7 +57,7 @@ export default function UserTaskPage() {
     }, [user?.user_id, fetchTasks])
   );
 
-  const selectedDateKey = toLocalDateKey(selectedDate);
+  const selectedDateKey = toLocalDateKey(new Date());
 
   const overdueTasksList = useMemo(() => tasks.filter((t) =>
     toLocalDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
