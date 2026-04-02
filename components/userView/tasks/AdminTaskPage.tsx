@@ -23,6 +23,7 @@ import { type ListModalOption } from "@/components/userView/common/ListPicker";
 import { type MultiSelectOption } from "@/components/userView/common/MultiPicker";
 import { type GroupedSelectGroup } from "@/components/userView/common/GroupedSelectModal";
 import UserTaskCard from "./UserTaskCard";
+import SectionHeader from "./SectionHeader";
 import UserHeader from "../common/UserHeader";
 import FilterToolbar from "../common/FilterToolbar";
 import { typography } from "@/constants/typography";
@@ -163,11 +164,11 @@ export default function AdminTaskPage() {
   );
 
   const sections = hasFilters
-    ? (activeTasksList.length > 0 ? [{ title: "Resultater", data: activeTasksList, count: activeTasksList.length }] : [])
+    ? (activeTasksList.length > 0 ? [{ title: "Resultater", variant: "default" as const, data: activeTasksList, count: activeTasksList.length }] : [])
     : [
-      ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", data: overdueTasksList, count: overdueTasksList.length }] : []),
-      ...(activeTasksList.length > 0 ? [{ title: "Aktive", data: activeTasksList, count: activeTasksList.length }] : []),
-      ...(upcomingTasksList.length > 0 ? [{ title: "Kommende", data: upcomingTasksList, count: upcomingTasksList.length }] : []),
+      ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", variant: "overdue" as const, data: overdueTasksList, count: overdueTasksList.length }] : []),
+      ...(activeTasksList.length > 0 ? [{ title: "Aktive", variant: "default" as const, data: activeTasksList, count: activeTasksList.length }] : []),
+      ...(upcomingTasksList.length > 0 ? [{ title: "Kommende", variant: "default" as const, data: upcomingTasksList, count: upcomingTasksList.length }] : []),
     ];
 
   const userOptions: MultiSelectOption[] = users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position ?? undefined }));
@@ -266,20 +267,9 @@ export default function AdminTaskPage() {
               onClick={() => router.push(`/(tabs)/tasks/${item.task_id}`)}
             />
           )}
-          renderSectionHeader={({ section: { title, count } }) => {
-            const isOverdue = title === "Overskredet";
-            return (
-              <View>
-                <View className="flex-row items-center justify-between pt-2.5 bg-[#F6F5F1]">
-                  <Text style={typography.labelSmUppercase}>{title}</Text>
-                  <View className="rounded-2xl px-2 py-0.5"
-                    style={{ backgroundColor: isOverdue ? colors.redLight : colors.border }}>
-                    <Text style={typography.labelSmUppercase}>{count}</Text>
-                  </View>
-                </View>
-              </View>
-            );
-          }}
+          renderSectionHeader={({ section: { title, count, variant } }) => (
+            <SectionHeader title={title} count={count} variant={variant} />
+          )}
           ItemSeparatorComponent={() => <View className="h-3" />}
           SectionSeparatorComponent={() => <View className="h-3" />}
           showsVerticalScrollIndicator={false}

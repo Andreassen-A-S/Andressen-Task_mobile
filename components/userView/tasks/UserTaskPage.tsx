@@ -17,6 +17,7 @@ import { Project } from "@/types/project";
 import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
 import UserTaskCard from "./UserTaskCard";
+import SectionHeader from "./SectionHeader";
 import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
@@ -70,8 +71,8 @@ export default function UserTaskPage() {
   ), [tasks, selectedDateKey]);
 
   const sections = [
-    ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", data: overdueTasksList, count: overdueTasksList.length }] : []),
-    ...(activeTasksList.length > 0 ? [{ title: "Aktive", data: activeTasksList, count: activeTasksList.length }] : []),
+    ...(overdueTasksList.length > 0 ? [{ title: "Overskredet", variant: "overdue" as const, data: overdueTasksList, count: overdueTasksList.length }] : []),
+    ...(activeTasksList.length > 0 ? [{ title: "Aktive", variant: "default" as const, data: activeTasksList, count: activeTasksList.length }] : []),
   ];
 
   if (error) {
@@ -106,21 +107,9 @@ export default function UserTaskPage() {
               onClick={() => router.push(`/(tabs)/tasks/${item.task_id}`)}
             />
           )}
-          renderSectionHeader={({ section: { title, count } }) => {
-            const isOverdue = title === "Overskredet";
-            return (
-              <View>
-                <View className="flex-row items-center justify-between pt-2.5 bg-[#F6F5F1]">
-                  <Text style={typography.labelSmUppercase}>{title}</Text>
-                  <View className="rounded-2xl px-2 py-0.5"
-                    style={{ backgroundColor: isOverdue ? colors.redLight : colors.border }}
-                  >
-                    <Text style={typography.labelSmUppercase}>{count}</Text>
-                  </View>
-                </View>
-              </View>
-            );
-          }}
+          renderSectionHeader={({ section: { title, count, variant } }) => (
+            <SectionHeader title={title} count={count} variant={variant} />
+          )}
           ItemSeparatorComponent={() => <View className="h-3" />}
           SectionSeparatorComponent={() => <View className="h-3" />}
           showsVerticalScrollIndicator={false}
