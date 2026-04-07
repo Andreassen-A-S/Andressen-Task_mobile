@@ -90,7 +90,7 @@ export default function UserTaskDetails() {
         style: "destructive",
         onPress: async () => {
           try {
-            await updateTask(task.task_id, { status: "REJECTED" });
+            await updateTask(task.task_id, { status: TaskStatus.REJECTED });
             router.back();
           } catch {
             Alert.alert("Fejl", "Kunne ikke afvise opgaven");
@@ -102,12 +102,12 @@ export default function UserTaskDetails() {
 
   const menuActions = user?.role === UserRole.ADMIN
     ? [
-        { label: "Rediger", systemImage: "pencil" as const, onPress: () => router.push(`${pathname}/edit`) },
-        { label: "Slet", systemImage: "trash" as const, onPress: handleDelete, role: "destructive" as const },
-      ]
+      { label: "Rediger", systemImage: "pencil" as const, onPress: () => router.push(`${pathname}/edit`) },
+      { label: "Slet", systemImage: "trash" as const, onPress: handleDelete, role: "destructive" as const },
+    ]
     : [
-        { label: "Afvis", systemImage: "xmark" as const, onPress: handleReject, role: "destructive" as const },
-      ];
+      { label: "Afvis", systemImage: "xmark" as const, onPress: handleReject, role: "destructive" as const },
+    ];
 
   const handleComplete = async () => {
     if (!task) return;
@@ -160,10 +160,10 @@ export default function UserTaskDetails() {
     <View style={{ flex: 1, backgroundColor: colors.eggWhite }}>
       <Stack.Screen options={{ headerShown: false }} />
       <TaskDetailsHeader
-          title={task?.title}
-          path={task?.project?.name}
-          menuActions={menuActions}
-        />
+        title={task?.title}
+        path={task?.project?.name}
+        menuActions={menuActions}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
