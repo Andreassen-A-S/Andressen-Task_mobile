@@ -22,7 +22,7 @@ import SingleAvatar from "@/components/userView/common/label/singleAvatar";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { formatRelativeDate } from "@/helpers/helpers";
-import type { ListModalOption } from "@/components/userView/common/ListPicker";
+import { ListModalOption } from "@/types/picker";
 
 const PRIORITY_OPTIONS: ListModalOption[] = [
   { value: TaskPriority.LOW, icon: <Badge variant="priority" value={TaskPriority.LOW} size="lg" /> },

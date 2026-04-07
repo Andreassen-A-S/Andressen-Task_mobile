@@ -1,6 +1,7 @@
 import { Share } from "react-native";
 import PathHeader from "@/components/userView/common/PathHeader";
-import GlassPillButton, { type MenuAction } from "@/components/userView/common/buttons/GlassPillButton";
+import GlassPillButton from "@/components/userView/common/buttons/GlassPillButton";
+import { MenuAction } from "@/types/pill";
 
 interface Props {
   title?: string;

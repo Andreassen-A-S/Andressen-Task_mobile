@@ -1,4 +1,4 @@
-import type { ListModalOption } from "@/components/userView/common/ListPicker";
+import { ListModalOption } from "@/types/picker";
 
 type Callback = (value: string) => void;
 

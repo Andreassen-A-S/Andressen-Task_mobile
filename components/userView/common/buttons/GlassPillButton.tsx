@@ -1,7 +1,8 @@
 import { View, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { SFSymbol } from "sf-symbols-typescript";
+import { SFSymbol } from "sf-symbols-typescript";
 import { colors } from "@/constants/colors";
+import { MenuAction, PillItem } from "@/types/pill";
 
 type Variant = "sm" | "lg";
 
@@ -20,18 +21,6 @@ const SF_TO_IONICON: Partial<Record<SFSymbol, keyof typeof Ionicons.glyphMap>> =
   "ellipsis": "ellipsis-horizontal",
 };
 
-export interface MenuAction {
-  label: string;
-  systemImage?: SFSymbol;
-  onPress: () => void;
-  role?: "destructive";
-}
-
-export interface PillItem {
-  systemName: SFSymbol;
-  onPress?: () => void;
-  menuActions?: MenuAction[];
-}
 
 interface Props {
   items: PillItem[];

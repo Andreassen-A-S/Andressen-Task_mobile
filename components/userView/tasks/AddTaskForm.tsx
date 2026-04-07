@@ -22,7 +22,7 @@ import ToolbarGlassButton from "@/components/userView/common/buttons/ToolbarGlas
 import GlassTextButton from "@/components/userView/common/buttons/GlassTextButton";
 import ModalScreen from "@/components/userView/common/ModalScreen";
 import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
-import { type ListModalOption } from "@/components/userView/common/ListPicker";
+import { ListModalOption } from "@/types/picker";
 import Badge from "@/components/userView/common/label/badge";
 
 const PRIORITY_OPTIONS: ListModalOption[] = [

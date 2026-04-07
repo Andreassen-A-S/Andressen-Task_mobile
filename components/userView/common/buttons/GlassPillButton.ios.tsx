@@ -1,8 +1,8 @@
 import { useIsFocused } from "@react-navigation/native";
 import { Host, Image, HStack, Menu, Button } from "@expo/ui/swift-ui";
 import { glassEffect, padding, onTapGesture, tint } from "@expo/ui/swift-ui/modifiers";
-import type { SFSymbol } from "sf-symbols-typescript";
 import { colors } from "@/constants/colors";
+import { MenuAction, PillItem } from "@/types/pill";
 
 type Variant = "sm" | "lg";
 
@@ -10,19 +10,6 @@ const VARIANTS: Record<Variant, { size: number; paddingSize: number }> = {
   sm: { size: 16, paddingSize: 10 },
   lg: { size: 18, paddingSize: 11 },
 };
-
-export interface MenuAction {
-  label: string;
-  systemImage?: SFSymbol;
-  onPress: () => void;
-  role?: "destructive";
-}
-
-export interface PillItem {
-  systemName: SFSymbol;
-  onPress?: () => void;
-  menuActions?: MenuAction[];
-}
 
 interface Props {
   items: PillItem[];

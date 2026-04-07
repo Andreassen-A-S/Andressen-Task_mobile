@@ -2,7 +2,7 @@ import { useRef, useCallback } from "react";
 import { useIsFocused } from "@react-navigation/native";
 import { Host, ZStack, Image } from "@expo/ui/swift-ui";
 import { glassEffect, frame, onTapGesture, contentShape, shapes, disabled } from "@expo/ui/swift-ui/modifiers";
-import type { SFSymbol } from "sf-symbols-typescript";
+import { SFSymbol } from "sf-symbols-typescript";
 import { colors } from "@/constants/colors";
 
 type Size = "sm" | "lg";

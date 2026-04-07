@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,14 +6,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
 import { pickerStore } from "@/lib/pickerStore";
+import { ListModalOption } from "@/types/picker";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
-
-export interface ListModalOption {
-  value: string;
-  label?: string;
-  icon?: ReactNode;
-}
 
 export default function ListPicker() {
   const router = useRouter();
