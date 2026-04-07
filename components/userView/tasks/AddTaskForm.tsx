@@ -104,10 +104,10 @@ export default function AddTaskForm() {
     selected: string,
     onSelect: (value: string) => void,
   ) => {
-    pickerStore.set(onSelect);
+    pickerStore.set(onSelect, options);
     router.push({
       pathname: "/(tabs)/tasks/list-picker",
-      params: { title, optionsJson: JSON.stringify(options), selected },
+      params: { title, selected },
     });
   };
 
