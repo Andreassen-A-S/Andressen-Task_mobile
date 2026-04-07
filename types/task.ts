@@ -65,6 +65,7 @@ export interface UpdateTaskInput {
   deadline?: string;
   assigned_users?: string[];
   scheduled_date?: string;
+  project_id?: string;
   unit?: TaskUnit;
   goal_type?: TaskGoalType;
   target_quantity?: number | null;

@@ -1,7 +1,8 @@
-import { View, Pressable } from "react-native";
+import { View, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { SFSymbol } from "sf-symbols-typescript";
+import { SFSymbol } from "sf-symbols-typescript";
 import { colors } from "@/constants/colors";
+import { PillItem } from "@/types/pill";
 
 type Variant = "sm" | "lg";
 
@@ -20,10 +21,6 @@ const SF_TO_IONICON: Partial<Record<SFSymbol, keyof typeof Ionicons.glyphMap>> =
   "ellipsis": "ellipsis-horizontal",
 };
 
-interface PillItem {
-  systemName: SFSymbol;
-  onPress: () => void;
-}
 
 interface Props {
   items: PillItem[];
@@ -44,10 +41,25 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
     }}>
       {items.map((item, index) => {
         const iconName = SF_TO_IONICON[item.systemName] ?? "ellipsis-horizontal";
+        const handlePress = item.menuActions?.length
+          ? () => Alert.alert(
+              "",
+              undefined,
+              [
+                ...item.menuActions!.map((a) => ({
+                  text: a.label,
+                  onPress: a.onPress,
+                  style: a.role === "destructive" ? ("destructive" as const) : ("default" as const),
+                })),
+                { text: "Annuller", style: "cancel" as const },
+              ]
+            )
+          : item.onPress;
+
         return (
           <Pressable
             key={index}
-            onPress={item.onPress}
+            onPress={handlePress}
             android_ripple={{ color: colors.border, borderless: false }}
             style={{
               paddingVertical: paddingSize,

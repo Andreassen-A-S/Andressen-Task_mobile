@@ -1,6 +1,6 @@
 import { View, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { SFSymbol } from "sf-symbols-typescript";
+import { SFSymbol } from "sf-symbols-typescript";
 import { colors } from "@/constants/colors";
 
 type Size = "sm" | "lg";

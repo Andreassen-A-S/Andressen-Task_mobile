@@ -19,7 +19,7 @@ import { toLocalDateKey } from "@/helpers/helpers";
 import { sortTasks, type TaskSortKey } from "@/helpers/sort";
 import { pickerStore } from "@/lib/pickerStore";
 import { multiSelectStore } from "@/lib/multiSelectStore";
-import { type ListModalOption } from "@/components/userView/common/ListPicker";
+import { ListModalOption } from "@/types/picker";
 import { type MultiSelectOption } from "@/components/userView/common/MultiPicker";
 import { type GroupedSelectGroup } from "@/components/userView/common/GroupedSelectModal";
 import UserTaskCard from "./UserTaskCard";

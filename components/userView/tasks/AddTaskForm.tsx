@@ -14,7 +14,7 @@ import { createTask } from "@/lib/api";
 import { TaskPriority, TaskStatus } from "@/types/task";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-import { formatRelativeDate, getPriorityAccentColor, toDateParam, parseDateParam, translatePriority, translateTaskUnit } from "@/helpers/helpers";
+import { formatRelativeDate, toDateParam, parseDateParam, translatePriority, translateTaskUnit } from "@/helpers/helpers";
 import { pickerStore } from "@/lib/pickerStore";
 import { multiSelectStore } from "@/lib/multiSelectStore";
 import { goalStore, type GoalData } from "@/lib/goalStore";
@@ -22,13 +22,13 @@ import ToolbarGlassButton from "@/components/userView/common/buttons/ToolbarGlas
 import GlassTextButton from "@/components/userView/common/buttons/GlassTextButton";
 import ModalScreen from "@/components/userView/common/ModalScreen";
 import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
-import { type ListModalOption } from "@/components/userView/common/ListPicker";
-
+import { ListModalOption } from "@/types/picker";
+import Badge from "@/components/userView/common/label/badge";
 
 const PRIORITY_OPTIONS: ListModalOption[] = [
-  { label: "Lav", value: TaskPriority.LOW, accent: getPriorityAccentColor(TaskPriority.LOW) },
-  { label: "Mellem", value: TaskPriority.MEDIUM, accent: getPriorityAccentColor(TaskPriority.MEDIUM) },
-  { label: "Høj", value: TaskPriority.HIGH, accent: getPriorityAccentColor(TaskPriority.HIGH) },
+  { value: TaskPriority.LOW, icon: <Badge variant="priority" value={TaskPriority.LOW} size="lg" /> },
+  { value: TaskPriority.MEDIUM, icon: <Badge variant="priority" value={TaskPriority.MEDIUM} size="lg" /> },
+  { value: TaskPriority.HIGH, icon: <Badge variant="priority" value={TaskPriority.HIGH} size="lg" /> },
 ];
 
 
@@ -104,10 +104,10 @@ export default function AddTaskForm() {
     selected: string,
     onSelect: (value: string) => void,
   ) => {
-    pickerStore.set(onSelect);
+    pickerStore.set(onSelect, options);
     router.push({
       pathname: "/(tabs)/tasks/list-picker",
-      params: { title, optionsJson: JSON.stringify(options), selected },
+      params: { title, selected },
     });
   };
 

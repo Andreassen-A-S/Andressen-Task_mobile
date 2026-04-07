@@ -59,6 +59,14 @@ export interface AddTaskProgressInput {
   note?: string;
 }
 
+export async function deleteTask(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/tasks/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete task");
+}
+
 export async function addTaskProgress(taskId: string, payload: AddTaskProgressInput): Promise<void> {
   const res = await fetch(`${API_URL}/tasks/${taskId}/progress`, {
     method: "POST",
