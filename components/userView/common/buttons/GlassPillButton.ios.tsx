@@ -1,6 +1,6 @@
 import { useIsFocused } from "@react-navigation/native";
 import { Host, Image, HStack, Menu, Button } from "@expo/ui/swift-ui";
-import { glassEffect, padding, onTapGesture, tint, foregroundStyle } from "@expo/ui/swift-ui/modifiers";
+import { glassEffect, padding, onTapGesture, tint } from "@expo/ui/swift-ui/modifiers";
 import type { SFSymbol } from "sf-symbols-typescript";
 import { colors } from "@/constants/colors";
 
@@ -44,7 +44,7 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
             horizontal: paddingSize + (index === 0 ? 4 : 0),
           });
 
-          if (item.menuActions) {
+          if (item.menuActions?.length) {
             return (
               <Menu
                 key={index}
@@ -76,7 +76,7 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
               key={index}
               systemName={item.systemName}
               size={size}
-              modifiers={[itemPadding, onTapGesture(item.onPress!)]}
+              modifiers={item.onPress ? [itemPadding, onTapGesture(item.onPress)] : [itemPadding]}
             />
           );
         })}

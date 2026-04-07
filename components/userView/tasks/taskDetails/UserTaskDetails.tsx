@@ -81,6 +81,34 @@ export default function UserTaskDetails() {
     ]);
   };
 
+  const handleReject = () => {
+    if (!task) return;
+    Alert.alert("Afvis opgave", "Er du sikker på, at du vil afvise denne opgave?", [
+      { text: "Annuller", style: "cancel" },
+      {
+        text: "Afvis",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await updateTask(task.task_id, { status: "REJECTED" });
+            router.back();
+          } catch {
+            Alert.alert("Fejl", "Kunne ikke afvise opgaven");
+          }
+        },
+      },
+    ]);
+  };
+
+  const menuActions = user?.role === UserRole.ADMIN
+    ? [
+        { label: "Rediger", systemImage: "pencil" as const, onPress: () => router.push(`${pathname}/edit`) },
+        { label: "Slet", systemImage: "trash" as const, onPress: handleDelete, role: "destructive" as const },
+      ]
+    : [
+        { label: "Afvis", systemImage: "xmark" as const, onPress: handleReject, role: "destructive" as const },
+      ];
+
   const handleComplete = async () => {
     if (!task) return;
     try {
@@ -134,8 +162,7 @@ export default function UserTaskDetails() {
       <TaskDetailsHeader
           title={task?.title}
           path={task?.project?.name}
-          onEdit={user?.role === UserRole.ADMIN ? () => router.push(`${pathname}/edit`) : undefined}
-          onDelete={user?.role === UserRole.ADMIN ? handleDelete : undefined}
+          menuActions={menuActions}
         />
 
       <ScrollView
