@@ -2,7 +2,7 @@ import { View, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SFSymbol } from "sf-symbols-typescript";
 import { colors } from "@/constants/colors";
-import { MenuAction, PillItem } from "@/types/pill";
+import { PillItem } from "@/types/pill";
 
 type Variant = "sm" | "lg";
 
@@ -41,7 +41,7 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
     }}>
       {items.map((item, index) => {
         const iconName = SF_TO_IONICON[item.systemName] ?? "ellipsis-horizontal";
-        const handlePress = item.menuActions
+        const handlePress = item.menuActions?.length
           ? () => Alert.alert(
               "",
               undefined,
