@@ -5,16 +5,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
-import Badge from "@/components/userView/common/label/badge";
 import { pickerStore } from "@/lib/pickerStore";
-import { TaskPriority } from "@/types/task";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 
 export interface ListModalOption {
-  label: string;
   value: string;
-  accent?: string;
+  label?: string;
   icon?: ReactNode;
 }
 
@@ -24,7 +21,7 @@ export default function ListPicker() {
   const { title, sub, optionsJson, selected, searchable, clearable } = useLocalSearchParams<{
     title: string;
     sub?: string;
-    optionsJson: string;
+    optionsJson?: string;
     selected: string;
     searchable?: string;
     clearable?: string;
@@ -35,19 +32,15 @@ export default function ListPicker() {
 
   useEffect(() => () => pickerStore.clear(), []);
 
-  let options: ListModalOption[] = [];
-  try {
-    const parsed: ListModalOption[] = JSON.parse(optionsJson ?? "[]");
-    options = parsed.map((o) =>
-      o.accent ? { ...o, icon: <Badge size="lg" variant="priority" value={o.value as TaskPriority} /> } : o
-    );
-  } catch {}
+  const options: ListModalOption[] = pickerStore.getOptions() ?? (() => {
+    try { return JSON.parse(optionsJson ?? "[]"); } catch { return []; }
+  })();
 
   const isClearable = clearable === "true";
   const isSearchable = searchable === "true";
 
   const filtered = search.trim()
-    ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
+    ? options.filter((o) => o.label?.toLowerCase().includes(search.toLowerCase()))
     : options;
 
   const handleSelect = (value: string) => {
@@ -72,7 +65,7 @@ export default function ListPicker() {
         )}
         ItemSeparatorComponent={() => (
           <View style={{ backgroundColor: colors.white }}>
-            <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 16 }} />
+            <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 16 }} />
           </View>
         )}
         renderItem={({ item }) => {
@@ -80,10 +73,10 @@ export default function ListPicker() {
           return (
             <TouchableOpacity
               onPress={() => handleSelect(isClearable && isSelected ? "" : item.value)}
-              style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 16, backgroundColor: colors.white }}
+              style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: colors.white }}
             >
               {item.icon ? <View style={{ marginRight: 12 }}>{item.icon}</View> : null}
-              <Text style={[typography.h5, { flex: 1 }]} numberOfLines={1}>{item.label}</Text>
+              {item.label ? <Text style={[typography.h5, { flex: 1 }]} numberOfLines={1}>{item.label}</Text> : <View style={{ flex: 1 }} />}
               {isSelected && <Ionicons name="checkmark" size={18} color={colors.green} />}
             </TouchableOpacity>
           );

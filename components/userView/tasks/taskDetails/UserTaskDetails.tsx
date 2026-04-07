@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,10 @@ import {
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
 import { User, UserRole } from "@/types/users";
-import { addTaskProgress, getTask, updateTask, getUser } from "@/lib/api";
+import { addTaskProgress, getTask, updateTask, getUser, deleteTask } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
-import { useRouter, Stack, useLocalSearchParams, usePathname } from "expo-router";
+import { useRouter, Stack, useLocalSearchParams, usePathname, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import TaskDetailsHeader from "./TaskDetailsHeader";
 import { typography } from "@/constants/typography";
@@ -55,10 +55,31 @@ export default function UserTaskDetails() {
     }
   }, [taskId]);
 
-  useEffect(() => {
-    if (!taskId) return;
-    fetchTask();
-  }, [fetchTask]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!taskId) return;
+      fetchTask();
+    }, [fetchTask])
+  );
+
+  const handleDelete = () => {
+    if (!task) return;
+    Alert.alert("Slet opgave", "Er du sikker på, at du vil slette denne opgave? Dette kan ikke fortrydes.", [
+      { text: "Annuller", style: "cancel" },
+      {
+        text: "Slet",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteTask(task.task_id);
+            router.dismissAll();
+          } catch {
+            Alert.alert("Fejl", "Kunne ikke slette opgaven");
+          }
+        },
+      },
+    ]);
+  };
 
   const handleComplete = async () => {
     if (!task) return;
@@ -110,7 +131,12 @@ export default function UserTaskDetails() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.eggWhite }}>
       <Stack.Screen options={{ headerShown: false }} />
-      <TaskDetailsHeader title={task?.title} path={task?.project?.name} />
+      <TaskDetailsHeader
+          title={task?.title}
+          path={task?.project?.name}
+          onEdit={user?.role === UserRole.ADMIN ? () => router.push(`${pathname}/edit`) : undefined}
+          onDelete={user?.role === UserRole.ADMIN ? handleDelete : undefined}
+        />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

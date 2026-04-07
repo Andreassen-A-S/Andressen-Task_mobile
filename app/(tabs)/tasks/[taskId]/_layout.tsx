@@ -7,6 +7,7 @@ export default function TaskDetailLayout() {
       <Stack.Screen name="comments" options={{ presentation: "modal" }} />
       <Stack.Screen name="photos" options={{ presentation: "modal" }} />
       <Stack.Screen name="files" options={{ presentation: "modal" }} />
+      <Stack.Screen name="edit" options={{ presentation: "modal" }} />
     </Stack>
   );
 }
