@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
-import { View, Text, Image, FlatList, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
+import { View, Text, Image, TouchableOpacity, FlatList, ActivityIndicator, Dimensions } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
+import ImageView from "react-native-image-viewing";
 import { getTaskImages } from "@/lib/api";
 import { TaskAttachment } from "@/types/comment";
 import { typography } from "@/constants/typography";
@@ -20,6 +21,7 @@ export default function TaskPhotos() {
   const [images, setImages] = useState<TaskAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const fetchImages = useCallback(async () => {
     try {
@@ -37,6 +39,8 @@ export default function TaskPhotos() {
   useFocusEffect(useCallback(() => {
     fetchImages();
   }, [fetchImages]));
+
+  const imageUris = images.map((img) => ({ uri: img.public_url }));
 
   return (
     <ModalScreen title="Billeder">
@@ -68,16 +72,25 @@ export default function TaskPhotos() {
             contentContainerStyle={{ paddingTop: headerHeight + GAP, paddingHorizontal: GAP }}
             columnWrapperStyle={{ gap: GAP, marginBottom: GAP }}
             showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <Image
-                source={{ uri: item.public_url }}
-                style={{ width: TILE_SIZE, height: TILE_SIZE }}
-                resizeMode="cover"
-              />
+            renderItem={({ item, index }) => (
+              <TouchableOpacity onPress={() => setViewerIndex(index)} activeOpacity={0.9}>
+                <Image
+                  source={{ uri: item.public_url }}
+                  style={{ width: TILE_SIZE, height: TILE_SIZE }}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
             )}
           />
         )}
       </View>
+
+      <ImageView
+        images={imageUris}
+        imageIndex={viewerIndex ?? 0}
+        visible={viewerIndex !== null}
+        onRequestClose={() => setViewerIndex(null)}
+      />
     </ModalScreen>
   );
 }

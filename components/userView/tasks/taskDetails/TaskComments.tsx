@@ -1,4 +1,7 @@
-import { useState, useCallback, useContext, useRef } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+import MaskedView from "@react-native-masked-view/masked-view";
 import {
   View,
   Text,
@@ -6,24 +9,24 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Image,
   Alert,
   ScrollView,
 } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
-import { useKeyboardHandler } from "react-native-keyboard-controller";
-import { useFocusEffect } from "@react-navigation/native";
-import { useLocalSearchParams } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
 import * as ImagePicker from "expo-image-picker";
-import { AuthContext } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { getTaskComments, createComment, deleteComment, getUser, getUploadUrl, uploadToGcs } from "@/lib/api";
+import { formatGroupTimestamp } from "@/helpers/helpers";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
+import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
+import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
+import KeyboardInputBarAction from "@/components/userView/common/KeyboardInputBarAction";
 import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
 import UserTaskCommentBubble from "./UserTaskCommentBubble";
 
@@ -33,12 +36,16 @@ type PendingImage = {
   mimeType: string;
 };
 
+const INPUT_BAR_OVERLAP = 120;
+const TIMESTAMP_THRESHOLD_MS = 30 * 60 * 1000;
+
+type ListItem = { type: "comment"; data: TaskComment } | { type: "timestamp"; key: string; label: string };
+
 export default function TaskComments() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
-  const insets = useSafeAreaInsets();
+  const router = useRouter();
   const headerHeight = useModalHeaderHeight();
-  const authContext = useContext(AuthContext);
-  const currentUser = authContext?.user;
+  const { user: currentUser } = useAuth();
   const inputRef = useRef<TextInput>(null);
   const flatListRef = useRef<FlatList>(null);
   const isNearBottomRef = useRef(true);
@@ -51,23 +58,17 @@ export default function TaskComments() {
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
-
-  const keyboardHeight = useSharedValue(0);
-
-  useKeyboardHandler({
-    onMove: (e) => {
-      "worklet";
-      keyboardHeight.value = e.height;
-    },
-    onInteractive: (e) => {
-      "worklet";
-      keyboardHeight.value = e.height;
-    },
-  }, []);
-
-  const spacerStyle = useAnimatedStyle(() => ({
-    height: keyboardHeight.value || insets.bottom,
-  }));
+  const listData = useMemo<ListItem[]>(() => {
+    const result: ListItem[] = [];
+    for (let i = 0; i < comments.length; i++) {
+      const comment = comments[i];
+      const prev = comments[i - 1];
+      const showTimestamp = !prev || new Date(comment.created_at).getTime() - new Date(prev.created_at).getTime() > TIMESTAMP_THRESHOLD_MS;
+      if (showTimestamp) result.push({ type: "timestamp", key: `ts-${comment.comment_id}`, label: formatGroupTimestamp(comment.created_at) });
+      result.push({ type: "comment", data: comment });
+    }
+    return result;
+  }, [comments]);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -89,99 +90,65 @@ export default function TaskComments() {
     }
   }, [taskId]);
 
-  useFocusEffect(useCallback(() => {
+  useEffect(() => {
     fetchComments();
     const timer = setTimeout(() => inputRef.current?.focus(), 300);
     return () => clearTimeout(timer);
-  }, [fetchComments]));
+  }, [fetchComments]);
 
   const pickImages = () => {
-    Alert.alert("Tilføj billede", "", [
-      {
-        text: "Kamera",
-        onPress: async () => {
-          const { status } = await ImagePicker.requestCameraPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Tilladelse krævet", "Kameraadgang er nødvendig for at tage billeder.");
-            return;
-          }
-          const result = await ImagePicker.launchCameraAsync({
-            mediaTypes: "images",
-            quality: 0.8,
-            allowsEditing: false,
-          });
-          if (!result.canceled) {
-            addPickedAssets(result.assets);
-          }
-        },
-      },
-      {
-        text: "Galleri",
-        onPress: async () => {
-          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Tilladelse krævet", "Adgang til fotobiblioteket er nødvendig.");
-            return;
-          }
-          const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: "images",
-            quality: 0.8,
-            allowsMultipleSelection: true,
-            selectionLimit: 5,
-          });
-          if (!result.canceled) {
-            addPickedAssets(result.assets);
-          }
-        },
-      },
-      { text: "Annuller", style: "cancel" },
-    ]);
+    attachmentPickerStore.set(async (source: "camera" | "gallery") => {
+      if (source === "camera") {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("Tilladelse krævet", "Kameraadgang er nødvendig for at tage billeder.");
+          return false;
+        }
+        const result = await ImagePicker.launchCameraAsync({ mediaTypes: "images", quality: 0.8 });
+        if (!result.canceled) { addPickedAssets(result.assets); return true; }
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert("Tilladelse krævet", "Adgang til fotobiblioteket er nødvendig.");
+          return false;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: "images",
+          quality: 0.8,
+          allowsMultipleSelection: true,
+          selectionLimit: 5,
+        });
+        if (!result.canceled) { addPickedAssets(result.assets); return true; }
+      }
+      return false;
+    });
+    router.push("./add-attachment");
   };
 
   const addPickedAssets = (assets: ImagePicker.ImagePickerAsset[]) => {
     const newImages: PendingImage[] = assets.map((asset) => {
       const ext = asset.uri.split(".").pop()?.toLowerCase() ?? "jpg";
       const mime = asset.mimeType ?? (ext === "png" ? "image/png" : "image/jpeg");
-      const fileName = asset.fileName ?? `photo_${Date.now()}.${ext}`;
-      return { localUri: asset.uri, fileName, mimeType: mime };
+      return { localUri: asset.uri, fileName: asset.fileName ?? `photo_${Date.now()}.${ext}`, mimeType: mime };
     });
     setPendingImages((prev) => [...prev, ...newImages]);
   };
 
-  const removePendingImage = (index: number) => {
-    setPendingImages((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const handleSubmit = async () => {
     if (!input.trim() && pendingImages.length === 0) return;
-
     try {
       setIsSubmitting(true);
       setInlineError(null);
 
-      // Upload each pending image to GCS
-      const uploadedAttachments: {
-        gcs_path: string;
-        public_url: string;
-        file_name: string;
-        mime_type: string;
-        type: "IMAGE";
-      }[] = [];
-
+      const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+      const uploadedAttachments = [];
       for (const img of pendingImages) {
-        const { uploadUrl, gcsPath, publicUrl } = await getUploadUrl(
-          taskId,
-          img.fileName,
-          img.mimeType,
-        );
-        await uploadToGcs(uploadUrl, img.localUri, img.mimeType);
-        uploadedAttachments.push({
-          gcs_path: gcsPath,
-          public_url: publicUrl,
-          file_name: img.fileName,
-          mime_type: img.mimeType,
-          type: "IMAGE",
-        });
+        const fileRes = await fetch(img.localUri);
+        const blob = await fileRes.blob();
+        if (blob.size > MAX_IMAGE_BYTES) throw new Error("Et eller flere billeder er for store (maks 10 MB)");
+        const { uploadUrl, gcsPath, publicUrl } = await getUploadUrl(taskId, img.fileName, img.mimeType);
+        await uploadToGcs(uploadUrl, blob, img.mimeType);
+        uploadedAttachments.push({ gcs_path: gcsPath, public_url: publicUrl, file_name: img.fileName, mime_type: img.mimeType, type: "IMAGE" as const });
       }
 
       const newComment = await createComment(taskId, {
@@ -238,8 +205,8 @@ export default function TaskComments() {
         ) : (
           <FlatList
             ref={flatListRef}
-            data={comments}
-            keyExtractor={(item) => item.comment_id}
+            data={listData}
+            keyExtractor={(item) => item.type === "comment" ? item.data.comment_id : item.key}
             keyboardShouldPersistTaps="handled"
             onLayout={() => { if (isNearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
             onScroll={(e) => {
@@ -247,12 +214,9 @@ export default function TaskComments() {
               isNearBottomRef.current = contentSize.height - layoutMeasurement.height - contentOffset.y < 80;
             }}
             scrollEventThrottle={100}
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingHorizontal: 16,
-            }}
+            contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
             ListHeaderComponent={() => <View style={{ flex: 1, minHeight: headerHeight + 16 }} />}
-            ListFooterComponent={() => <View style={{ height: 12 }} />}
+            ListFooterComponent={() => <View style={{ height: INPUT_BAR_OVERLAP }} />}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={{ alignItems: "center" }}>
@@ -261,91 +225,70 @@ export default function TaskComments() {
                 </Text>
               </View>
             }
-            renderItem={({ item }) =>
-              currentUser?.user_id === item.user_id
-                ? <OwnUserTaskCommentBubble comment={item} onDelete={handleDelete} />
-                : <UserTaskCommentBubble comment={item} author={commentAuthors[item.user_id]} />
-            }
+            renderItem={({ item }) => {
+              if (item.type === "timestamp") {
+                return (
+                  <Text style={[typography.monoXs, { color: colors.textMuted, textAlign: "center", marginVertical: 4 }]}>
+                    {item.label}
+                  </Text>
+                );
+              }
+              return currentUser?.user_id === item.data.user_id
+                ? <OwnUserTaskCommentBubble comment={item.data} onDelete={handleDelete} />
+                : <UserTaskCommentBubble comment={item.data} author={commentAuthors[item.data.user_id]} />;
+            }}
             ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           />
         )}
+      </View>
 
-        {inlineError && (
-          <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.redLight }}>
-            <Text style={[typography.bodyXs, { color: colors.redText, textAlign: "center" }]}>{inlineError}</Text>
-          </View>
-        )}
-
-        {/* Pending image thumbnails */}
-        {pendingImages.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ backgroundColor: colors.white }}
-            contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}
-          >
-            {pendingImages.map((img, index) => (
-              <View key={index} style={{ position: "relative" }}>
-                <Image
-                  source={{ uri: img.localUri }}
-                  style={{ width: 64, height: 64, borderRadius: 8 }}
-                  resizeMode="cover"
-                />
-                <TouchableOpacity
-                  onPress={() => removePendingImage(index)}
-                  style={{
-                    position: "absolute",
-                    top: -6,
-                    right: -6,
-                    backgroundColor: colors.charcoal,
-                    borderRadius: 10,
-                    width: 20,
-                    height: 20,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="close" size={12} color={colors.white} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        )}
-
-        {/* Input row */}
-        <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.white }}>
-          <TouchableOpacity
-            onPress={pickImages}
-            disabled={isSubmitting}
-            style={{ width: 37, height: 37, borderRadius: 20, alignItems: "center", justifyContent: "center", opacity: isSubmitting ? 0.4 : 1 }}
-          >
-            <Ionicons name="image-outline" size={22} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <TextInput
-            ref={inputRef}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Besked..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-            autoCorrect
-            autoCapitalize="sentences"
-            style={[typography.bodyMd, { flex: 1, maxHeight: 100, backgroundColor: colors.muted, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 }]}
-          />
-
-          <TouchableOpacity
-            onPress={handleSubmit}
-            disabled={!canSend}
-            style={{ width: 37, height: 37, borderRadius: 20, marginBottom: 2, opacity: canSend ? 1 : 0.4, backgroundColor: canSend ? colors.green : colors.muted, alignItems: "center", justifyContent: "center" }}
-          >
-            {isSubmitting
-              ? <ActivityIndicator color={colors.white} size="small" />
-              : <Ionicons name="arrow-up" size={18} color={canSend ? colors.white : colors.textMuted} />
-            }
-          </TouchableOpacity>
+      {/* Inline error */}
+      {inlineError && (
+        <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.redLight }}>
+          <Text style={[typography.bodyXs, { color: colors.redText, textAlign: "center" }]}>{inlineError}</Text>
         </View>
-        <Animated.View style={spacerStyle} />
+      )}
+
+      <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>
+        <MaskedView
+          style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
+          maskElement={
+            <LinearGradient
+              colors={["transparent", "black", "black"]}
+              locations={[0, 0.7, 1]}
+              style={{ flex: 1 }}
+            />
+          }
+        >
+          <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} />
+        </MaskedView>
+        <LinearGradient
+          colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
+          style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
+          pointerEvents="none"
+        />
+        <KeyboardInputBar
+          inputRef={inputRef}
+          value={input}
+          onChangeText={setInput}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          canSubmit={canSend}
+          leftActions={
+            <KeyboardInputBarAction icon="add" onPress={pickImages} disabled={isSubmitting} iconSize={26} />
+          }
+          attachments={pendingImages.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
+              {pendingImages.map((img, index) => (
+                <PendingAttachmentCard
+                  key={index}
+                  uri={img.localUri}
+                  onRemove={() => setPendingImages((prev) => prev.filter((_, i) => i !== index))}
+                />
+              ))}
+            </ScrollView>
+          ) : undefined}
+        />
       </View>
     </ModalScreen>
   );

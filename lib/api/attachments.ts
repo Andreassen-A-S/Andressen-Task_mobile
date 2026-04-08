@@ -25,11 +25,9 @@ export async function getUploadUrl(
 
 export async function uploadToGcs(
   uploadUrl: string,
-  localUri: string,
+  blob: Blob,
   mimeType: string,
 ): Promise<void> {
-  const fileRes = await fetch(localUri);
-  const blob = await fileRes.blob();
   const uploadRes = await fetch(uploadUrl, {
     method: "PUT",
     body: blob,

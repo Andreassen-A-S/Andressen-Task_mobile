@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { TaskComment } from "@/types/comment";
-import { formatCommentDate } from "@/helpers/helpers";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import CommentImageGrid from "./CommentImageGrid";
@@ -22,10 +21,6 @@ export default function OwnUserTaskCommentBubble({ comment, onDelete }: Props) {
   const images = comment.attachments?.filter((a) => a.type === "IMAGE") ?? [];
   return (
     <View className="self-end" style={{ gap: 4 }}>
-      <Text className="text-right mb-1" style={typography.monoXs}>
-        {formatCommentDate(comment.created_at)}
-      </Text>
-
       <CommentImageGrid images={images} align="flex-end" />
 
       {comment.message ? (

@@ -1,7 +1,6 @@
 import { View, Text } from "react-native";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
-import { formatCommentDate } from "@/helpers/helpers";
 import SingleAvatar from "../../common/label/singleAvatar";
 import { typography } from "@/constants/typography";
 import CommentImageGrid from "./CommentImageGrid";
@@ -21,7 +20,6 @@ export default function UserTaskCommentBubble({ comment, author }: Props) {
         <Text style={typography.labelLg}>
           {author?.name || author?.email || "Ukendt bruger"}
         </Text>
-        <Text style={typography.monoXs}>{formatCommentDate(comment.created_at)}</Text>
       </View>
 
       <View className="self-start" style={{ gap: 4 }}>
