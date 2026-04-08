@@ -18,6 +18,8 @@
       "bundleIdentifier": "com.andreassen.tms",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Bruges til at tage billeder af opgaver.",
+        "NSPhotoLibraryUsageDescription": "Bruges til at vedhæfte billeder fra dit fotobibliotek.",
         "NSAppTransportSecurity": {
           "NSExceptionDomains": {
             "46.101.166.108": {
@@ -44,6 +46,13 @@
     "plugins": [
       "expo-router",
       "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Bruges til at vedhæfte billeder fra dit fotobibliotek.",
+          "cameraPermission": "Bruges til at tage billeder af opgaver."
+        }
+      ],
       [
         "expo-notifications",
         {

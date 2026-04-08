@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -36,11 +36,12 @@ export default function UserTaskDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  const fetchTask = useCallback(async () => {
+  const fetchTask = useCallback(async (silent = false) => {
     try {
       setError(null);
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const taskData = await getTask(taskId);
       setTask(taskData);
       if (taskData.created_by) {
@@ -49,16 +50,17 @@ export default function UserTaskDetails() {
         } catch { }
       }
     } catch {
-      setError("Kunne ikke hente opgave detaljer");
+      if (!silent) setError("Kunne ikke hente opgave detaljer");
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [taskId]);
 
   useFocusEffect(
     useCallback(() => {
       if (!taskId) return;
-      fetchTask();
+      fetchTask(hasLoadedRef.current);
+      hasLoadedRef.current = true;
     }, [fetchTask])
   );
 

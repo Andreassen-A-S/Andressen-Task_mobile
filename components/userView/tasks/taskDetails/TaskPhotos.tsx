@@ -1,14 +1,82 @@
-import { View, Text } from "react-native";
+import { useState, useCallback } from "react";
+import { View, Text, Image, FlatList, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
+import { getTaskImages } from "@/lib/api";
+import { TaskAttachment } from "@/types/comment";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 
+const COLUMNS = 3;
+const GAP = 2;
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const TILE_SIZE = (SCREEN_WIDTH - GAP * (COLUMNS + 1)) / COLUMNS;
+
 export default function TaskPhotos() {
+  const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const headerHeight = useModalHeaderHeight();
+
+  const [images, setImages] = useState<TaskAttachment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const fetchImages = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setFetchError(null);
+      const data = await getTaskImages(taskId);
+      setImages(data);
+    } catch {
+      setFetchError("Kunne ikke hente billeder");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [taskId]);
+
+  useFocusEffect(useCallback(() => {
+    fetchImages();
+  }, [fetchImages]));
+
   return (
     <ModalScreen title="Billeder">
-      <View className="flex-1 items-center justify-center" style={{ paddingTop: headerHeight }}>
-        <Text style={[typography.bodySm, { color: colors.textMuted }]}>Billeder kommer snart</Text>
+      <View style={{ flex: 1 }}>
+        {isLoading ? (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator color={colors.green} size="large" />
+          </View>
+        ) : fetchError ? (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+            <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
+              <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
+              <TouchableOpacity onPress={fetchImages} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
+                <Text style={typography.btnMdWhite}>Prøv igen</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : images.length === 0 ? (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Text style={[typography.bodySm, { color: colors.textMuted }]}>
+              Ingen billeder endnu.{"\n"}Send billeder i kommentarerne.
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={images}
+            keyExtractor={(item) => item.attachment_id}
+            numColumns={COLUMNS}
+            contentContainerStyle={{ paddingTop: headerHeight + GAP, paddingHorizontal: GAP }}
+            columnWrapperStyle={{ gap: GAP, marginBottom: GAP }}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <Image
+                source={{ uri: item.public_url }}
+                style={{ width: TILE_SIZE, height: TILE_SIZE }}
+                resizeMode="cover"
+              />
+            )}
+          />
+        )}
       </View>
     </ModalScreen>
   );

@@ -8,7 +8,10 @@ export async function getTaskComments(taskId: string): Promise<TaskComment[]> {
   });
   if (!response.ok) throw new Error("Failed to fetch comments");
   const result = await response.json();
-  return result.data;
+  return (result.data as TaskComment[]).map((c) => ({
+    ...c,
+    attachments: c.attachments ?? [],
+  }));
 }
 
 export async function createComment(taskId: string, data: CreateCommentRequest): Promise<TaskComment> {
@@ -19,7 +22,8 @@ export async function createComment(taskId: string, data: CreateCommentRequest):
   });
   if (!response.ok) throw new Error("Failed to create comment");
   const result = await response.json();
-  return result.data;
+  // Ensure attachments array is always present
+  return { ...result.data, attachments: result.data.attachments ?? [] };
 }
 
 export async function deleteComment(commentId: string): Promise<void> {
