@@ -1,5 +1,5 @@
-import { type ReactNode, useRef } from "react";
-import { View, TextInput, type LayoutChangeEvent } from "react-native";
+import { ReactNode, RefObject, useRef } from "react";
+import { View, TextInput, LayoutChangeEvent } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { useKeyboardHandler } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,7 +16,7 @@ interface Props {
   canSubmit?: boolean;
   leftActions?: ReactNode;
   attachments?: ReactNode;
-  inputRef?: React.RefObject<TextInput | null>;
+  inputRef?: RefObject<TextInput | null>;
   onLayout?: (e: LayoutChangeEvent) => void;
 }
 

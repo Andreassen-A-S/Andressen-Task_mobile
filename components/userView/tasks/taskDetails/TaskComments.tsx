@@ -12,6 +12,7 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
 import * as ImagePicker from "expo-image-picker";
@@ -91,9 +92,12 @@ export default function TaskComments() {
 
   useEffect(() => {
     fetchComments();
+  }, [fetchComments]);
+
+  useFocusEffect(useCallback(() => {
     const timer = setTimeout(() => inputRef.current?.focus(), 300);
     return () => clearTimeout(timer);
-  }, [fetchComments]);
+  }, []));
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
 
@@ -128,8 +132,8 @@ export default function TaskComments() {
 
   const addPickedAssets = (assets: ImagePicker.ImagePickerAsset[]) => {
     const newImages: PendingImage[] = assets.map((asset) => {
-      const ext = asset.uri.split(".").pop()?.toLowerCase() ?? "jpg";
-      const mime = asset.mimeType ?? (ext === "png" ? "image/png" : "image/jpeg");
+      const mime = asset.mimeType ?? "image/jpeg";
+      const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
       return { localUri: asset.uri, fileName: asset.fileName ?? `photo_${Date.now()}.${ext}`, mimeType: mime };
     });
     setPendingImages((prev) => [...prev, ...newImages]);
@@ -178,7 +182,7 @@ export default function TaskComments() {
 
       // 4. Finalize — create comment, backend confirms tokens atomically
       const newComment = await createComment(taskId, {
-        message: input.trim(),
+        ...(input.trim() && { message: input.trim() }),
         uploadTokens,
       });
 

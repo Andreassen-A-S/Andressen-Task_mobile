@@ -40,8 +40,10 @@ export default function UserTaskDetails() {
 
   const fetchTask = useCallback(async (silent = false) => {
     try {
-      setError(null);
-      if (!silent) setIsLoading(true);
+      if (!silent) {
+        setError(null);
+        setIsLoading(true);
+      }
       const taskData = await getTask(taskId);
       setTask(taskData);
       if (taskData.created_by) {

@@ -10,7 +10,7 @@ import GlassIconButton from "@/components/userView/common/buttons/GlassIconButto
 
 type Option = {
   key: "camera" | "gallery";
-  icon: React.ComponentProps<typeof Ionicons>["name"];
+  icon: string;
   label: string;
 };
 

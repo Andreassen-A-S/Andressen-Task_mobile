@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/colors";
 
 interface Props {
-  icon: React.ComponentProps<typeof Ionicons>["name"];
+  icon: string;
   onPress: () => void;
   disabled?: boolean;
   backgroundColor?: string;

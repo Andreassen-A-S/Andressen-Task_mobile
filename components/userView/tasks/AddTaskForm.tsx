@@ -17,7 +17,7 @@ import { colors } from "@/constants/colors";
 import { formatRelativeDate, toDateParam, parseDateParam, translatePriority, translateTaskUnit } from "@/helpers/helpers";
 import { pickerStore } from "@/lib/pickerStore";
 import { multiSelectStore } from "@/lib/multiSelectStore";
-import { goalStore, type GoalData } from "@/lib/goalStore";
+import { goalStore, GoalData } from "@/lib/goalStore";
 import ToolbarGlassButton from "@/components/userView/common/buttons/ToolbarGlassButton";
 import GlassTextButton from "@/components/userView/common/buttons/GlassTextButton";
 import ModalScreen from "@/components/userView/common/ModalScreen";

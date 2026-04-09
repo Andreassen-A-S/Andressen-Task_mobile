@@ -4,7 +4,7 @@ import { useKeyboardAnimation } from "react-native-keyboard-controller";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import MaskedView from "@react-native-masked-view/masked-view";
-import { Host, HStack, Image, TextField, GlassEffectContainer, type TextFieldRef } from "@expo/ui/swift-ui";
+import { Host, HStack, Image, TextField, GlassEffectContainer, TextFieldRef } from "@expo/ui/swift-ui";
 import { glassEffect, padding, textFieldStyle, frame, onTapGesture } from "@expo/ui/swift-ui/modifiers";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/constants/colors";
