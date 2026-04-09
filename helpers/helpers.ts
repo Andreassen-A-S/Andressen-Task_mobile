@@ -94,6 +94,20 @@ export function formatCommentDate(dateString: string): string {
   });
 }
 
+export function formatGroupTimestamp(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const timeStr = date.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
+
+  if (date.toDateString() === now.toDateString()) return timeStr;
+  if (date.toDateString() === yesterday.toDateString()) return `I går ${timeStr}`;
+  if (diffDays < 7) return date.toLocaleDateString("da-DK", { weekday: "long" }) + ` ${timeStr}`;
+  return date.toLocaleDateString("da-DK", { day: "numeric", month: "short", year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined }) + ` ${timeStr}`;
+}
+
 export function isoToDateString(iso: string): string {
   return iso.split("T")[0];
 }

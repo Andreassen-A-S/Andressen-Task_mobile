@@ -1,5 +1,5 @@
 import { View, Text, Platform } from "react-native";
-import { type ReactNode } from "react";
+import { ReactNode } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

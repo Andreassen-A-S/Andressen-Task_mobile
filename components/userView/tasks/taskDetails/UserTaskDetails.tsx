@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -36,29 +36,34 @@ export default function UserTaskDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedRef = useRef(false);
 
-  const fetchTask = useCallback(async () => {
+  const fetchTask = useCallback(async (silent = false) => {
     try {
-      setError(null);
-      setIsLoading(true);
+      if (!silent) {
+        setError(null);
+        setIsLoading(true);
+      }
       const taskData = await getTask(taskId);
       setTask(taskData);
+      setError(null);
       if (taskData.created_by) {
         try {
           setCreator(await getUser(taskData.created_by));
         } catch { }
       }
     } catch {
-      setError("Kunne ikke hente opgave detaljer");
+      if (!silent) setError("Kunne ikke hente opgave detaljer");
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [taskId]);
 
   useFocusEffect(
     useCallback(() => {
       if (!taskId) return;
-      fetchTask();
+      fetchTask(hasLoadedRef.current);
+      hasLoadedRef.current = true;
     }, [fetchTask])
   );
 
@@ -181,7 +186,7 @@ export default function UserTaskDetails() {
           <View style={{ backgroundColor: colors.redLight, borderWidth: 1, borderColor: colors.redBorder, borderRadius: 8, padding: 16, gap: 12 }}>
             <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center" }]}>{error}</Text>
             <TouchableOpacity
-              onPress={fetchTask}
+              onPress={() => fetchTask()}
               style={{ alignSelf: "center", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.redText }}
             >
               <Text style={[typography.btnMd, { color: colors.white }]}>Prøv igen</Text>

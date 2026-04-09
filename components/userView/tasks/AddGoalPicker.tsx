@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { pickerStore } from "@/lib/pickerStore";
-import { goalStore, type GoalData } from "@/lib/goalStore";
+import { goalStore, GoalData } from "@/lib/goalStore";
 import { TaskGoalType, TaskUnit } from "@/types/task";
 import { translateTaskUnit } from "@/helpers/helpers";
 import { colors } from "@/constants/colors";

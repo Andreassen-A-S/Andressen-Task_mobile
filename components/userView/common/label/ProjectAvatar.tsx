@@ -1,4 +1,4 @@
-import { View, Text, type ViewStyle } from "react-native";
+import { View, Text, ViewStyle } from "react-native";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
