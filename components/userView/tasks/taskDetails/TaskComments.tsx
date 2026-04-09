@@ -148,7 +148,7 @@ export default function TaskComments() {
       setIsSubmitting(true);
       setInlineError(null);
 
-      let uploadTokens: string[] | undefined;
+      let upload_tokens: string[] | undefined;
 
       if (pendingImages.length > 0) {
         const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -167,26 +167,26 @@ export default function TaskComments() {
         const prepared = await prepareAttachments(
           taskId,
           blobsWithMeta.map(({ blob, img }) => ({
-            fileName: img.fileName,
-            mimeType: img.mimeType,
-            fileSize: blob.size,
+            file_name: img.fileName,
+            mime_type: img.mimeType,
+            file_size: blob.size,
           })),
         );
 
         // 3. Upload directly to GCS
         await Promise.all(
-          prepared.map(({ uploadUrl }, i) =>
-            uploadToGcs(uploadUrl, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType),
+          prepared.map(({ upload_url }, i) =>
+            uploadToGcs(upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType),
           ),
         );
 
-        uploadTokens = prepared.map((p) => p.uploadToken);
+        upload_tokens = prepared.map((p) => p.upload_token);
       }
 
       // 4. Finalize — create comment, backend confirms tokens atomically
       const newComment = await createComment(taskId, {
         ...(input.trim() && { message: input.trim() }),
-        uploadTokens,
+        upload_tokens,
       });
 
       if (!commentAuthors[newComment.user_id]) {

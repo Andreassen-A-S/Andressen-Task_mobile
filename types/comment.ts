@@ -23,5 +23,5 @@ export interface TaskComment {
 
 export interface CreateCommentRequest {
   message?: string;
-  uploadTokens?: string[];
+  upload_tokens?: string[];
 }
