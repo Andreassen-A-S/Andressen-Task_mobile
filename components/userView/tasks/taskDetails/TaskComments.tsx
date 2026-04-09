@@ -79,6 +79,7 @@ export default function TaskComments() {
       }
       const data = await getTaskComments(taskId);
       setComments(data);
+      setFetchError(null);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
       const uniqueIds = [...new Set(data.map((c) => c.user_id))];
       const authors: Record<string, User> = {};
@@ -311,11 +312,11 @@ export default function TaskComments() {
           }
           attachments={pendingImages.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
-              {pendingImages.map((img, index) => (
+              {pendingImages.map((img) => (
                 <PendingAttachmentCard
-                  key={index}
+                  key={img.localUri}
                   uri={img.localUri}
-                  onRemove={() => setPendingImages((prev) => prev.filter((_, i) => i !== index))}
+                  onRemove={() => setPendingImages((prev) => prev.filter((i) => i.localUri !== img.localUri))}
                 />
               ))}
             </ScrollView>

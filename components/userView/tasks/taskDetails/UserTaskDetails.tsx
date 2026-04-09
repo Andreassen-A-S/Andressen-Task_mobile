@@ -46,6 +46,7 @@ export default function UserTaskDetails() {
       }
       const taskData = await getTask(taskId);
       setTask(taskData);
+      setError(null);
       if (taskData.created_by) {
         try {
           setCreator(await getUser(taskData.created_by));
