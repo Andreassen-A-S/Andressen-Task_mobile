@@ -3,18 +3,18 @@ import { getAuthHeaders } from "@/helpers/helpers";
 import { TaskAttachment } from "@/types/comment";
 
 export interface PreparedAttachment {
-  upload_token: string;
-  upload_url: string;
+  uploadToken: string;
+  uploadUrl: string;
 }
 
 export async function prepareAttachments(
-  task_id: string,
-  files: { file_name: string; mime_type: string; file_size: number }[],
+  taskId: string,
+  files: { fileName: string; mimeType: string; fileSize: number }[],
 ): Promise<PreparedAttachment[]> {
   const res = await fetch(`${API_URL}/attachments/prepare`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ task_id, files }),
+    body: JSON.stringify({ taskId, files }),
   });
   if (!res.ok) throw new Error("Failed to prepare attachments");
   const data = await res.json();
@@ -22,14 +22,14 @@ export async function prepareAttachments(
 }
 
 export async function uploadToGcs(
-  upload_url: string,
+  uploadUrl: string,
   blob: Blob,
-  mime_type: string,
+  mimeType: string,
 ): Promise<void> {
-  const uploadRes = await fetch(upload_url, {
+  const uploadRes = await fetch(uploadUrl, {
     method: "PUT",
     body: blob,
-    headers: { "Content-Type": mime_type },
+    headers: { "Content-Type": mimeType },
   });
   if (!uploadRes.ok) throw new Error("GCS upload failed");
 }
