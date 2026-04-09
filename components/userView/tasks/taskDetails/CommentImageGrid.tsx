@@ -46,7 +46,6 @@ export default function CommentImageGrid({ images, align = "flex-start" }: Props
         {Array.from({ length: visibleCount }).map((_, i) => {
           const imgIndex = visibleCount - 1 - i; // i=0 → back image, i=visibleCount-1 → front (images[0])
           const offset = imgIndex * STACK_OFFSET;
-          const isBack = i === 0;
 
           return (
             <TouchableOpacity
@@ -60,14 +59,10 @@ export default function CommentImageGrid({ images, align = "flex-start" }: Props
                 style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10 }}
                 resizeMode="cover"
               />
-              {isBack && hiddenCount > 0 && (
-                <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 10, backgroundColor: "rgba(0,0,0,0.45)", alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ color: "white", fontSize: 22, fontWeight: "600" }}>+{hiddenCount}</Text>
-                </View>
-              )}
             </TouchableOpacity>
           );
         })}
+
       </View>
 
       <ImageView

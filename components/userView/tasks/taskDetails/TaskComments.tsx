@@ -285,6 +285,7 @@ export default function TaskComments() {
       <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>
         <MaskedView
           style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
+          pointerEvents="none"
           maskElement={
             <LinearGradient
               colors={["transparent", "black", "black"]}
@@ -293,7 +294,7 @@ export default function TaskComments() {
             />
           }
         >
-          <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} />
+          <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} pointerEvents="none" />
         </MaskedView>
         <LinearGradient
           colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
