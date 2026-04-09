@@ -58,7 +58,7 @@ export default function AttachmentPicker() {
             activeOpacity={0.7}
             style={{ flex: 1, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.muted, paddingVertical: 20, alignItems: "center", gap: 10 }}
           >
-            <Ionicons name={opt.icon} size={28} color={colors.textPrimary} />
+            <Ionicons name={opt.icon as any} size={28} color={colors.textPrimary} />
             <Text style={typography.bodyMd}>{opt.label}</Text>
           </TouchableOpacity>
         ))}

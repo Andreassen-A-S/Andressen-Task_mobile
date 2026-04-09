@@ -29,7 +29,7 @@ export default function KeyboardInputBarAction({
     >
       {loading
         ? <ActivityIndicator color={colors.white} size="small" />
-        : <Ionicons name={icon} size={iconSize} color={iconColor} />
+        : <Ionicons name={icon as any} size={iconSize} color={iconColor} />
       }
     </TouchableOpacity>
   );

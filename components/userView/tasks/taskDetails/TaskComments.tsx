@@ -49,6 +49,7 @@ export default function TaskComments() {
   const inputRef = useRef<TextInput>(null);
   const flatListRef = useRef<FlatList>(null);
   const isNearBottomRef = useRef(true);
+  const hasLoadedRef = useRef(false);
 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
@@ -70,10 +71,12 @@ export default function TaskComments() {
     return result;
   }, [comments]);
 
-  const fetchComments = useCallback(async () => {
+  const fetchComments = useCallback(async (silent = false) => {
     try {
-      setIsLoading(true);
-      setFetchError(null);
+      if (!silent) {
+        setIsLoading(true);
+        setFetchError(null);
+      }
       const data = await getTaskComments(taskId);
       setComments(data);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
@@ -84,20 +87,18 @@ export default function TaskComments() {
       }));
       setCommentAuthors(authors);
     } catch {
-      setFetchError("Kunne ikke hente kommentarer");
+      if (!silent) setFetchError("Kunne ikke hente kommentarer");
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, [taskId]);
 
-  useEffect(() => {
-    fetchComments();
-  }, [fetchComments]);
-
   useFocusEffect(useCallback(() => {
+    fetchComments(hasLoadedRef.current);
+    hasLoadedRef.current = true;
     const timer = setTimeout(() => inputRef.current?.focus(), 300);
     return () => clearTimeout(timer);
-  }, []));
+  }, [fetchComments]));
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
 
@@ -131,10 +132,11 @@ export default function TaskComments() {
   };
 
   const addPickedAssets = (assets: ImagePicker.ImagePickerAsset[]) => {
-    const newImages: PendingImage[] = assets.map((asset) => {
+    const ts = Date.now();
+    const newImages: PendingImage[] = assets.map((asset, i) => {
       const mime = asset.mimeType ?? "image/jpeg";
       const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
-      return { localUri: asset.uri, fileName: asset.fileName ?? `photo_${Date.now()}.${ext}`, mimeType: mime };
+      return { localUri: asset.uri, fileName: asset.fileName ?? `photo_${ts}_${i}.${ext}`, mimeType: mime };
     });
     setPendingImages((prev) => [...prev, ...newImages]);
   };
@@ -227,7 +229,7 @@ export default function TaskComments() {
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight, paddingHorizontal: 24 }}>
             <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
               <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
-              <TouchableOpacity onPress={fetchComments} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
+              <TouchableOpacity onPress={() => fetchComments()} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
                 <Text style={typography.btnMdWhite}>Prøv igen</Text>
               </TouchableOpacity>
             </View>

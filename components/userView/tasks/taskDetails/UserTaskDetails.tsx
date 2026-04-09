@@ -185,7 +185,7 @@ export default function UserTaskDetails() {
           <View style={{ backgroundColor: colors.redLight, borderWidth: 1, borderColor: colors.redBorder, borderRadius: 8, padding: 16, gap: 12 }}>
             <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center" }]}>{error}</Text>
             <TouchableOpacity
-              onPress={fetchTask}
+              onPress={() => fetchTask()}
               style={{ alignSelf: "center", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.redText }}
             >
               <Text style={[typography.btnMd, { color: colors.white }]}>Prøv igen</Text>
