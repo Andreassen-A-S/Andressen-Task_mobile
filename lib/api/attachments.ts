@@ -2,23 +2,21 @@ import { API_URL } from "@/constants/api";
 import { getAuthHeaders } from "@/helpers/helpers";
 import { TaskAttachment } from "@/types/comment";
 
-export interface UploadUrlResponse {
+export interface PreparedAttachment {
+  uploadToken: string;
   uploadUrl: string;
-  gcsPath: string;
-  publicUrl: string;
 }
 
-export async function getUploadUrl(
-  task_id: string,
-  file_name: string,
-  mime_type: string,
-): Promise<UploadUrlResponse> {
-  const res = await fetch(`${API_URL}/attachments/upload-url`, {
+export async function prepareAttachments(
+  taskId: string,
+  files: { fileName: string; mimeType: string; fileSize: number }[],
+): Promise<PreparedAttachment[]> {
+  const res = await fetch(`${API_URL}/attachments/prepare`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ task_id, file_name, mime_type }),
+    body: JSON.stringify({ taskId, files }),
   });
-  if (!res.ok) throw new Error("Failed to get upload URL");
+  if (!res.ok) throw new Error("Failed to prepare attachments");
   const data = await res.json();
   return data.data;
 }

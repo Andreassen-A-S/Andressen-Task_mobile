@@ -19,13 +19,13 @@ export default function CommentImageGrid({ images, align = "flex-start" }: Props
 
   if (images.length === 0) return null;
 
-  const imageUris = images.map((img) => ({ uri: img.public_url }));
+  const imageUris = images.map((img) => ({ uri: img.url }));
 
   if (images.length === 1) {
     return (
       <>
         <TouchableOpacity onPress={() => setViewerIndex(0)} activeOpacity={0.9} style={{ alignSelf: align }}>
-          <Image source={{ uri: images[0].public_url }} style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10 }} resizeMode="cover" />
+          <Image source={{ uri: images[0].url }} style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10 }} resizeMode="cover" />
         </TouchableOpacity>
         <ImageView images={imageUris} imageIndex={0} visible={viewerIndex !== null} onRequestClose={() => setViewerIndex(null)} />
       </>
@@ -56,7 +56,7 @@ export default function CommentImageGrid({ images, align = "flex-start" }: Props
               activeOpacity={0.9}
             >
               <Image
-                source={{ uri: images[imgIndex].public_url }}
+                source={{ uri: images[imgIndex].url }}
                 style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10 }}
                 resizeMode="cover"
               />

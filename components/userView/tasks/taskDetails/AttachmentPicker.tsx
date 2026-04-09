@@ -24,7 +24,12 @@ export default function AttachmentPicker() {
 
   const select = async (source: "camera" | "gallery") => {
     const cb = attachmentPickerStore.get();
-    const picked = await cb?.(source);
+    if (!cb) {
+      attachmentPickerStore.clear();
+      router.back();
+      return;
+    }
+    const picked = await cb(source);
     if (picked) {
       attachmentPickerStore.clear();
       router.back();

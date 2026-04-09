@@ -40,17 +40,17 @@ export default function TaskPhotos() {
     fetchImages();
   }, [fetchImages]));
 
-  const imageUris = images.map((img) => ({ uri: img.public_url }));
+  const imageUris = images.map((img) => ({ uri: img.url }));
 
   return (
     <ModalScreen title="Billeder">
       <View style={{ flex: 1 }}>
         {isLoading ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
             <ActivityIndicator color={colors.green} size="large" />
           </View>
         ) : fetchError ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight, paddingHorizontal: 24 }}>
             <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
               <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
               <TouchableOpacity onPress={fetchImages} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
@@ -59,7 +59,7 @@ export default function TaskPhotos() {
             </View>
           </View>
         ) : images.length === 0 ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
             <Text style={[typography.bodySm, { color: colors.textMuted }]}>
               Ingen billeder endnu.{"\n"}Send billeder i kommentarerne.
             </Text>
@@ -75,7 +75,7 @@ export default function TaskPhotos() {
             renderItem={({ item, index }) => (
               <TouchableOpacity onPress={() => setViewerIndex(index)} activeOpacity={0.9}>
                 <Image
-                  source={{ uri: item.public_url }}
+                  source={{ uri: item.url }}
                   style={{ width: TILE_SIZE, height: TILE_SIZE }}
                   resizeMode="cover"
                 />

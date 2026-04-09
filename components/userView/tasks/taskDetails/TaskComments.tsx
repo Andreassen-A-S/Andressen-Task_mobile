@@ -16,13 +16,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/hooks/useAuth";
-import { getTaskComments, createComment, deleteComment, getUser, getUploadUrl, uploadToGcs } from "@/lib/api";
+import { getTaskComments, createComment, deleteComment, getUser, prepareAttachments, uploadToGcs } from "@/lib/api";
 import { formatGroupTimestamp } from "@/helpers/helpers";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-import { Ionicons } from "@expo/vector-icons";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
 import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
@@ -96,6 +95,8 @@ export default function TaskComments() {
     return () => clearTimeout(timer);
   }, [fetchComments]);
 
+  useEffect(() => () => attachmentPickerStore.clear(), []);
+
   const pickImages = () => {
     attachmentPickerStore.set(async (source: "camera" | "gallery") => {
       if (source === "camera") {
@@ -104,7 +105,7 @@ export default function TaskComments() {
           Alert.alert("Tilladelse krævet", "Kameraadgang er nødvendig for at tage billeder.");
           return false;
         }
-        const result = await ImagePicker.launchCameraAsync({ mediaTypes: "images", quality: 0.8 });
+        const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
         if (!result.canceled) { addPickedAssets(result.assets); return true; }
       } else {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -113,7 +114,7 @@ export default function TaskComments() {
           return false;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: "images",
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
           quality: 0.8,
           allowsMultipleSelection: true,
           selectionLimit: 5,
@@ -141,19 +142,38 @@ export default function TaskComments() {
       setInlineError(null);
 
       const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-      const uploadedAttachments = [];
-      for (const img of pendingImages) {
-        const fileRes = await fetch(img.localUri);
-        const blob = await fileRes.blob();
-        if (blob.size > MAX_IMAGE_BYTES) throw new Error("Et eller flere billeder er for store (maks 10 MB)");
-        const { uploadUrl, gcsPath, publicUrl } = await getUploadUrl(taskId, img.fileName, img.mimeType);
-        await uploadToGcs(uploadUrl, blob, img.mimeType);
-        uploadedAttachments.push({ gcs_path: gcsPath, public_url: publicUrl, file_name: img.fileName, mime_type: img.mimeType, type: "IMAGE" as const });
-      }
 
+      // 1. Fetch blobs and validate sizes locally
+      const blobsWithMeta = await Promise.all(
+        pendingImages.map(async (img) => {
+          const fileRes = await fetch(img.localUri);
+          const blob = await fileRes.blob();
+          if (blob.size > MAX_IMAGE_BYTES) throw new Error("Et eller flere billeder er for store (maks 10 MB)");
+          return { blob, img };
+        }),
+      );
+
+      // 2. Prepare — get upload tokens + signed URLs from backend
+      const prepared = await prepareAttachments(
+        taskId,
+        blobsWithMeta.map(({ blob, img }) => ({
+          fileName: img.fileName,
+          mimeType: img.mimeType,
+          fileSize: blob.size,
+        })),
+      );
+
+      // 3. Upload directly to GCS
+      await Promise.all(
+        prepared.map(({ uploadUrl }, i) =>
+          uploadToGcs(uploadUrl, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType),
+        ),
+      );
+
+      // 4. Finalize — create comment, backend confirms tokens atomically
       const newComment = await createComment(taskId, {
         message: input.trim(),
-        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined,
+        uploadTokens: prepared.map((p) => p.uploadToken),
       });
 
       if (!commentAuthors[newComment.user_id]) {
@@ -167,8 +187,8 @@ export default function TaskComments() {
       setInput("");
       setPendingImages([]);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
-    } catch {
-      setInlineError("Kunne ikke sende besked");
+    } catch (err) {
+      setInlineError(err instanceof Error ? err.message : "Kunne ikke sende besked");
     } finally {
       setIsSubmitting(false);
     }
@@ -190,11 +210,11 @@ export default function TaskComments() {
     <ModalScreen title="Kommentarer">
       <View style={{ flex: 1 }}>
         {isLoading ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
             <ActivityIndicator color={colors.green} size="large" />
           </View>
         ) : fetchError ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight, paddingHorizontal: 24 }}>
             <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
               <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
               <TouchableOpacity onPress={fetchComments} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
