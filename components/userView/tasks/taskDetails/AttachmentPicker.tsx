@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,6 +22,8 @@ const OPTIONS: Option[] = [
 export default function AttachmentPicker() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  useEffect(() => () => attachmentPickerStore.clear(), []);
 
   const select = async (source: "camera" | "gallery") => {
     const cb = attachmentPickerStore.get();

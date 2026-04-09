@@ -141,39 +141,45 @@ export default function TaskComments() {
       setIsSubmitting(true);
       setInlineError(null);
 
-      const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+      let uploadTokens: string[] | undefined;
 
-      // 1. Fetch blobs and validate sizes locally
-      const blobsWithMeta = await Promise.all(
-        pendingImages.map(async (img) => {
-          const fileRes = await fetch(img.localUri);
-          const blob = await fileRes.blob();
-          if (blob.size > MAX_IMAGE_BYTES) throw new Error("Et eller flere billeder er for store (maks 10 MB)");
-          return { blob, img };
-        }),
-      );
+      if (pendingImages.length > 0) {
+        const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
-      // 2. Prepare — get upload tokens + signed URLs from backend
-      const prepared = await prepareAttachments(
-        taskId,
-        blobsWithMeta.map(({ blob, img }) => ({
-          fileName: img.fileName,
-          mimeType: img.mimeType,
-          fileSize: blob.size,
-        })),
-      );
+        // 1. Fetch blobs and validate sizes locally
+        const blobsWithMeta = await Promise.all(
+          pendingImages.map(async (img) => {
+            const fileRes = await fetch(img.localUri);
+            const blob = await fileRes.blob();
+            if (blob.size > MAX_IMAGE_BYTES) throw new Error("Et eller flere billeder er for store (maks 10 MB)");
+            return { blob, img };
+          }),
+        );
 
-      // 3. Upload directly to GCS
-      await Promise.all(
-        prepared.map(({ uploadUrl }, i) =>
-          uploadToGcs(uploadUrl, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType),
-        ),
-      );
+        // 2. Prepare — get upload tokens + signed URLs from backend
+        const prepared = await prepareAttachments(
+          taskId,
+          blobsWithMeta.map(({ blob, img }) => ({
+            fileName: img.fileName,
+            mimeType: img.mimeType,
+            fileSize: blob.size,
+          })),
+        );
+
+        // 3. Upload directly to GCS
+        await Promise.all(
+          prepared.map(({ uploadUrl }, i) =>
+            uploadToGcs(uploadUrl, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType),
+          ),
+        );
+
+        uploadTokens = prepared.map((p) => p.uploadToken);
+      }
 
       // 4. Finalize — create comment, backend confirms tokens atomically
       const newComment = await createComment(taskId, {
         message: input.trim(),
-        uploadTokens: prepared.map((p) => p.uploadToken),
+        uploadTokens,
       });
 
       if (!commentAuthors[newComment.user_id]) {

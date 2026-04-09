@@ -24,6 +24,7 @@ export default function TaskPhotos() {
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   const fetchImages = useCallback(async () => {
+    if (!taskId) return;
     try {
       setIsLoading(true);
       setFetchError(null);
