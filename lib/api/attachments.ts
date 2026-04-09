@@ -8,13 +8,13 @@ export interface PreparedAttachment {
 }
 
 export async function prepareAttachments(
-  taskId: string,
-  files: { fileName: string; mimeType: string; fileSize: number }[],
+  task_id: string,
+  files: { file_name: string; mime_type: string; file_size: number }[],
 ): Promise<PreparedAttachment[]> {
   const res = await fetch(`${API_URL}/attachments/prepare`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ taskId, files }),
+    body: JSON.stringify({ task_id, files }),
   });
   if (!res.ok) throw new Error("Failed to prepare attachments");
   const data = await res.json();

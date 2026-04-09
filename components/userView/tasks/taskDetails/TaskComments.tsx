@@ -167,9 +167,9 @@ export default function TaskComments() {
         const prepared = await prepareAttachments(
           taskId,
           blobsWithMeta.map(({ blob, img }) => ({
-            fileName: img.fileName,
-            mimeType: img.mimeType,
-            fileSize: blob.size,
+            file_name: img.fileName,
+            mime_type: img.mimeType,
+            file_size: blob.size,
           })),
         );
 
