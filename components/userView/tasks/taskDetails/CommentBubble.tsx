@@ -63,7 +63,13 @@ export default function CommentBubble({ comment, isOwn, author, sending, failed,
         </View>
       )}
 
-      <CommentAttachments attachments={comment.attachments ?? []} align={align} />
+      <TouchableOpacity
+        activeOpacity={comment.attachments?.length ? 0.8 : 1}
+        onLongPress={isOwn && status === "idle" && !comment.message ? handleLongPress : undefined}
+        delayLongPress={400}
+      >
+        <CommentAttachments attachments={comment.attachments ?? []} align={align} />
+      </TouchableOpacity>
 
       {comment.message ? (
         <TouchableOpacity

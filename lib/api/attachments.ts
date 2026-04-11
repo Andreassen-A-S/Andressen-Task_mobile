@@ -42,7 +42,7 @@ export async function getTaskAttachments(taskId: string): Promise<TaskAttachment
   const res = await fetch(`${API_URL}/attachments/task/${taskId}`, {
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to fetch images");
+  if (!res.ok) throw new Error(`Failed to fetch attachments (${res.status})`);
   const data = await res.json();
   return applyAttachmentUrlCache(data.data);
 }

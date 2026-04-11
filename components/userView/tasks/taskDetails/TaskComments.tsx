@@ -299,7 +299,7 @@ export default function TaskComments() {
   const handleDelete = async (commentId: string) => {
     try {
       await deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c.comment_id !== commentId));
+      setComments((prev) => prev.filter((c) => c.comment_id !== commentId && c.serverCommentId !== commentId));
     } catch {
       Alert.alert("Fejl", "Kunne ikke slette kommentar");
     }
