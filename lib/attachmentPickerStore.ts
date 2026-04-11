@@ -1,4 +1,4 @@
-type Source = "camera" | "gallery";
+type Source = "camera" | "gallery" | "files";
 type Callback = (source: Source) => Promise<boolean>;
 
 let _callback: Callback | null = null;

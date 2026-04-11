@@ -16,9 +16,11 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
 import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import { useAuth } from "@/hooks/useAuth";
 import { getTaskComments, createComment, deleteComment, getUser, prepareAttachments, uploadToGcs } from "@/lib/api";
 import { formatGroupTimestamp } from "@/helpers/helpers";
+import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
 import { typography } from "@/constants/typography";
@@ -27,19 +29,25 @@ import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/
 import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
 import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
 import KeyboardInputBarAction from "@/components/userView/common/KeyboardInputBarAction";
-import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
-import UserTaskCommentBubble from "./UserTaskCommentBubble";
+import CommentBubble from "./CommentBubble";
 
-type PendingImage = {
+type PendingAttachment = {
   localUri: string;
   fileName: string;
   mimeType: string;
 };
 
+type DisplayComment = TaskComment & {
+  sending?: boolean;
+  failed?: boolean;
+  errorMessage?: string;
+  serverCommentId?: string;
+};
+
 const INPUT_BAR_OVERLAP = 120;
 const TIMESTAMP_THRESHOLD_MS = 30 * 60 * 1000;
 
-type ListItem = { type: "comment"; data: TaskComment } | { type: "timestamp"; key: string; label: string };
+type ListItem = { type: "comment"; data: DisplayComment } | { type: "timestamp"; key: string; label: string };
 
 export default function TaskComments() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
@@ -51,14 +59,13 @@ export default function TaskComments() {
   const isNearBottomRef = useRef(true);
   const hasLoadedRef = useRef(false);
 
-  const [comments, setComments] = useState<TaskComment[]>([]);
+  const [comments, setComments] = useState<DisplayComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [inlineError, setInlineError] = useState<string | null>(null);
   const [input, setInput] = useState("");
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const listData = useMemo<ListItem[]>(() => {
     const result: ListItem[] = [];
     for (let i = 0; i < comments.length; i++) {
@@ -103,8 +110,29 @@ export default function TaskComments() {
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
 
-  const pickImages = () => {
-    attachmentPickerStore.set(async (source: "camera" | "gallery") => {
+  const pickAttachments = () => {
+    attachmentPickerStore.set(async (source: "camera" | "gallery" | "files") => {
+      if (source === "files") {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+          multiple: true,
+          copyToCacheDirectory: true,
+        });
+        if (!result.canceled && result.assets.length > 0) {
+          const newFiles: PendingAttachment[] = result.assets.map((asset) => {
+            const name = asset.name || decodeURIComponent(asset.uri.split("/").pop() ?? "") || "Fil";
+            const ext = name.split(".").pop()?.toLowerCase();
+            const inferredMime = ext === "pdf" ? "application/pdf"
+              : ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              : ext === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              : "application/octet-stream";
+            return { localUri: asset.uri, fileName: name, mimeType: asset.mimeType ?? inferredMime };
+          });
+          setPendingAttachments((prev) => [...prev, ...newFiles]);
+          return true;
+        }
+        return false;
+      }
       if (source === "camera") {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (status !== "granted") {
@@ -134,36 +162,63 @@ export default function TaskComments() {
 
   const addPickedAssets = (assets: ImagePicker.ImagePickerAsset[]) => {
     const ts = Date.now();
-    const newImages: PendingImage[] = assets.map((asset, i) => {
+    const newAttachments: PendingAttachment[] = assets.map((asset, i) => {
       const mime = asset.mimeType ?? "image/jpeg";
       const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
       return { localUri: asset.uri, fileName: asset.fileName ?? `photo_${ts}_${i}.${ext}`, mimeType: mime };
     });
-    setPendingImages((prev) => [...prev, ...newImages]);
+    setPendingAttachments((prev) => [...prev, ...newAttachments]);
   };
 
   const handleSubmit = async () => {
-    if (!input.trim() && pendingImages.length === 0) return;
-    try {
-      setIsSubmitting(true);
-      setInlineError(null);
+    if (!taskId || !currentUser) return;
+    if (!input.trim() && pendingAttachments.length === 0) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
+    const localId = `local-${Date.now()}`;
+    const optimistic: DisplayComment = {
+      comment_id: localId,
+      task_id: taskId,
+      user_id: currentUser!.user_id,
+      message: input.trim(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      attachments: pendingAttachments.map((a, i) => ({
+        attachment_id: `${localId}-att-${i}`,
+        comment_id: null,
+        task_id: taskId,
+        uploaded_by: currentUser!.user_id,
+        type: a.mimeType.startsWith("image/") ? "IMAGE" as const : "FILE" as const,
+        gcs_path: "",
+        url: a.localUri,
+        file_name: a.fileName,
+        mime_type: a.mimeType,
+        created_at: new Date().toISOString(),
+      })),
+      sending: true,
+    };
+
+    setComments((prev) => [...prev, optimistic]);
+    setInput("");
+    setPendingAttachments([]);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+
+    try {
       let upload_tokens: string[] | undefined;
 
-      if (pendingImages.length > 0) {
-        const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+      if (pendingAttachments.length > 0) {
+        const blobsWithMeta: { blob: Blob; img: typeof pendingAttachments[0] }[] = [];
+        for (const attachment of pendingAttachments) {
+          const fileRes = await fetch(attachment.localUri);
+          const blob = await fileRes.blob();
+          const maxBytes = MAX_FILE_SIZE[attachment.mimeType] ?? 10 * 1024 * 1024;
+          if (blob.size > maxBytes) {
+            throw new Error(`${attachment.fileName ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+          }
+          blobsWithMeta.push({ blob, img: attachment });
+        }
 
-        // 1. Fetch blobs and validate sizes locally
-        const blobsWithMeta = await Promise.all(
-          pendingImages.map(async (img) => {
-            const fileRes = await fetch(img.localUri);
-            const blob = await fileRes.blob();
-            if (blob.size > MAX_IMAGE_BYTES) throw new Error("Et eller flere billeder er for store (maks 10 MB)");
-            return { blob, img };
-          }),
-        );
-
-        // 2. Prepare — get upload tokens + signed URLs from backend
         const prepared = await prepareAttachments(
           taskId,
           blobsWithMeta.map(({ blob, img }) => ({
@@ -173,19 +228,15 @@ export default function TaskComments() {
           })),
         );
 
-        // 3. Upload directly to GCS
-        await Promise.all(
-          prepared.map(({ upload_url }, i) =>
-            uploadToGcs(upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType),
-          ),
-        );
+        for (let i = 0; i < prepared.length; i++) {
+          await uploadToGcs(prepared[i].upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType);
+        }
 
         upload_tokens = prepared.map((p) => p.upload_token);
       }
 
-      // 4. Finalize — create comment, backend confirms tokens atomically
       const newComment = await createComment(taskId, {
-        ...(input.trim() && { message: input.trim() }),
+        ...(optimistic.message && { message: optimistic.message }),
         upload_tokens,
       });
 
@@ -196,28 +247,90 @@ export default function TaskComments() {
         } catch { }
       }
 
-      setComments((prev) => [...prev, newComment]);
-      setInput("");
-      setPendingImages([]);
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+      setComments((prev) => prev.map((c) =>
+        c.comment_id === localId
+          ? { ...newComment, comment_id: localId, serverCommentId: newComment.comment_id, sending: false }
+          : c,
+      ));
     } catch (err) {
-      setInlineError(err instanceof Error ? err.message : "Kunne ikke sende besked");
+      const msg = err instanceof Error ? err.message : "Kunne ikke sende besked";
+      setComments((prev) => prev.map((c) =>
+        c.comment_id === localId ? { ...c, sending: false, failed: true, errorMessage: msg } : c,
+      ));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (commentId: string) => {
+  const handleRetry = async (commentId: string) => {
+    if (!taskId || !currentUser) return;
+    const comment = comments.find((c) => c.comment_id === commentId);
+    if (!comment) return;
+
+    setComments((prev) => prev.map((c) =>
+      c.comment_id === commentId ? { ...c, sending: true, failed: false, errorMessage: undefined } : c,
+    ));
+
     try {
-      setInlineError(null);
-      await deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c.comment_id !== commentId));
-    } catch {
-      setInlineError("Kunne ikke slette kommentar");
+      let upload_tokens: string[] | undefined;
+
+      const fileAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://") || a.url.startsWith("content://"));
+      if (fileAttachments.length > 0) {
+        const blobsWithMeta: { blob: Blob; mimeType: string; fileName: string }[] = [];
+        for (const a of fileAttachments) {
+          const res = await fetch(a.url);
+          const blob = await res.blob();
+          const mimeType = a.mime_type ?? "application/octet-stream";
+          const maxBytes = MAX_FILE_SIZE[mimeType] ?? 10 * 1024 * 1024;
+          if (blob.size > maxBytes) {
+            throw new Error(`${a.file_name ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+          }
+          blobsWithMeta.push({ blob, mimeType, fileName: a.file_name ?? "file" });
+        }
+        const prepared = await prepareAttachments(
+          taskId,
+          blobsWithMeta.map(({ blob, mimeType, fileName }) => ({ file_name: fileName, mime_type: mimeType, file_size: blob.size })),
+        );
+        for (let i = 0; i < prepared.length; i++) {
+          await uploadToGcs(prepared[i].upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].mimeType);
+        }
+        upload_tokens = prepared.map((p) => p.upload_token);
+      }
+
+      const newComment = await createComment(taskId, {
+        ...(comment.message && { message: comment.message }),
+        upload_tokens,
+      });
+
+      setComments((prev) => prev.map((c) =>
+        c.comment_id === commentId
+          ? { ...newComment, comment_id: commentId, serverCommentId: newComment.comment_id, sending: false }
+          : c,
+      ));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Kunne ikke sende besked";
+      setComments((prev) => prev.map((c) =>
+        c.comment_id === commentId ? { ...c, sending: false, failed: true, errorMessage: msg } : c,
+      ));
     }
   };
 
-  const canSend = (input.trim().length > 0 || pendingImages.length > 0) && !isSubmitting;
+  const handleDelete = async (commentId: string) => {
+    const comment = comments.find((c) => c.comment_id === commentId || c.serverCommentId === commentId);
+    const isLocalOnly = comment && !comment.serverCommentId && comment.comment_id.startsWith("local-");
+    if (isLocalOnly) {
+      setComments((prev) => prev.filter((c) => c.comment_id !== commentId));
+      return;
+    }
+    try {
+      await deleteComment(commentId);
+      setComments((prev) => prev.filter((c) => c.comment_id !== commentId && c.serverCommentId !== commentId));
+    } catch {
+      Alert.alert("Fejl", "Kunne ikke slette kommentar");
+    }
+  };
+
+  const canSend = input.trim().length > 0 || pendingAttachments.length > 0;
 
   return (
     <ModalScreen title="Kommentarer">
@@ -267,20 +380,13 @@ export default function TaskComments() {
                 );
               }
               return currentUser?.user_id === item.data.user_id
-                ? <OwnUserTaskCommentBubble comment={item.data} onDelete={handleDelete} />
-                : <UserTaskCommentBubble comment={item.data} author={commentAuthors[item.data.user_id]} />;
+                ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={handleDelete} onRetry={handleRetry} />
+                : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />;
             }}
             ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           />
         )}
       </View>
-
-      {/* Inline error */}
-      {inlineError && (
-        <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.redLight }}>
-          <Text style={[typography.bodyXs, { color: colors.redText, textAlign: "center" }]}>{inlineError}</Text>
-        </View>
-      )}
 
       <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>
         <MaskedView
@@ -306,18 +412,20 @@ export default function TaskComments() {
           value={input}
           onChangeText={setInput}
           onSubmit={handleSubmit}
+          canSubmit={canSend && !isSubmitting}
           isSubmitting={isSubmitting}
-          canSubmit={canSend}
           leftActions={
-            <KeyboardInputBarAction icon="add" onPress={pickImages} disabled={isSubmitting} iconSize={26} />
+            <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} disabled={isSubmitting} />
           }
-          attachments={pendingImages.length > 0 ? (
+          attachments={pendingAttachments.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
-              {pendingImages.map((img) => (
+              {pendingAttachments.map((attachment) => (
                 <PendingAttachmentCard
-                  key={img.localUri}
-                  uri={img.localUri}
-                  onRemove={() => setPendingImages((prev) => prev.filter((i) => i.localUri !== img.localUri))}
+                  key={attachment.localUri}
+                  uri={attachment.localUri}
+                  mimeType={attachment.mimeType}
+                  fileName={attachment.fileName}
+                  onRemove={() => setPendingAttachments((prev) => prev.filter((a) => a.localUri !== attachment.localUri))}
                 />
               ))}
             </ScrollView>
