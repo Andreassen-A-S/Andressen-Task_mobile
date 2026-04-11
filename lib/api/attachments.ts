@@ -18,8 +18,8 @@ export async function prepareAttachments(
     body: JSON.stringify({ task_id, files }),
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? "Failed to prepare attachments");
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error ?? "Failed to prepare attachments");
   }
   const data = await res.json();
   return data.data;

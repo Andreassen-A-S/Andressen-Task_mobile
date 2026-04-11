@@ -185,7 +185,7 @@ export default function TaskComments() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       attachments: pendingAttachments.map((a, i) => ({
-        attachment_id: `local-${i}`,
+        attachment_id: `${localId}-att-${i}`,
         comment_id: null,
         task_id: taskId,
         uploaded_by: currentUser!.user_id,
