@@ -119,11 +119,15 @@ export default function TaskComments() {
           copyToCacheDirectory: true,
         });
         if (!result.canceled && result.assets.length > 0) {
-          const newFiles: PendingAttachment[] = result.assets.map((asset) => ({
-            localUri: asset.uri,
-            fileName: asset.name || decodeURIComponent(asset.uri.split("/").pop() ?? "") || "Fil",
-            mimeType: asset.mimeType ?? "application/octet-stream",
-          }));
+          const newFiles: PendingAttachment[] = result.assets.map((asset) => {
+            const name = asset.name || decodeURIComponent(asset.uri.split("/").pop() ?? "") || "Fil";
+            const ext = name.split(".").pop()?.toLowerCase();
+            const inferredMime = ext === "pdf" ? "application/pdf"
+              : ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              : ext === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              : "application/octet-stream";
+            return { localUri: asset.uri, fileName: name, mimeType: asset.mimeType ?? inferredMime };
+          });
           setPendingAttachments((prev) => [...prev, ...newFiles]);
           return true;
         }
@@ -270,7 +274,7 @@ export default function TaskComments() {
     try {
       let upload_tokens: string[] | undefined;
 
-      const fileAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://"));
+      const fileAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://") || a.url.startsWith("content://"));
       if (fileAttachments.length > 0) {
         const blobsWithMeta: { blob: Blob; mimeType: string; fileName: string }[] = [];
         for (const a of fileAttachments) {
@@ -312,6 +316,12 @@ export default function TaskComments() {
   };
 
   const handleDelete = async (commentId: string) => {
+    const comment = comments.find((c) => c.comment_id === commentId || c.serverCommentId === commentId);
+    const isLocalOnly = comment && !comment.serverCommentId && comment.comment_id.startsWith("local-");
+    if (isLocalOnly) {
+      setComments((prev) => prev.filter((c) => c.comment_id !== commentId));
+      return;
+    }
     try {
       await deleteComment(commentId);
       setComments((prev) => prev.filter((c) => c.comment_id !== commentId && c.serverCommentId !== commentId));

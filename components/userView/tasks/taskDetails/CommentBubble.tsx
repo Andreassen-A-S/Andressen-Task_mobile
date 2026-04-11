@@ -49,7 +49,7 @@ export default function CommentBubble({ comment, isOwn, author, sending, failed,
     if (isOwn && onDelete) {
       options.push({ text: "Slet", style: "destructive", onPress: () => onDelete(deleteId ?? comment.comment_id) });
     }
-    Alert.alert("", comment.message ?? "", options);
+    Alert.alert(comment.message ? "" : "Vedhæftning", comment.message ?? "Handlinger", options);
   };
 
   const align = isOwn ? "flex-end" : "flex-start";

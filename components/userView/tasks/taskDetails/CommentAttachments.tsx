@@ -86,18 +86,21 @@ export default function CommentAttachments({ attachments, align = "flex-start" }
   return (
     <View style={{ gap: 6 }}>
       {images.length > 0 && <ImageGrid images={images} align={align} />}
-      {files.map((file) => (
-        <TouchableOpacity
-          key={file.attachment_id}
-          onPress={() => WebBrowser.openBrowserAsync(file.url)}
-          activeOpacity={0.7}
-          style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: colors.white, borderRadius: 10, borderWidth: 1, borderColor: colors.muted, paddingVertical: 8, paddingHorizontal: 12, width: 220, alignSelf: align }}
-        >
-          <Ionicons name={getFileIcon(file.mime_type) as any} size={20} color={colors.textPrimary} />
-          <Text style={[typography.bodySm, { flex: 1 }]} numberOfLines={1}>{file.file_name ?? "Fil"}</Text>
-          <Ionicons name="open-outline" size={14} color={colors.textMuted} />
-        </TouchableOpacity>
-      ))}
+      {files.map((file) => {
+        const isLocal = file.url.startsWith("file://") || file.url.startsWith("content://") || file.url.startsWith("ph://");
+        return (
+          <TouchableOpacity
+            key={file.attachment_id}
+            onPress={isLocal ? undefined : () => WebBrowser.openBrowserAsync(file.url)}
+            activeOpacity={isLocal ? 1 : 0.7}
+            style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: colors.white, borderRadius: 10, borderWidth: 1, borderColor: colors.muted, paddingVertical: 8, paddingHorizontal: 12, width: 220, alignSelf: align }}
+          >
+            <Ionicons name={getFileIcon(file.mime_type) as any} size={20} color={colors.textPrimary} />
+            <Text style={[typography.bodySm, { flex: 1 }]} numberOfLines={1}>{file.file_name ?? "Fil"}</Text>
+            {!isLocal && <Ionicons name="open-outline" size={14} color={colors.textMuted} />}
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
