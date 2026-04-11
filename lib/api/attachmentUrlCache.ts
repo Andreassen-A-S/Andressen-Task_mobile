@@ -10,7 +10,13 @@ export function applyAttachmentUrlCache(attachments: TaskAttachment[]): TaskAtta
 
   const result = attachments.map((a) => {
     const cached = urlCache.get(a.attachment_id);
-    if (cached && cached.expiresAt > now) return { ...a, url: cached.url };
+    // Delete + re-set in both branches to move key to end of insertion order,
+    // keeping LRU eviction accurate (Map.set on existing key does not reorder)
+    urlCache.delete(a.attachment_id);
+    if (cached && cached.expiresAt > now) {
+      urlCache.set(a.attachment_id, cached);
+      return { ...a, url: cached.url };
+    }
     urlCache.set(a.attachment_id, { url: a.url, expiresAt: now + TTL });
     return a;
   });

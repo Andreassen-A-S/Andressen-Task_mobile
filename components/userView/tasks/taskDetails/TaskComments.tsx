@@ -65,6 +65,7 @@ export default function TaskComments() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const listData = useMemo<ListItem[]>(() => {
     const result: ListItem[] = [];
     for (let i = 0; i < comments.length; i++) {
@@ -166,7 +167,10 @@ export default function TaskComments() {
   };
 
   const handleSubmit = async () => {
+    if (!taskId || !currentUser) return;
     if (!input.trim() && pendingAttachments.length === 0) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     const localId = `local-${Date.now()}`;
     const optimistic: DisplayComment = {
@@ -249,10 +253,13 @@ export default function TaskComments() {
       setComments((prev) => prev.map((c) =>
         c.comment_id === localId ? { ...c, sending: false, failed: true, errorMessage: msg } : c,
       ));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleRetry = async (commentId: string) => {
+    if (!taskId || !currentUser) return;
     const comment = comments.find((c) => c.comment_id === commentId);
     if (!comment) return;
 
@@ -395,9 +402,10 @@ export default function TaskComments() {
           value={input}
           onChangeText={setInput}
           onSubmit={handleSubmit}
-          canSubmit={canSend}
+          canSubmit={canSend && !isSubmitting}
+          isSubmitting={isSubmitting}
           leftActions={
-            <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} />
+            <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} disabled={isSubmitting} />
           }
           attachments={pendingAttachments.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
