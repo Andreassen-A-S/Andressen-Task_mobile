@@ -20,6 +20,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { useAuth } from "@/hooks/useAuth";
 import { getTaskComments, createComment, deleteComment, getUser, prepareAttachments, uploadToGcs } from "@/lib/api";
 import { formatGroupTimestamp } from "@/helpers/helpers";
+import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
 import { typography } from "@/constants/typography";
@@ -199,13 +200,16 @@ export default function TaskComments() {
       let upload_tokens: string[] | undefined;
 
       if (pendingAttachments.length > 0) {
-        const blobsWithMeta = await Promise.all(
-          pendingAttachments.map(async (attachment) => {
-            const fileRes = await fetch(attachment.localUri);
-            const blob = await fileRes.blob();
-            return { blob, img: attachment };
-          }),
-        );
+        const blobsWithMeta: { blob: Blob; img: typeof pendingAttachments[0] }[] = [];
+        for (const attachment of pendingAttachments) {
+          const fileRes = await fetch(attachment.localUri);
+          const blob = await fileRes.blob();
+          const maxBytes = MAX_FILE_SIZE[attachment.mimeType] ?? 10 * 1024 * 1024;
+          if (blob.size > maxBytes) {
+            throw new Error(`${attachment.fileName ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+          }
+          blobsWithMeta.push({ blob, img: attachment });
+        }
 
         const prepared = await prepareAttachments(
           taskId,
@@ -216,11 +220,9 @@ export default function TaskComments() {
           })),
         );
 
-        await Promise.all(
-          prepared.map(({ upload_url }, i) =>
-            uploadToGcs(upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType),
-          ),
-        );
+        for (let i = 0; i < prepared.length; i++) {
+          await uploadToGcs(prepared[i].upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType);
+        }
 
         upload_tokens = prepared.map((p) => p.upload_token);
       }
@@ -263,18 +265,24 @@ export default function TaskComments() {
 
       const fileAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://"));
       if (fileAttachments.length > 0) {
-        const blobsWithMeta = await Promise.all(
-          fileAttachments.map(async (a) => {
-            const res = await fetch(a.url);
-            const blob = await res.blob();
-            return { blob, mimeType: a.mime_type ?? "application/octet-stream", fileName: a.file_name ?? "file" };
-          }),
-        );
+        const blobsWithMeta: { blob: Blob; mimeType: string; fileName: string }[] = [];
+        for (const a of fileAttachments) {
+          const res = await fetch(a.url);
+          const blob = await res.blob();
+          const mimeType = a.mime_type ?? "application/octet-stream";
+          const maxBytes = MAX_FILE_SIZE[mimeType] ?? 10 * 1024 * 1024;
+          if (blob.size > maxBytes) {
+            throw new Error(`${a.file_name ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+          }
+          blobsWithMeta.push({ blob, mimeType, fileName: a.file_name ?? "file" });
+        }
         const prepared = await prepareAttachments(
           taskId,
           blobsWithMeta.map(({ blob, mimeType, fileName }) => ({ file_name: fileName, mime_type: mimeType, file_size: blob.size })),
         );
-        await Promise.all(prepared.map(({ upload_url }, i) => uploadToGcs(upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].mimeType)));
+        for (let i = 0; i < prepared.length; i++) {
+          await uploadToGcs(prepared[i].upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].mimeType);
+        }
         upload_tokens = prepared.map((p) => p.upload_token);
       }
 

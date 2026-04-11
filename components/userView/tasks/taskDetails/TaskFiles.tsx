@@ -11,14 +11,7 @@ import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
-
-function getFileIcon(mimeType: string | null): string {
-  if (!mimeType) return "document-outline";
-  if (mimeType === "application/pdf") return "document-text-outline";
-  if (mimeType.includes("word") || mimeType.includes("document")) return "document-outline";
-  if (mimeType.includes("sheet") || mimeType.includes("excel")) return "grid-outline";
-  return "document-outline";
-}
+import { getFileIcon } from "@/helpers/attachmentHelpers";
 
 export default function TaskFiles() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();

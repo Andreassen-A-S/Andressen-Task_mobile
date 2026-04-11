@@ -7,6 +7,7 @@ import ImageView from "react-native-image-viewing";
 import { TaskAttachment } from "@/types/comment";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
+import { getFileIcon } from "@/helpers/attachmentHelpers";
 
 interface Props {
   attachments: TaskAttachment[];
@@ -17,13 +18,6 @@ const STACK_OFFSET = 8;
 const MAX_VISIBLE = 3;
 const IMAGE_SIZE = 160;
 
-function getFileIcon(mimeType: string | null): string {
-  if (!mimeType) return "document-outline";
-  if (mimeType === "application/pdf") return "document-text-outline";
-  if (mimeType.includes("word") || mimeType.includes("document")) return "document-outline";
-  if (mimeType.includes("sheet") || mimeType.includes("excel")) return "grid-outline";
-  return "document-outline";
-}
 
 function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-start" | "flex-end" }) {
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);

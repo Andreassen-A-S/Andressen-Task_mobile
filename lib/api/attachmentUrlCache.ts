@@ -8,12 +8,19 @@ const MAX_CACHE_SIZE = 500;
 export function applyAttachmentUrlCache(attachments: TaskAttachment[]): TaskAttachment[] {
   const now = Date.now();
 
-  // Evict expired entries
+  const result = attachments.map((a) => {
+    const cached = urlCache.get(a.attachment_id);
+    if (cached && cached.expiresAt > now) return { ...a, url: cached.url };
+    urlCache.set(a.attachment_id, { url: a.url, expiresAt: now + TTL });
+    return a;
+  });
+
+  // Evict expired entries after inserts
   for (const [id, entry] of urlCache) {
     if (entry.expiresAt <= now) urlCache.delete(id);
   }
 
-  // Evict oldest entries if over limit
+  // Evict oldest entries if still over limit
   if (urlCache.size > MAX_CACHE_SIZE) {
     const overflow = urlCache.size - MAX_CACHE_SIZE;
     let i = 0;
@@ -23,12 +30,7 @@ export function applyAttachmentUrlCache(attachments: TaskAttachment[]): TaskAtta
     }
   }
 
-  return attachments.map((a) => {
-    const cached = urlCache.get(a.attachment_id);
-    if (cached && cached.expiresAt > now) return { ...a, url: cached.url };
-    urlCache.set(a.attachment_id, { url: a.url, expiresAt: now + TTL });
-    return a;
-  });
+  return result;
 }
 
 export function bustAttachmentUrl(attachmentId: string) {

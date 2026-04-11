@@ -2,20 +2,13 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
+import { getFileIcon } from "@/helpers/attachmentHelpers";
 
 interface Props {
   uri: string;
   mimeType?: string;
   fileName?: string;
   onRemove: () => void;
-}
-
-function getFileIcon(mimeType?: string): string {
-  if (!mimeType) return "document-outline";
-  if (mimeType === "application/pdf") return "document-text-outline";
-  if (mimeType.includes("word") || mimeType.includes("document")) return "document-outline";
-  if (mimeType.includes("sheet") || mimeType.includes("excel")) return "grid-outline";
-  return "document-outline";
 }
 
 export default function PendingAttachmentCard({ uri, mimeType, fileName, onRemove }: Props) {
