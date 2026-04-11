@@ -1,8 +1,7 @@
 import { View, Text, ActivityIndicator } from "react-native";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
-import UserTaskCommentBubble from "./UserTaskCommentBubble";
-import OwnUserTaskCommentBubble from "./OwnUserTaskCommentBubble";
+import CommentBubble from "./CommentBubble";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
@@ -41,10 +40,8 @@ export default function UserTaskComment({
         <View className="gap-4 mb-4">
           {comments.map((c) => {
             const isOwn = currentUserId === c.user_id;
-            return isOwn ? (
-              <OwnUserTaskCommentBubble key={c.comment_id} comment={c} onDelete={onDelete} />
-            ) : (
-              <UserTaskCommentBubble key={c.comment_id} comment={c} author={commentAuthors[c.user_id]} />
+            return (
+              <CommentBubble key={c.comment_id} comment={c} isOwn={isOwn} author={commentAuthors[c.user_id]} onDelete={onDelete} />
             );
           })}
         </View>

@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
-import { View, Text, Image, TouchableOpacity, FlatList, ActivityIndicator, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Dimensions } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams } from "expo-router";
+import { Image } from "expo-image";
 import ImageView from "react-native-image-viewing";
-import { getTaskImages } from "@/lib/api";
+import { getTaskAttachments } from "@/lib/api";
 import { TaskAttachment } from "@/types/comment";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
@@ -28,8 +29,8 @@ export default function TaskPhotos() {
     try {
       setIsLoading(true);
       setFetchError(null);
-      const data = await getTaskImages(taskId);
-      setImages(data);
+      const data = await getTaskAttachments(taskId);
+      setImages(data.filter((a) => a.type === "IMAGE"));
     } catch {
       setFetchError("Kunne ikke hente billeder");
     } finally {
@@ -77,8 +78,11 @@ export default function TaskPhotos() {
               <TouchableOpacity onPress={() => setViewerIndex(index)} activeOpacity={0.9}>
                 <Image
                   source={{ uri: item.url }}
-                  style={{ width: TILE_SIZE, height: TILE_SIZE }}
-                  resizeMode="cover"
+                  cacheKey={item.attachment_id}
+                  cachePolicy="memory-disk"
+                  style={{ width: TILE_SIZE, height: TILE_SIZE, backgroundColor: colors.border }}
+                  contentFit="cover"
+                  transition={200}
                 />
               </TouchableOpacity>
             )}

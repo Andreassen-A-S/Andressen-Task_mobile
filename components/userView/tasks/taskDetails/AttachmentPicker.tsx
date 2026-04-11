@@ -9,7 +9,7 @@ import { colors } from "@/constants/colors";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
 type Option = {
-  key: "camera" | "gallery";
+  key: "camera" | "gallery" | "files";
   icon: string;
   label: string;
 };
@@ -17,6 +17,7 @@ type Option = {
 const OPTIONS: Option[] = [
   { key: "camera", icon: "camera-outline", label: "Kamera" },
   { key: "gallery", icon: "image-outline", label: "Galleri" },
+  { key: "files", icon: "document-outline", label: "Filer" },
 ];
 
 export default function AttachmentPicker() {
@@ -25,7 +26,7 @@ export default function AttachmentPicker() {
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
 
-  const select = async (source: "camera" | "gallery") => {
+  const select = async (source: "camera" | "gallery" | "files") => {
     const cb = attachmentPickerStore.get();
     if (!cb) {
       attachmentPickerStore.clear();
