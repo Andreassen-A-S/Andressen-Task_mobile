@@ -65,7 +65,7 @@ export default function UserTaskPage() {
   ), [tasks, selectedDateKey]);
 
   const activeTasksList = useMemo(() => tasks.filter((t) =>
-    toLocalDateKey(t.scheduled_date) <= selectedDateKey &&
+    toLocalDateKey(t.start_date) <= selectedDateKey &&
     toLocalDateKey(t.deadline) >= selectedDateKey &&
     !INACTIVE_STATUSES.includes(t.status)
   ), [tasks, selectedDateKey]);

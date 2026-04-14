@@ -5,8 +5,8 @@ export type TaskSortKey =
   | "deadline_desc"
   | "priority_asc"
   | "priority_desc"
-  | "scheduled_asc"
-  | "scheduled_desc"
+  | "start_asc"
+  | "start_desc"
   | "created_desc"
   | "created_asc";
 
@@ -27,10 +27,10 @@ export function sortTasks(tasks: Task[], key: TaskSortKey = "deadline_asc"): Tas
       case "priority_desc":
         return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority]
           || new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
-      case "scheduled_asc":
-        return new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime();
-      case "scheduled_desc":
-        return new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime();
+      case "start_asc":
+        return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+      case "start_desc":
+        return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
       case "created_desc":
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       case "created_asc":

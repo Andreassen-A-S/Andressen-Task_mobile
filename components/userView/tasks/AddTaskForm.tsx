@@ -62,7 +62,7 @@ export default function AddTaskForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>(TaskPriority.MEDIUM);
-  const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
   const [goal, setGoal] = useState<GoalData | null>(null);
@@ -84,8 +84,8 @@ export default function AddTaskForm() {
         project_id: projectId,
         priority,
         status: TaskStatus.PENDING,
-        deadline: toDateParam(deadline ?? scheduledDate ?? new Date()) + "T23:59:59.000Z",
-        scheduled_date: toDateParam(scheduledDate ?? new Date()) + "T00:00:00.000Z",
+        deadline: toDateParam(deadline ?? startDate ?? new Date()) + "T23:59:59.000Z",
+        start_date: toDateParam(startDate ?? new Date()) + "T00:00:00.000Z",
         created_by: user.user_id,
         assigned_users: assignedUsers,
         ...(goal ? { goal_type: goal.goal_type, target_quantity: goal.target_quantity, unit: goal.unit } : {}),
@@ -177,7 +177,7 @@ export default function AddTaskForm() {
           contentContainerStyle={{ paddingHorizontal: 12, gap: 8, alignItems: 'center' }}
         >
           <ToolbarGlassButton icon="flag" label={translatePriority(priority).charAt(0) + translatePriority(priority).slice(1).toLowerCase()} tint={priority ? "#007AFF" : undefined} onPress={() => openPicker("Prioritet", PRIORITY_OPTIONS, priority, (v) => setPriority(v as TaskPriority))} />
-          <ToolbarGlassButton icon="calendar" label={scheduledDate ? formatRelativeDate(scheduledDate) : "Planlagt"} tint={scheduledDate ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setScheduledDate(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Planlagt dato", selected: toDateParam(scheduledDate ?? new Date()) } }); }} />
+          <ToolbarGlassButton icon="calendar" label={startDate ? formatRelativeDate(startDate) : "Startdato"} tint={startDate ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setStartDate(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Startdato", selected: toDateParam(startDate ?? new Date()) } }); }} />
           <ToolbarGlassButton icon="clock" label={deadline ? formatRelativeDate(deadline) : "Deadline"} tint={deadline ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setDeadline(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Deadline", selected: toDateParam(deadline ?? new Date()) } }); }} />
           <ToolbarGlassButton icon="target" label={goal?.target_quantity ? translateTaskUnit(goal.unit).replace(/^./, (c) => c.toUpperCase()) : "Mål"} tint={goal ? "#007AFF" : undefined} onPress={() => { goalStore.set(setGoal, goal); router.push({ pathname: "/(tabs)/tasks/add-goal-picker" }); }} />
           <ToolbarGlassButton icon="person" label={assignedUsers.length > 0 ? `${assignedUsers.length} Tildelt${assignedUsers.length === 1 ? "" : "e"}` : "Tildelte"} tint={assignedUsers.length > 0 ? "#007AFF" : undefined} onPress={() => { multiSelectStore.set(setAssignedUsers, assignedUsers); router.push({ pathname: "/(tabs)/tasks/add-assignees-picker" }); }} />
