@@ -172,7 +172,7 @@ export default function CalendarPage() {
                 <CalendarTaskCard task={item} onClick={() => router.push(`/(tabs)/calendar/${item.task_id}`)} />
               )}
               renderSectionHeader={({ section: { title, data } }) => {
-                if (title === "Planlagt" && !hasBothSections) return null;
+                if (title === "Startdato" && !hasBothSections) return null;
                 const isCarriedOverSection = title === "Overført";
                 return (
                   <View>
