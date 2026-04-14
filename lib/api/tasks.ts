@@ -9,7 +9,7 @@ export interface CreateTaskInput {
   priority: TaskPriority;
   status: TaskStatus;
   deadline: string;
-  scheduled_date: string;
+  start_date: string;
   created_by: string;
   assigned_users: string[];
   goal_type?: TaskGoalType;

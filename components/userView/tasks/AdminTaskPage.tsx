@@ -44,8 +44,8 @@ const SORT_GROUPS: GroupedSelectGroup[] = [
   },
   {
     options: [
-      { label: "Planlagt (nyeste)", value: "scheduled_desc" },
-      { label: "Planlagt (ældste)", value: "scheduled_asc" },
+      { label: "Startdato (nyeste)", value: "start_desc" },
+      { label: "Startdato (ældste)", value: "start_asc" },
     ]
   },
   {
@@ -61,8 +61,8 @@ const SORT_LABELS: Record<TaskSortKey, string> = {
   deadline_desc: "Deadline ↓",
   priority_asc: "Prioritet ↑",
   priority_desc: "Prioritet ↓",
-  scheduled_asc: "Planlagt ↑",
-  scheduled_desc: "Planlagt ↓",
+  start_asc: "Startdato ↑",
+  start_desc: "Startdato ↓",
   created_desc: "Nyeste",
   created_asc: "Ældste",
 };
@@ -153,12 +153,12 @@ export default function AdminTaskPage() {
   const activeTasksList = hasFilters
     ? sortedTasks
     : sortedTasks.filter((t) =>
-        toLocalDateKey(t.scheduled_date) <= selectedDateKey &&
+        toLocalDateKey(t.start_date) <= selectedDateKey &&
         toLocalDateKey(t.deadline) >= selectedDateKey &&
         !INACTIVE_STATUSES.includes(t.status)
       );
   const upcomingTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
-    toLocalDateKey(t.scheduled_date) > selectedDateKey &&
+    toLocalDateKey(t.start_date) > selectedDateKey &&
     toLocalDateKey(t.deadline) >= selectedDateKey &&
     !INACTIVE_STATUSES.includes(t.status)
   );

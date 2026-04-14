@@ -131,17 +131,17 @@ export default function EditTaskModal() {
     router.push({ pathname: "/(tabs)/tasks/list-picker", params: { title: "Status", selected: currentTask.status } });
   };
 
-  const openScheduledDatePicker = () => {
+  const openStartDatePicker = () => {
     const currentTask = taskRef.current;
     if (!currentTask) return;
     pickerStore.set((value) => {
-      if (value) save({ scheduled_date: value + "T00:00:00.000Z" });
+      if (value) save({ start_date: value + "T00:00:00.000Z" });
     });
     router.push({
       pathname: "/(tabs)/tasks/date-picker",
       params: {
-        title: "Planlagt dato",
-        selected: currentTask.scheduled_date.split("T")[0],
+        title: "Startdato",
+        selected: currentTask.start_date.split("T")[0],
       },
     });
   };
@@ -225,9 +225,9 @@ export default function EditTaskModal() {
             <Badge variant="status" value={task.status} size="md" />
           </EditRow>
 
-          <EditRow label="Planlagt dato" onEdit={openScheduledDatePicker} isSaving={isSaving}>
+          <EditRow label="Startdato" onEdit={openStartDatePicker} isSaving={isSaving}>
             <Text style={typography.bodySm}>
-              {task.scheduled_date ? formatRelativeDate(task.scheduled_date) : "Ingen dato"}
+              {task.start_date ? formatRelativeDate(task.start_date) : "Ingen dato"}
             </Text>
           </EditRow>
 

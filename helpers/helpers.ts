@@ -276,7 +276,7 @@ export function translateTaskUnit(unit?: string | null): string {
 export function getTodayAssignmentStats(assignments: TaskAssignment[]) {
   const today = toLocalDateKey(new Date());
   const assignedToday = assignments.filter(
-    (a) => toLocalDateKey(a.task.scheduled_date) === today,
+    (a) => toLocalDateKey(a.task.start_date) === today,
   ).length;
   const completedToday = assignments.filter(
     (a) => a.completed_at && toLocalDateKey(a.completed_at) === today,
