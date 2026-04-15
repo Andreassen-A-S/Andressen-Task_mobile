@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments, getProjects } from "@/lib/api";
 import { Task, INACTIVE_STATUSES } from "@/types/task";
 import { Project } from "@/types/project";
-import { toLocalDateKey } from "@/helpers/helpers";
+import { toDateKey } from "@/helpers/helpers";
 import { sortTasks } from "@/helpers/sort";
 import UserTaskCard from "./UserTaskCard";
 import SectionHeader from "./SectionHeader";
@@ -58,15 +58,15 @@ export default function UserTaskPage() {
     }, [user?.user_id, fetchTasks])
   );
 
-  const selectedDateKey = toLocalDateKey(new Date());
+  const selectedDateKey = toDateKey(new Date());
 
   const overdueTasksList = useMemo(() => tasks.filter((t) =>
-    toLocalDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
+    toDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
   ), [tasks, selectedDateKey]);
 
   const activeTasksList = useMemo(() => tasks.filter((t) =>
-    toLocalDateKey(t.start_date) <= selectedDateKey &&
-    toLocalDateKey(t.deadline) >= selectedDateKey &&
+    toDateKey(t.start_date) <= selectedDateKey &&
+    toDateKey(t.deadline) >= selectedDateKey &&
     !INACTIVE_STATUSES.includes(t.status)
   ), [tasks, selectedDateKey]);
 

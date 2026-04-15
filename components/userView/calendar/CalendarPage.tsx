@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { getUserAssignments } from "@/lib/api";
 import { Task, TaskStatus } from "@/types/task";
 import { useAuth } from "@/hooks/useAuth";
-import { formatLocalDate, toLocalDateKey } from "@/helpers/helpers";
+import { formatLocalDate, toDateKey } from "@/helpers/helpers";
 import CalendarMonthNavigator from "./CalendarMonthNavigator";
 import CalendarTaskCard from "./CalendarTaskCard";
 import UserHeader from "../common/UserHeader";
@@ -72,16 +72,16 @@ export default function CalendarPage() {
     return days;
   };
 
-  const todayKey = toLocalDateKey(new Date());
+  const todayKey = toDateKey(new Date());
 
   const isCarriedOver = (task: Task) =>
-    toLocalDateKey(task.start_date) < todayKey &&
+    toDateKey(task.start_date) < todayKey &&
     (task.status === TaskStatus.PENDING || task.status === TaskStatus.IN_PROGRESS);
 
   const getTasksForDate = (date: Date) => {
-    const dateStr = toLocalDateKey(date);
+    const dateStr = toDateKey(date);
     return tasks.filter((t) => {
-      if (toLocalDateKey(t.start_date) === dateStr) return true;
+      if (toDateKey(t.start_date) === dateStr) return true;
       return dateStr === todayKey && isCarriedOver(t);
     });
   };
@@ -91,8 +91,8 @@ export default function CalendarPage() {
 
   const days = getDaysInMonth();
   const monthName = formatLocalDate(currentDate, "da-DK", { month: "long", year: "numeric" });
-  const selectedDateKey = toLocalDateKey(selectedDate);
-  const startDateTasks = tasks.filter((t) => toLocalDateKey(t.start_date) === selectedDateKey);
+  const selectedDateKey = toDateKey(selectedDate);
+  const startDateTasks = tasks.filter((t) => toDateKey(t.start_date) === selectedDateKey);
   const carriedOverTasks = selectedDateKey === todayKey ? tasks.filter(isCarriedOver) : [];
   const totalCount = startDateTasks.length + carriedOverTasks.length;
   const hasBothSections = startDateTasks.length > 0 && carriedOverTasks.length > 0;
