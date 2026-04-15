@@ -55,22 +55,12 @@ export function formatLocalDate(
   return date.toLocaleDateString(locale, options);
 }
 
-export function toLocalDateKey(dateInput: string | Date): string {
+export function toDateKey(dateInput: string | Date): string {
   const date = parseDateInput(dateInput);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-export function formatDaDate(isoDate: string | Date): string {
-  const date = typeof isoDate === "string" ? new Date(isoDate) : isoDate;
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("da-DK", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 export function formatCommentDate(dateString: string): string {
@@ -108,8 +98,10 @@ export function formatGroupTimestamp(dateString: string): string {
   return date.toLocaleDateString("da-DK", { day: "numeric", month: "short", year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined }) + ` ${timeStr}`;
 }
 
-export function isoToDateString(iso: string): string {
-  return iso.split("T")[0];
+
+// Convert YYYY-MM-DD to a full ISO 8601 UTC string for API submission
+export function toIsoDate(dateString: string): string {
+  return dateString + "T00:00:00.000Z";
 }
 
 export function translatePriority(priority: string): string {
@@ -205,13 +197,6 @@ export const getPriorityAccentColor = (priority: TaskPriority): string => {
   return colors[priority];
 };
 
-export function toDateParam(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 export function parseDateParam(s: string): Date {
   const [y, mo, d] = s.split("-").map(Number);
   return new Date(y, mo - 1, d);
@@ -274,12 +259,12 @@ export function translateTaskUnit(unit?: string | null): string {
 }
 
 export function getTodayAssignmentStats(assignments: TaskAssignment[]) {
-  const today = toLocalDateKey(new Date());
+  const today = toDateKey(new Date());
   const assignedToday = assignments.filter(
-    (a) => toLocalDateKey(a.task.start_date) === today,
+    (a) => toDateKey(a.task.start_date) === today,
   ).length;
   const completedToday = assignments.filter(
-    (a) => a.completed_at && toLocalDateKey(a.completed_at) === today,
+    (a) => a.completed_at && toDateKey(a.completed_at) === today,
   ).length;
   return { assignedToday, completedToday };
 }

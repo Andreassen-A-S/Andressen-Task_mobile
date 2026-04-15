@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import DateSelectModal from "@/components/userView/common/DateSelectModal";
 import { pickerStore } from "@/lib/pickerStore";
-import { toDateParam, parseDateParam } from "@/helpers/helpers";
+import { toDateKey, parseDateParam } from "@/helpers/helpers";
 
 export default function DatePicker() {
   const router = useRouter();
@@ -11,7 +11,7 @@ export default function DatePicker() {
   useEffect(() => () => pickerStore.clear(), []);
 
   const handleConfirm = (date: Date | null) => {
-    pickerStore.call(date ? toDateParam(date) : "");
+    pickerStore.call(date ? toDateKey(date) : "");
     pickerStore.clear();
     router.back();
   };

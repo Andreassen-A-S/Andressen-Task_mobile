@@ -15,7 +15,7 @@ import { getTasks, getProjects, getUsers } from "@/lib/api";
 import { Task, TaskStatus, INACTIVE_STATUSES } from "@/types/task";
 import { Project } from "@/types/project";
 import { User } from "@/types/users";
-import { toLocalDateKey } from "@/helpers/helpers";
+import { toDateKey } from "@/helpers/helpers";
 import { sortTasks, TaskSortKey } from "@/helpers/sort";
 import { pickerStore } from "@/lib/pickerStore";
 import { multiSelectStore } from "@/lib/multiSelectStore";
@@ -129,7 +129,7 @@ export default function AdminTaskPage() {
     }, [fetchData])
   );
 
-  const selectedDateKey = toLocalDateKey(new Date());
+  const selectedDateKey = toDateKey(new Date());
 
   const filteredTasks = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -148,18 +148,18 @@ export default function AdminTaskPage() {
   const sortedTasks = useMemo(() => sortTasks(filteredTasks, sortKey), [filteredTasks, sortKey]);
 
   const overdueTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
-    toLocalDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
+    toDateKey(t.deadline) < selectedDateKey && !INACTIVE_STATUSES.includes(t.status)
   );
   const activeTasksList = hasFilters
     ? sortedTasks
     : sortedTasks.filter((t) =>
-        toLocalDateKey(t.start_date) <= selectedDateKey &&
-        toLocalDateKey(t.deadline) >= selectedDateKey &&
+        toDateKey(t.start_date) <= selectedDateKey &&
+        toDateKey(t.deadline) >= selectedDateKey &&
         !INACTIVE_STATUSES.includes(t.status)
       );
   const upcomingTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
-    toLocalDateKey(t.start_date) > selectedDateKey &&
-    toLocalDateKey(t.deadline) >= selectedDateKey &&
+    toDateKey(t.start_date) > selectedDateKey &&
+    toDateKey(t.deadline) >= selectedDateKey &&
     !INACTIVE_STATUSES.includes(t.status)
   );
 

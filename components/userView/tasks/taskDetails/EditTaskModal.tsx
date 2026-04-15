@@ -21,7 +21,7 @@ import Badge from "@/components/userView/common/label/badge";
 import SingleAvatar from "@/components/userView/common/label/singleAvatar";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-import { formatRelativeDate } from "@/helpers/helpers";
+import { formatRelativeDate, toIsoDate } from "@/helpers/helpers";
 import { ListModalOption } from "@/types/picker";
 
 const PRIORITY_OPTIONS: ListModalOption[] = [
@@ -135,13 +135,13 @@ export default function EditTaskModal() {
     const currentTask = taskRef.current;
     if (!currentTask) return;
     pickerStore.set((value) => {
-      if (value) save({ start_date: value + "T00:00:00.000Z" });
+      if (value) save({ start_date: toIsoDate(value) });
     });
     router.push({
       pathname: "/(tabs)/tasks/date-picker",
       params: {
         title: "Startdato",
-        selected: currentTask.start_date.split("T")[0],
+        selected: currentTask.start_date,
       },
     });
   };
@@ -150,13 +150,13 @@ export default function EditTaskModal() {
     const currentTask = taskRef.current;
     if (!currentTask) return;
     pickerStore.set((value) => {
-      if (value) save({ deadline: value + "T23:59:59.000Z" });
+      if (value) save({ deadline: toIsoDate(value) });
     });
     router.push({
       pathname: "/(tabs)/tasks/date-picker",
       params: {
         title: "Deadline",
-        selected: currentTask.deadline.split("T")[0],
+        selected: currentTask.deadline,
       },
     });
   };

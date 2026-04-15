@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-import { formatRelativeDate, toLocalDateKey } from "@/helpers/helpers";
+import { formatRelativeDate, toDateKey } from "@/helpers/helpers";
 
 interface DeadlineBadgeProps {
   deadline: string;
@@ -18,7 +18,7 @@ const containerClass = {
 const iconSize = { sm: 12, md: 13, lg: 13 };
 
 export default function DeadlineBadge({ deadline, size = "md" }: DeadlineBadgeProps) {
-  const isOverdue = toLocalDateKey(deadline) < toLocalDateKey(new Date());
+  const isOverdue = toDateKey(deadline) < toDateKey(new Date());
   const color = isOverdue ? colors.red : colors.textMuted;
 
   return (
