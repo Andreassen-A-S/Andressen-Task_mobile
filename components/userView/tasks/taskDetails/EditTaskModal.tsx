@@ -21,7 +21,7 @@ import Badge from "@/components/userView/common/label/badge";
 import SingleAvatar from "@/components/userView/common/label/singleAvatar";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-import { formatRelativeDate, toIsoDate } from "@/helpers/helpers";
+import { formatRelativeDate, toIsoDate, toDateKey } from "@/helpers/helpers";
 import { ListModalOption } from "@/types/picker";
 
 const PRIORITY_OPTIONS: ListModalOption[] = [
@@ -141,7 +141,7 @@ export default function EditTaskModal() {
       pathname: "/(tabs)/tasks/date-picker",
       params: {
         title: "Startdato",
-        selected: currentTask.start_date,
+        selected: toDateKey(currentTask.start_date),
       },
     });
   };
@@ -156,7 +156,7 @@ export default function EditTaskModal() {
       pathname: "/(tabs)/tasks/date-picker",
       params: {
         title: "Deadline",
-        selected: currentTask.deadline,
+        selected: toDateKey(currentTask.deadline),
       },
     });
   };
