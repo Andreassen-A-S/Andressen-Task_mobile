@@ -1,4 +1,5 @@
 import "../global.css";
+import { Toaster } from "sonner-native";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
@@ -89,6 +90,10 @@ export default function RootLayout() {
         <AuthProvider>
           <RootGuard />
         </AuthProvider>
+        <Toaster
+          position="top-center"
+          positionerStyle={{ paddingHorizontal: 16 }}
+        />
       </KeyboardProvider>
     </GestureHandlerRootView>
   );
