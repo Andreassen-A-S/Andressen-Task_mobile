@@ -111,14 +111,6 @@ export default function TaskComments() {
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
 
-  // TODO: remove – toast test                                                          
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      showToast({ title: "Filer for store", message: "3 filer overskrider den maksimale filstørrelse og blev ikke tilføjet." });
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
   const pickAttachments = () => {
     attachmentPickerStore.set(async (source: "camera" | "gallery" | "files") => {
       if (source === "files") {
