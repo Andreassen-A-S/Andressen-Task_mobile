@@ -15,6 +15,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
+import { showToast } from "@/lib/toast";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { useAuth } from "@/hooks/useAuth";
@@ -119,17 +120,31 @@ export default function TaskComments() {
           copyToCacheDirectory: true,
         });
         if (!result.canceled && result.assets.length > 0) {
-          const newFiles: PendingAttachment[] = result.assets.map((asset) => {
+          const newFiles: PendingAttachment[] = [];
+          const oversized: string[] = [];
+          for (const asset of result.assets) {
             const name = asset.name || decodeURIComponent(asset.uri.split("/").pop() ?? "") || "Fil";
             const ext = name.split(".").pop()?.toLowerCase();
             const inferredMime = ext === "pdf" ? "application/pdf"
               : ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              : ext === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              : "application/octet-stream";
-            return { localUri: asset.uri, fileName: name, mimeType: asset.mimeType ?? inferredMime };
-          });
-          setPendingAttachments((prev) => [...prev, ...newFiles]);
-          return true;
+                : ext === "xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  : "application/octet-stream";
+            const mimeType = asset.mimeType ?? inferredMime;
+            const maxBytes = MAX_FILE_SIZE[mimeType] ?? 10 * 1024 * 1024;
+            if (asset.size != null && asset.size > maxBytes) {
+              oversized.push(name);
+            } else {
+              newFiles.push({ localUri: asset.uri, fileName: name, mimeType });
+            }
+          }
+          if (oversized.length > 0) {
+            showToast({ title: "Filer for store", message: `${oversized.length === 1 ? oversized[0] : `${oversized.length} filer`} overskrider den maksimale filstørrelse og blev ikke tilføjet.` });
+          }
+          if (newFiles.length > 0) {
+            setPendingAttachments((prev) => [...prev, ...newFiles]);
+            return true;
+          }
+          return false;
         }
         return false;
       }
@@ -149,9 +164,8 @@ export default function TaskComments() {
         }
         const result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          quality: 0.8,
           allowsMultipleSelection: true,
-          selectionLimit: 5,
+          selectionLimit: 20,
         });
         if (!result.canceled) { addPickedAssets(result.assets); return true; }
       }
@@ -162,12 +176,31 @@ export default function TaskComments() {
 
   const addPickedAssets = (assets: ImagePicker.ImagePickerAsset[]) => {
     const ts = Date.now();
-    const newAttachments: PendingAttachment[] = assets.map((asset, i) => {
+    const newAttachments: PendingAttachment[] = [];
+    const oversized: string[] = [];
+
+    assets.forEach((asset, i) => {
       const mime = asset.mimeType ?? "image/jpeg";
       const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
-      return { localUri: asset.uri, fileName: asset.fileName ?? `photo_${ts}_${i}.${ext}`, mimeType: mime };
+      const fileName = asset.fileName ?? `photo_${ts}_${i}.${ext}`;
+      const maxBytes = MAX_FILE_SIZE[mime] ?? 10 * 1024 * 1024;
+      if (asset.fileSize != null && asset.fileSize > maxBytes) {
+        oversized.push(fileName);
+      } else {
+        newAttachments.push({ localUri: asset.uri, fileName, mimeType: mime });
+      }
     });
-    setPendingAttachments((prev) => [...prev, ...newAttachments]);
+
+    if (oversized.length > 0) {
+      showToast({
+        title: "Filer for store",
+        message: `${oversized.length === 1 ? oversized[0] : `${oversized.length} filer`} overskrider den maksimale filstørrelse og blev ikke tilføjet.`,
+      });
+    }
+
+    if (newAttachments.length > 0) {
+      setPendingAttachments((prev) => [...prev, ...newAttachments]);
+    }
   };
 
   const handleSubmit = async () => {
@@ -208,16 +241,17 @@ export default function TaskComments() {
       let upload_tokens: string[] | undefined;
 
       if (pendingAttachments.length > 0) {
-        const blobsWithMeta: { blob: Blob; img: typeof pendingAttachments[0] }[] = [];
-        for (const attachment of pendingAttachments) {
-          const fileRes = await fetch(attachment.localUri);
-          const blob = await fileRes.blob();
-          const maxBytes = MAX_FILE_SIZE[attachment.mimeType] ?? 10 * 1024 * 1024;
-          if (blob.size > maxBytes) {
-            throw new Error(`${attachment.fileName ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
-          }
-          blobsWithMeta.push({ blob, img: attachment });
-        }
+        const blobsWithMeta = await Promise.all(
+          pendingAttachments.map(async (attachment) => {
+            const fileRes = await fetch(attachment.localUri);
+            const blob = await fileRes.blob();
+            const maxBytes = MAX_FILE_SIZE[attachment.mimeType] ?? 10 * 1024 * 1024;
+            if (blob.size > maxBytes) {
+              throw new Error(`${attachment.fileName ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+            }
+            return { blob, img: attachment };
+          }),
+        );
 
         const prepared = await prepareAttachments(
           taskId,
@@ -228,9 +262,9 @@ export default function TaskComments() {
           })),
         );
 
-        for (let i = 0; i < prepared.length; i++) {
-          await uploadToGcs(prepared[i].upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType);
-        }
+        await Promise.all(
+          prepared.map((p, i) => uploadToGcs(p.upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType)),
+        );
 
         upload_tokens = prepared.map((p) => p.upload_token);
       }
@@ -276,24 +310,25 @@ export default function TaskComments() {
 
       const fileAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://") || a.url.startsWith("content://"));
       if (fileAttachments.length > 0) {
-        const blobsWithMeta: { blob: Blob; mimeType: string; fileName: string }[] = [];
-        for (const a of fileAttachments) {
-          const res = await fetch(a.url);
-          const blob = await res.blob();
-          const mimeType = a.mime_type ?? "application/octet-stream";
-          const maxBytes = MAX_FILE_SIZE[mimeType] ?? 10 * 1024 * 1024;
-          if (blob.size > maxBytes) {
-            throw new Error(`${a.file_name ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
-          }
-          blobsWithMeta.push({ blob, mimeType, fileName: a.file_name ?? "file" });
-        }
+        const blobsWithMeta = await Promise.all(
+          fileAttachments.map(async (a) => {
+            const res = await fetch(a.url);
+            const blob = await res.blob();
+            const mimeType = a.mime_type ?? "application/octet-stream";
+            const maxBytes = MAX_FILE_SIZE[mimeType] ?? 10 * 1024 * 1024;
+            if (blob.size > maxBytes) {
+              throw new Error(`${a.file_name ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+            }
+            return { blob, mimeType, fileName: a.file_name ?? "file" };
+          }),
+        );
         const prepared = await prepareAttachments(
           taskId,
           blobsWithMeta.map(({ blob, mimeType, fileName }) => ({ file_name: fileName, mime_type: mimeType, file_size: blob.size })),
         );
-        for (let i = 0; i < prepared.length; i++) {
-          await uploadToGcs(prepared[i].upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].mimeType);
-        }
+        await Promise.all(
+          prepared.map((p, i) => uploadToGcs(p.upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].mimeType)),
+        );
         upload_tokens = prepared.map((p) => p.upload_token);
       }
 
