@@ -48,7 +48,7 @@ export default function LoginForm() {
           {/* Logo */}
           <View className="items-center mb-10">
             <Image
-              source={require("@/assets/icon.png")}
+              source={require("@/assets/logo.png")}
               style={{ width: 140, height: 70 }}
               resizeMode="contain"
               className="mb-2"
