@@ -7,6 +7,7 @@ import {
   Alert,
   TouchableOpacity,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
 import { User, UserRole } from "@/types/users";
@@ -105,11 +106,15 @@ export default function UserTaskDetails() {
     ]);
   };
 
+  const isArchived = task?.status === TaskStatus.ARCHIVED;
+
   const menuActions = user?.role === UserRole.ADMIN
     ? [
-      { label: "Rediger", systemImage: "pencil" as const, onPress: () => router.push(`${pathname}/edit`) },
+      ...(!isArchived ? [{ label: "Rediger", systemImage: "pencil" as const, onPress: () => router.push(`${pathname}/edit`) }] : []),
       { label: "Slet", systemImage: "trash" as const, onPress: handleDelete, role: "destructive" as const },
     ]
+    : isArchived
+    ? []
     : [
       { label: "Afvis", systemImage: "xmark" as const, onPress: handleReject, role: "destructive" as const },
     ];
@@ -194,6 +199,13 @@ export default function UserTaskDetails() {
           </View>
         )}
 
+        {task && !isLoading && !error && isArchived && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: colors.muted, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 4 }}>
+            <Ionicons name="lock-closed-outline" size={14} color={colors.textSecondary} />
+            <Text style={[typography.labelSm, { color: colors.textSecondary }]}>Denne opgave er arkiveret og kan ikke redigeres</Text>
+          </View>
+        )}
+
         {task && !isLoading && !error && (
           <View style={{ flex: 1, justifyContent: "space-between", gap: 16 }}>
             <View style={{ gap: 16 }}>
@@ -226,6 +238,7 @@ export default function UserTaskDetails() {
                   unitLabel={unitLabel}
                   onAddProgress={handleAddProgress}
                   isUpdating={isUpdating}
+                  disabled={isArchived}
                 />
               )}
 
@@ -257,11 +270,13 @@ export default function UserTaskDetails() {
                 </>
               )}
             </TouchableOpacity> */}
-            <SlideToComplete
-              onComplete={handleComplete}
-              isCompleted={task.status === TaskStatus.DONE}
-              isUpdating={isUpdating}
-            />
+            {!isArchived && (
+              <SlideToComplete
+                onComplete={handleComplete}
+                isCompleted={task.status === TaskStatus.DONE}
+                isUpdating={isUpdating}
+              />
+            )}
           </View>
         )}
       </ScrollView>

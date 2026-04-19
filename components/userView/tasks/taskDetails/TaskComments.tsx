@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import MaskedView from "@react-native-masked-view/masked-view";
@@ -19,10 +20,11 @@ import { showToast } from "@/lib/toast";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { useAuth } from "@/hooks/useAuth";
-import { getTaskComments, createComment, deleteComment, getUser, prepareAttachments, uploadToGcs } from "@/lib/api";
+import { getTaskComments, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs } from "@/lib/api";
 import { formatGroupTimestamp } from "@/helpers/helpers";
 import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { TaskComment } from "@/types/comment";
+import { TaskStatus } from "@/types/task";
 import { User } from "@/types/users";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
@@ -52,6 +54,7 @@ type ListItem = { type: "comment"; data: DisplayComment } | { type: "timestamp";
 
 export default function TaskComments() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
+  const [isArchived, setIsArchived] = useState(false);
   const router = useRouter();
   const headerHeight = useModalHeaderHeight();
   const { user: currentUser } = useAuth();
@@ -85,7 +88,8 @@ export default function TaskComments() {
         setIsLoading(true);
         setFetchError(null);
       }
-      const data = await getTaskComments(taskId);
+      const [data, taskData] = await Promise.all([getTaskComments(taskId), getTask(taskId)]);
+      setIsArchived(taskData.status === TaskStatus.ARCHIVED);
       setComments(data);
       setFetchError(null);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
@@ -105,8 +109,8 @@ export default function TaskComments() {
   useFocusEffect(useCallback(() => {
     fetchComments(hasLoadedRef.current);
     hasLoadedRef.current = true;
-    const timer = setTimeout(() => inputRef.current?.focus(), 300);
-    return () => clearTimeout(timer);
+    const timer = !isArchived ? setTimeout(() => inputRef.current?.focus(), 300) : null;
+    return () => { if (timer) clearTimeout(timer); };
   }, [fetchComments]));
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
@@ -423,50 +427,57 @@ export default function TaskComments() {
         )}
       </View>
 
-      <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>
-        <MaskedView
-          style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
-          pointerEvents="none"
-          maskElement={
-            <LinearGradient
-              colors={["transparent", "black", "black"]}
-              locations={[0, 0.7, 1]}
-              style={{ flex: 1 }}
-            />
-          }
-        >
-          <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} pointerEvents="none" />
-        </MaskedView>
-        <LinearGradient
-          colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
-          style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
-          pointerEvents="none"
-        />
-        <KeyboardInputBar
-          inputRef={inputRef}
-          value={input}
-          onChangeText={setInput}
-          onSubmit={handleSubmit}
-          canSubmit={canSend && !isSubmitting}
-          isSubmitting={isSubmitting}
-          leftActions={
-            <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} disabled={isSubmitting} />
-          }
-          attachments={pendingAttachments.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
-              {pendingAttachments.map((attachment) => (
-                <PendingAttachmentCard
-                  key={attachment.localUri}
-                  uri={attachment.localUri}
-                  mimeType={attachment.mimeType}
-                  fileName={attachment.fileName}
-                  onRemove={() => setPendingAttachments((prev) => prev.filter((a) => a.localUri !== attachment.localUri))}
-                />
-              ))}
-            </ScrollView>
-          ) : undefined}
-        />
-      </View>
+      {isArchived ? (
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
+          <Ionicons name="lock-closed-outline" size={13} color={colors.textMuted} />
+          <Text style={[typography.labelSm, { color: colors.textMuted }]}>Arkiveret — kun visning</Text>
+        </View>
+      ) : (
+        <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>
+          <MaskedView
+            style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
+            pointerEvents="none"
+            maskElement={
+              <LinearGradient
+                colors={["transparent", "black", "black"]}
+                locations={[0, 0.7, 1]}
+                style={{ flex: 1 }}
+              />
+            }
+          >
+            <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} pointerEvents="none" />
+          </MaskedView>
+          <LinearGradient
+            colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
+            pointerEvents="none"
+          />
+          <KeyboardInputBar
+            inputRef={inputRef}
+            value={input}
+            onChangeText={setInput}
+            onSubmit={handleSubmit}
+            canSubmit={canSend && !isSubmitting}
+            isSubmitting={isSubmitting}
+            leftActions={
+              <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} disabled={isSubmitting} />
+            }
+            attachments={pendingAttachments.length > 0 ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
+                {pendingAttachments.map((attachment) => (
+                  <PendingAttachmentCard
+                    key={attachment.localUri}
+                    uri={attachment.localUri}
+                    mimeType={attachment.mimeType}
+                    fileName={attachment.fileName}
+                    onRemove={() => setPendingAttachments((prev) => prev.filter((a) => a.localUri !== attachment.localUri))}
+                  />
+                ))}
+              </ScrollView>
+            ) : undefined}
+          />
+        </View>
+      )}
     </ModalScreen>
   );
 }
