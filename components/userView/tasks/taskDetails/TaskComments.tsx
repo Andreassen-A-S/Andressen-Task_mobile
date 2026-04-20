@@ -224,6 +224,7 @@ export default function TaskComments() {
 
   const handleSubmit = async () => {
     if (!taskId || !currentUser) return;
+    if (isArchived) return;
     if (!input.trim() && pendingAttachments.length === 0) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -448,7 +449,7 @@ export default function TaskComments() {
         )}
       </View>
 
-      {isArchived ? (
+      {isLoading ? null : isArchived ? (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 12 + insets.bottom, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
           <Ionicons name="lock-closed-outline" size={13} color={colors.textMuted} />
           <Text style={[typography.labelSm, { color: colors.textMuted }]}>Arkiveret — kun visning</Text>
