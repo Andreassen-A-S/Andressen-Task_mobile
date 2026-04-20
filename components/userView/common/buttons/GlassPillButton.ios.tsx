@@ -1,6 +1,6 @@
 import { useIsFocused } from "@react-navigation/native";
 import { Host, Image, HStack, Menu, Button } from "@expo/ui/swift-ui";
-import { glassEffect, padding, onTapGesture, tint } from "@expo/ui/swift-ui/modifiers";
+import { glassEffect, padding, onTapGesture, tint, disabled as disabledModifier } from "@expo/ui/swift-ui/modifiers";
 import { colors } from "@/constants/colors";
 import { MenuAction, PillItem } from "@/types/pill";
 
@@ -51,7 +51,10 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
                     systemImage={action.systemImage}
                     role={action.role}
                     onPress={action.onPress}
-                    modifiers={action.role === "destructive" ? [tint("#FF3B30")] : []}
+                    modifiers={[
+                      ...(action.role === "destructive" ? [tint("#FF3B30")] : []),
+                      ...(action.disabled ? [disabledModifier(true)] : []),
+                    ]}
                   />
                 ))}
               </Menu>

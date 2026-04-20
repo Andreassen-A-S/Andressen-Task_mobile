@@ -46,7 +46,7 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
               "",
               undefined,
               [
-                ...item.menuActions!.map((a) => ({
+                ...item.menuActions!.filter((a) => !a.disabled).map((a) => ({
                   text: a.label,
                   onPress: a.onPress,
                   style: a.role === "destructive" ? ("destructive" as const) : ("default" as const),

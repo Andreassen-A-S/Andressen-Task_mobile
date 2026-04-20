@@ -109,6 +109,11 @@ export default function TaskComments() {
   };
 
   const fetchComments = useCallback(async (silent = false) => {
+    if (!taskId) {
+      setFetchError("Ugyldigt opgave-id");
+      setIsLoading(false);
+      return;
+    }
     try {
       if (!silent) {
         setIsLoading(true);
@@ -439,7 +444,7 @@ export default function TaskComments() {
             pointerEvents={showScrollDown ? "box-none" : "none"}
             style={{
               position: "absolute",
-              bottom: INPUT_BAR_OVERLAP + 8,
+              bottom: isArchived ? 8 : INPUT_BAR_OVERLAP + 8,
               alignSelf: "center",
               opacity: scrollDownAnim,
               transform: [{ translateY: scrollDownAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
