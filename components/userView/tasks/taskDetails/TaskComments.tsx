@@ -403,7 +403,7 @@ export default function TaskComments() {
             scrollEventThrottle={100}
             contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
             ListHeaderComponent={() => <View style={{ flex: 1, minHeight: headerHeight + 16 }} />}
-            ListFooterComponent={() => <View style={{ height: INPUT_BAR_OVERLAP }} />}
+            ListFooterComponent={() => <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP }} />}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={{ alignItems: "center" }}>

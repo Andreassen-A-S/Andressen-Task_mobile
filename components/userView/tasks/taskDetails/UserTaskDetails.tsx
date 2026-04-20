@@ -111,7 +111,7 @@ export default function UserTaskDetails() {
   const menuActions = user?.role === UserRole.ADMIN
     ? [
       ...(!!task && !isArchived ? [{ label: "Rediger", systemImage: "pencil" as const, onPress: () => router.push(`${pathname}/edit`) }] : []),
-      { label: "Slet", systemImage: "trash" as const, onPress: handleDelete, role: "destructive" as const },
+      ...(!!task ? [{ label: "Slet", systemImage: "trash" as const, onPress: handleDelete, role: "destructive" as const }] : []),
     ]
     : isArchived
     ? []
