@@ -5,6 +5,7 @@ export interface MenuAction {
   systemImage?: SFSymbol;
   onPress: () => void;
   role?: "destructive";
+  disabled?: boolean;
 }
 
 export interface PillItem {

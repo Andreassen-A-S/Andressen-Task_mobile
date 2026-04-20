@@ -17,9 +17,10 @@ interface Props {
   unitLabel?: string;
   onAddProgress: (value: string) => void;
   isUpdating: boolean;
+  disabled?: boolean;
 }
 
-export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress, isUpdating }: Props) {
+export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress, isUpdating, disabled = false }: Props) {
   const [visible, setVisible] = useState(false);
   const [value, setValue] = useState("");
   const [inputError, setInputError] = useState(false);
@@ -54,9 +55,9 @@ export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress
             </Text>
             <TouchableOpacity
               onPress={() => setVisible(true)}
-              disabled={isUpdating}
+              disabled={isUpdating || disabled}
               className="rounded-xl px-3.5 justify-center disabled:opacity-50"
-              style={{ backgroundColor: "rgba(15,110,86,0.12)" }}
+              style={{ backgroundColor: "rgba(15,110,86,0.12)", opacity: disabled || isUpdating ? 0.4 : 1 }}
             >
               {isUpdating ? (
                 <ActivityIndicator color={colors.green} size="small" />

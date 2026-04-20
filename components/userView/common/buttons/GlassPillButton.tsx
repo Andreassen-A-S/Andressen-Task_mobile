@@ -41,12 +41,13 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
     }}>
       {items.map((item, index) => {
         const iconName = SF_TO_IONICON[item.systemName] ?? "ellipsis-horizontal";
-        const handlePress = item.menuActions?.length
+        const enabledActions = item.menuActions?.filter((a) => !a.disabled) ?? [];
+        const handlePress = enabledActions.length
           ? () => Alert.alert(
               "",
               undefined,
               [
-                ...item.menuActions!.map((a) => ({
+                ...enabledActions.map((a) => ({
                   text: a.label,
                   onPress: a.onPress,
                   style: a.role === "destructive" ? ("destructive" as const) : ("default" as const),

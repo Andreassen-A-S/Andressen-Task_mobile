@@ -28,6 +28,7 @@ const SF_TO_IONICON: Partial<Record<SFSymbol, keyof typeof Ionicons.glyphMap>> =
   "magnifyingglass": "search",
   "plus": "add",
   "checkmark": "checkmark",
+  "arrow.down": "arrow-down",
 };
 
 interface Props {
