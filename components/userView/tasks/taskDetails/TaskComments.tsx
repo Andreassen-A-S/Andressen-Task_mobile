@@ -403,7 +403,7 @@ export default function TaskComments() {
               const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
               const nearBottom = contentSize.height - layoutMeasurement.height - contentOffset.y < 80;
               isNearBottomRef.current = nearBottom;
-              setShowScrollDown(!nearBottom);
+              if (nearBottom === showScrollDown) setShowScrollDown(!nearBottom);
             }}
             scrollEventThrottle={100}
             contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
