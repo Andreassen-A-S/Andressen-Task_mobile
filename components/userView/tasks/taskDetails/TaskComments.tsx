@@ -429,7 +429,7 @@ export default function TaskComments() {
                 return (
                   <View key={item.data.comment_id} style={{ marginBottom: 8 }}>
                     {currentUser?.user_id === item.data.user_id
-                      ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={handleDelete} onRetry={handleRetry} />
+                      ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} />
                       : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />}
                   </View>
                 );
