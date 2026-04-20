@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect, useLayoutEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -8,10 +8,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
+  ScrollView,
   ActivityIndicator,
   Alert,
-  ScrollView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -61,9 +60,11 @@ export default function TaskComments() {
   const insets = useSafeAreaInsets();
   const { user: currentUser } = useAuth();
   const inputRef = useRef<TextInput>(null);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<ScrollView>(null);
   const isNearBottomRef = useRef(true);
   const hasLoadedRef = useRef(false);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollPendingRef = useRef(false);
 
   const [comments, setComments] = useState<DisplayComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
@@ -94,9 +95,11 @@ export default function TaskComments() {
       const archived = taskData.status === TaskStatus.ARCHIVED;
       setIsArchived(archived);
       setComments(data);
-      if (!archived && !silent) setTimeout(() => inputRef.current?.focus(), 300);
+      if (!archived && !silent) {
+        if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = setTimeout(() => inputRef.current?.focus(), 300);
+      }
       setFetchError(null);
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
       const uniqueIds = [...new Set(data.map((c) => c.user_id))];
       const authors: Record<string, User> = {};
       await Promise.all(uniqueIds.map(async (id) => {
@@ -113,9 +116,19 @@ export default function TaskComments() {
   useFocusEffect(useCallback(() => {
     fetchComments(hasLoadedRef.current);
     hasLoadedRef.current = true;
+    return () => {
+      if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
+    };
   }, [fetchComments]));
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
+
+  useLayoutEffect(() => {
+    if (scrollPendingRef.current) {
+      scrollPendingRef.current = false;
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }
+  }, [comments]);
 
   const pickAttachments = () => {
     attachmentPickerStore.set(async (source: "camera" | "gallery" | "files") => {
@@ -238,10 +251,10 @@ export default function TaskComments() {
       sending: true,
     };
 
+    scrollPendingRef.current = true;
     setComments((prev) => [...prev, optimistic]);
     setInput("");
     setPendingAttachments([]);
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
 
     try {
       let upload_tokens: string[] | undefined;
@@ -390,42 +403,48 @@ export default function TaskComments() {
             </View>
           </View>
         ) : (
-          <FlatList
+          <ScrollView
             ref={flatListRef}
-            data={listData}
-            keyExtractor={(item) => item.type === "comment" ? item.data.comment_id : item.key}
             keyboardShouldPersistTaps="handled"
             onLayout={() => { if (isNearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
+            onContentSizeChange={() => { if (isNearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
             onScroll={(e) => {
               const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
               isNearBottomRef.current = contentSize.height - layoutMeasurement.height - contentOffset.y < 80;
             }}
             scrollEventThrottle={100}
             contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
-            ListHeaderComponent={() => <View style={{ flex: 1, minHeight: headerHeight + 16 }} />}
-            ListFooterComponent={() => <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP }} />}
             showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
+          >
+            <View style={{ flex: 1, minHeight: headerHeight + 16 }} />
+
+            {listData.length === 0 ? (
               <View style={{ alignItems: "center" }}>
                 <Text style={[typography.bodySm, { color: colors.textMuted, textAlign: "center" }]}>
                   Ingen kommentarer endnu.{"\n"}Skriv den første!
                 </Text>
               </View>
-            }
-            renderItem={({ item }) => {
-              if (item.type === "timestamp") {
+            ) : (
+              listData.map((item) => {
+                if (item.type === "timestamp") {
+                  return (
+                    <Text key={item.key} style={[typography.monoXs, { color: colors.textMuted, textAlign: "center", marginVertical: 4 }]}>
+                      {item.label}
+                    </Text>
+                  );
+                }
                 return (
-                  <Text style={[typography.monoXs, { color: colors.textMuted, textAlign: "center", marginVertical: 4 }]}>
-                    {item.label}
-                  </Text>
+                  <View key={item.data.comment_id} style={{ marginBottom: 8 }}>
+                    {currentUser?.user_id === item.data.user_id
+                      ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={handleDelete} onRetry={handleRetry} />
+                      : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />}
+                  </View>
                 );
-              }
-              return currentUser?.user_id === item.data.user_id
-                ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={handleDelete} onRetry={handleRetry} />
-                : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />;
-            }}
-            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-          />
+              })
+            )}
+
+            <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP }} />
+          </ScrollView>
         )}
       </View>
 
