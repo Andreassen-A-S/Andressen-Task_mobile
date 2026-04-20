@@ -1,8 +1,5 @@
 import { ReactNode, RefObject, useRef } from "react";
 import { View, TextInput, LayoutChangeEvent } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
-import { useKeyboardHandler } from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import KeyboardInputBarAction from "./KeyboardInputBarAction";
@@ -32,25 +29,11 @@ export default function KeyboardInputBar({
   inputRef: externalInputRef,
   onLayout,
 }: Props) {
-  const insets = useSafeAreaInsets();
   const internalRef = useRef<TextInput>(null);
   const inputRef = externalInputRef ?? internalRef;
 
-  const keyboardHeight = useSharedValue(0);
-
-  useKeyboardHandler({
-    onMove: (e) => { "worklet"; keyboardHeight.value = e.height; },
-    onEnd: (e) => { "worklet"; keyboardHeight.value = e.height; },
-    onInteractive: (e) => { "worklet"; keyboardHeight.value = e.height; },
-  }, []);
-
-  const spacerStyle = useAnimatedStyle(() => ({
-    height: Math.max(keyboardHeight.value, insets.bottom),
-  }));
-
   return (
     <>
-      {/* Input card — onLayout measures card height only, independent of keyboard spacer */}
       <View style={{ paddingTop: 12, paddingHorizontal: 12, paddingBottom: 4 }} onLayout={onLayout}>
         <View style={{ backgroundColor: colors.white, borderRadius: 24, borderWidth: 1, borderColor: colors.muted, paddingHorizontal: 8, paddingTop: attachments ? 8 : 14, paddingBottom: 8, overflow: "hidden" }}>
 
@@ -86,8 +69,6 @@ export default function KeyboardInputBar({
         </View>
       </View>
 
-      {/* Keyboard spacer — handles keyboard avoidance only */}
-      <Animated.View style={spacerStyle} />
     </>
   );
 }

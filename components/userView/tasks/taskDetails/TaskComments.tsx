@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect, useLayoutEffect } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
@@ -11,8 +11,10 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Animated,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
 import { showToast } from "@/lib/toast";
@@ -33,6 +35,7 @@ import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
 import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
 import KeyboardInputBarAction from "@/components/userView/common/KeyboardInputBarAction";
 import CommentBubble from "./CommentBubble";
+import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
 type PendingAttachment = {
   localUri: string;
@@ -60,7 +63,7 @@ export default function TaskComments() {
   const insets = useSafeAreaInsets();
   const { user: currentUser } = useAuth();
   const inputRef = useRef<TextInput>(null);
-  const flatListRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const isNearBottomRef = useRef(true);
   const hasLoadedRef = useRef(false);
   const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,6 +76,9 @@ export default function TaskComments() {
   const [input, setInput] = useState("");
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showScrollDown, setShowScrollDown] = useState(false);
+  const scrollDownAnim = useRef(new Animated.Value(0)).current;
+
   const listData = useMemo<ListItem[]>(() => {
     const result: ListItem[] = [];
     for (let i = 0; i < comments.length; i++) {
@@ -84,6 +90,23 @@ export default function TaskComments() {
     }
     return result;
   }, [comments]);
+
+  const uploadAttachments = async (attachments: Array<{ uri: string; fileName: string; mimeType: string }>): Promise<string[]> => {
+    const blobsWithMeta = await Promise.all(
+      attachments.map(async ({ uri, fileName, mimeType }) => {
+        const blob = await fetch(uri).then((r) => r.blob());
+        const maxBytes = MAX_FILE_SIZE[mimeType] ?? 10 * 1024 * 1024;
+        if (blob.size > maxBytes) throw new Error(`${fileName} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+        return { blob, fileName, mimeType };
+      }),
+    );
+    const prepared = await prepareAttachments(
+      taskId,
+      blobsWithMeta.map(({ blob, fileName, mimeType }) => ({ file_name: fileName, mime_type: mimeType, file_size: blob.size })),
+    );
+    await Promise.all(prepared.map((p, i) => uploadToGcs(p.upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].mimeType)));
+    return prepared.map((p) => p.upload_token);
+  };
 
   const fetchComments = useCallback(async (silent = false) => {
     try {
@@ -97,7 +120,7 @@ export default function TaskComments() {
       setComments(data);
       if (!archived && !silent) {
         if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
-        focusTimerRef.current = setTimeout(() => inputRef.current?.focus(), 300);
+        focusTimerRef.current = setTimeout(() => inputRef.current?.focus(), 600);
       }
       setFetchError(null);
       const uniqueIds = [...new Set(data.map((c) => c.user_id))];
@@ -123,12 +146,43 @@ export default function TaskComments() {
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
 
-  useLayoutEffect(() => {
-    if (scrollPendingRef.current) {
-      scrollPendingRef.current = false;
-      flatListRef.current?.scrollToEnd({ animated: true });
+
+  useEffect(() => {
+    Animated.spring(scrollDownAnim, {
+      toValue: showScrollDown ? 1 : 0,
+      useNativeDriver: true,
+      bounciness: 6,
+    }).start();
+  }, [showScrollDown]);
+
+  const addPickedAssets = (assets: ImagePicker.ImagePickerAsset[]) => {
+    const ts = Date.now();
+    const newAttachments: PendingAttachment[] = [];
+    const oversized: string[] = [];
+
+    assets.forEach((asset, i) => {
+      const mime = asset.mimeType ?? "image/jpeg";
+      const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+      const fileName = asset.fileName ?? `photo_${ts}_${i}.${ext}`;
+      const maxBytes = MAX_FILE_SIZE[mime] ?? 10 * 1024 * 1024;
+      if (asset.fileSize != null && asset.fileSize > maxBytes) {
+        oversized.push(fileName);
+      } else {
+        newAttachments.push({ localUri: asset.uri, fileName, mimeType: mime });
+      }
+    });
+
+    if (oversized.length > 0) {
+      showToast({
+        title: "Filer for store",
+        message: `${oversized.length === 1 ? oversized[0] : `${oversized.length} filer`} overskrider den maksimale filstørrelse og blev ikke tilføjet.`,
+      });
     }
-  }, [comments]);
+
+    if (newAttachments.length > 0) {
+      setPendingAttachments((prev) => [...prev, ...newAttachments]);
+    }
+  };
 
   const pickAttachments = () => {
     attachmentPickerStore.set(async (source: "camera" | "gallery" | "files") => {
@@ -193,35 +247,6 @@ export default function TaskComments() {
     router.push("./add-attachment");
   };
 
-  const addPickedAssets = (assets: ImagePicker.ImagePickerAsset[]) => {
-    const ts = Date.now();
-    const newAttachments: PendingAttachment[] = [];
-    const oversized: string[] = [];
-
-    assets.forEach((asset, i) => {
-      const mime = asset.mimeType ?? "image/jpeg";
-      const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
-      const fileName = asset.fileName ?? `photo_${ts}_${i}.${ext}`;
-      const maxBytes = MAX_FILE_SIZE[mime] ?? 10 * 1024 * 1024;
-      if (asset.fileSize != null && asset.fileSize > maxBytes) {
-        oversized.push(fileName);
-      } else {
-        newAttachments.push({ localUri: asset.uri, fileName, mimeType: mime });
-      }
-    });
-
-    if (oversized.length > 0) {
-      showToast({
-        title: "Filer for store",
-        message: `${oversized.length === 1 ? oversized[0] : `${oversized.length} filer`} overskrider den maksimale filstørrelse og blev ikke tilføjet.`,
-      });
-    }
-
-    if (newAttachments.length > 0) {
-      setPendingAttachments((prev) => [...prev, ...newAttachments]);
-    }
-  };
-
   const handleSubmit = async () => {
     if (!taskId || !currentUser) return;
     if (isArchived) return;
@@ -258,36 +283,9 @@ export default function TaskComments() {
     setPendingAttachments([]);
 
     try {
-      let upload_tokens: string[] | undefined;
-
-      if (pendingAttachments.length > 0) {
-        const blobsWithMeta = await Promise.all(
-          pendingAttachments.map(async (attachment) => {
-            const fileRes = await fetch(attachment.localUri);
-            const blob = await fileRes.blob();
-            const maxBytes = MAX_FILE_SIZE[attachment.mimeType] ?? 10 * 1024 * 1024;
-            if (blob.size > maxBytes) {
-              throw new Error(`${attachment.fileName ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
-            }
-            return { blob, img: attachment };
-          }),
-        );
-
-        const prepared = await prepareAttachments(
-          taskId,
-          blobsWithMeta.map(({ blob, img }) => ({
-            file_name: img.fileName,
-            mime_type: img.mimeType,
-            file_size: blob.size,
-          })),
-        );
-
-        await Promise.all(
-          prepared.map((p, i) => uploadToGcs(p.upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].img.mimeType)),
-        );
-
-        upload_tokens = prepared.map((p) => p.upload_token);
-      }
+      const upload_tokens = pendingAttachments.length > 0
+        ? await uploadAttachments(pendingAttachments.map((a) => ({ uri: a.localUri, fileName: a.fileName, mimeType: a.mimeType })))
+        : undefined;
 
       const newComment = await createComment(taskId, {
         ...(optimistic.message && { message: optimistic.message }),
@@ -326,31 +324,10 @@ export default function TaskComments() {
     ));
 
     try {
-      let upload_tokens: string[] | undefined;
-
-      const fileAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://") || a.url.startsWith("content://"));
-      if (fileAttachments.length > 0) {
-        const blobsWithMeta = await Promise.all(
-          fileAttachments.map(async (a) => {
-            const res = await fetch(a.url);
-            const blob = await res.blob();
-            const mimeType = a.mime_type ?? "application/octet-stream";
-            const maxBytes = MAX_FILE_SIZE[mimeType] ?? 10 * 1024 * 1024;
-            if (blob.size > maxBytes) {
-              throw new Error(`${a.file_name ?? "Fil"} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
-            }
-            return { blob, mimeType, fileName: a.file_name ?? "file" };
-          }),
-        );
-        const prepared = await prepareAttachments(
-          taskId,
-          blobsWithMeta.map(({ blob, mimeType, fileName }) => ({ file_name: fileName, mime_type: mimeType, file_size: blob.size })),
-        );
-        await Promise.all(
-          prepared.map((p, i) => uploadToGcs(p.upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].mimeType)),
-        );
-        upload_tokens = prepared.map((p) => p.upload_token);
-      }
+      const localAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://") || a.url.startsWith("content://"));
+      const upload_tokens = localAttachments.length > 0
+        ? await uploadAttachments(localAttachments.map((a) => ({ uri: a.url, fileName: a.file_name ?? "file", mimeType: a.mime_type ?? "application/octet-stream" })))
+        : undefined;
 
       const newComment = await createComment(taskId, {
         ...(comment.message && { message: comment.message }),
@@ -389,8 +366,9 @@ export default function TaskComments() {
 
   return (
     <ModalScreen title="Kommentarer">
-      <View style={{ flex: 1 }}>
-        {isLoading ? (
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={insets.top}>
+        <View style={{ flex: 1 }}>
+          {isLoading ? (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
             <ActivityIndicator color={colors.green} size="large" />
           </View>
@@ -405,13 +383,22 @@ export default function TaskComments() {
           </View>
         ) : (
           <ScrollView
-            ref={flatListRef}
+            ref={scrollRef}
             keyboardShouldPersistTaps="handled"
-            onLayout={() => { if (isNearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
-            onContentSizeChange={() => { if (isNearBottomRef.current) flatListRef.current?.scrollToEnd({ animated: false }); }}
+            onLayout={() => { if (isNearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false }); }}
+            onContentSizeChange={() => {
+              if (scrollPendingRef.current) {
+                scrollPendingRef.current = false;
+                scrollRef.current?.scrollToEnd({ animated: true });
+              } else if (isNearBottomRef.current) {
+                scrollRef.current?.scrollToEnd({ animated: false });
+              }
+            }}
             onScroll={(e) => {
               const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-              isNearBottomRef.current = contentSize.height - layoutMeasurement.height - contentOffset.y < 80;
+              const nearBottom = contentSize.height - layoutMeasurement.height - contentOffset.y < 80;
+              isNearBottomRef.current = nearBottom;
+              setShowScrollDown(!nearBottom);
             }}
             scrollEventThrottle={100}
             contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
@@ -447,10 +434,28 @@ export default function TaskComments() {
             <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP }} />
           </ScrollView>
         )}
-      </View>
+        {!isLoading && !fetchError && (
+          <Animated.View
+            pointerEvents={showScrollDown ? "box-none" : "none"}
+            style={{
+              position: "absolute",
+              bottom: INPUT_BAR_OVERLAP + 8,
+              alignSelf: "center",
+              opacity: scrollDownAnim,
+              transform: [{ translateY: scrollDownAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+            }}
+          >
+            <GlassIconButton
+              systemName="arrow.down"
+              onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+              size="lg"
+            />
+          </Animated.View>
+        )}
+        </View>
 
       {isLoading ? null : isArchived ? (
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 12 + insets.bottom, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 12, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
           <Ionicons name="lock-closed-outline" size={13} color={colors.textMuted} />
           <Text style={[typography.labelSm, { color: colors.textMuted }]}>Arkiveret — kun visning</Text>
         </View>
@@ -500,6 +505,8 @@ export default function TaskComments() {
           />
         </View>
       )}
+      </KeyboardAvoidingView>
+      <View style={{ height: insets.bottom }} />
     </ModalScreen>
   );
 }
