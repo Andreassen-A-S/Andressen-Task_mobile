@@ -29,6 +29,7 @@ import { User } from "@/types/users";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
 import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
 import KeyboardInputBarAction from "@/components/userView/common/KeyboardInputBarAction";
@@ -57,6 +58,7 @@ export default function TaskComments() {
   const [isArchived, setIsArchived] = useState(false);
   const router = useRouter();
   const headerHeight = useModalHeaderHeight();
+  const insets = useSafeAreaInsets();
   const { user: currentUser } = useAuth();
   const inputRef = useRef<TextInput>(null);
   const flatListRef = useRef<FlatList>(null);
@@ -89,8 +91,10 @@ export default function TaskComments() {
         setFetchError(null);
       }
       const [data, taskData] = await Promise.all([getTaskComments(taskId), getTask(taskId)]);
-      setIsArchived(taskData.status === TaskStatus.ARCHIVED);
+      const archived = taskData.status === TaskStatus.ARCHIVED;
+      setIsArchived(archived);
       setComments(data);
+      if (!archived && !silent) setTimeout(() => inputRef.current?.focus(), 300);
       setFetchError(null);
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
       const uniqueIds = [...new Set(data.map((c) => c.user_id))];
@@ -109,8 +113,6 @@ export default function TaskComments() {
   useFocusEffect(useCallback(() => {
     fetchComments(hasLoadedRef.current);
     hasLoadedRef.current = true;
-    const timer = !isArchived ? setTimeout(() => inputRef.current?.focus(), 300) : null;
-    return () => { if (timer) clearTimeout(timer); };
   }, [fetchComments]));
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
@@ -428,7 +430,7 @@ export default function TaskComments() {
       </View>
 
       {isArchived ? (
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 12 + insets.bottom, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
           <Ionicons name="lock-closed-outline" size={13} color={colors.textMuted} />
           <Text style={[typography.labelSm, { color: colors.textMuted }]}>Arkiveret — kun visning</Text>
         </View>

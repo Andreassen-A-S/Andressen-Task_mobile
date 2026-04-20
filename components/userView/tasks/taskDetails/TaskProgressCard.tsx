@@ -57,7 +57,7 @@ export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress
               onPress={() => setVisible(true)}
               disabled={isUpdating || disabled}
               className="rounded-xl px-3.5 justify-center disabled:opacity-50"
-              style={{ backgroundColor: "rgba(15,110,86,0.12)", opacity: disabled ? 0.4 : 1 }}
+              style={{ backgroundColor: "rgba(15,110,86,0.12)", opacity: disabled || isUpdating ? 0.4 : 1 }}
             >
               {isUpdating ? (
                 <ActivityIndicator color={colors.green} size="small" />
