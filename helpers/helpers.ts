@@ -1,3 +1,4 @@
+import parseDecimalNumber from "parse-decimal-number";
 import { ViewStyle, TextStyle } from "react-native";
 import { TaskPriority, TaskStatus } from "@/types/task";
 import { TaskAssignment } from "@/types/assignment";
@@ -270,35 +271,11 @@ export function getTodayAssignmentStats(assignments: TaskAssignment[]) {
 }
 
 export function parseLocalizedNumber(value: string): number {
-  const s = value.trim().replace(/[\s ]/g, "");
-  if (!s) return NaN;
-  if ((s.match(/,/g) ?? []).length > 1) return NaN;
-
-  // Both separators: '.' is thousands, ',' is decimal  (e.g. "1.234,56")
-  if (s.includes(".") && s.includes(",")) {
-    if (!/^-?\d{1,3}(\.\d{3})+,\d+$/.test(s)) return NaN;
-    return Number(s.replace(/\./g, "").replace(",", "."));
-  }
-  // Only comma: da-DK decimal separator (e.g. "1,5")
-  if (s.includes(",")) {
-    if (!/^-?\d+,\d+$/.test(s)) return NaN;
-    return Number(s.replace(",", "."));
-  }
-  // Only dot: thousands pattern if groups of 3 (e.g. "1.234"), else decimal
-  if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) {
-    return Number(s.replace(/\./g, ""));
-  }
-  if (s.includes(".") && !/^-?\d+\.\d+$/.test(s)) return NaN;
-  if (!/^-?\d+(\.\d+)?$/.test(s)) return NaN;
-  return Number(s);
+  const s = value.trim().replace(/[\s ]/g, "");
+  if (!s || s.endsWith(",") || s.endsWith(".")) return NaN;
+  return parseDecimalNumber(s, { thousands: ".", decimal: "," });
 }
 
 export function formatNumber(value: number | string): string {
-  if (typeof value === "number") return value.toLocaleString("da-DK");
-
-  const trimmed = value.trim();
-  if (!trimmed) return value;
-
-  const numericValue = parseLocalizedNumber(trimmed);
-  return Number.isFinite(numericValue) ? numericValue.toLocaleString("da-DK") : value;
+  return typeof value === "number" ? value.toLocaleString("da-DK") : value;
 }

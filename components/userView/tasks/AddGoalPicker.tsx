@@ -8,6 +8,7 @@ import { pickerStore } from "@/lib/pickerStore";
 import { goalStore, GoalData } from "@/lib/goalStore";
 import { TaskGoalType, TaskUnit } from "@/types/task";
 import { translateTaskUnit, parseLocalizedNumber, formatNumber } from "@/helpers/helpers";
+import { showToast } from "@/lib/toast";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 import { ListModalOption } from "@/types/picker";
@@ -36,13 +37,23 @@ export default function AddGoalPicker() {
   useEffect(() => () => goalStore.clear(), []);
 
   const initial = goalStore.getInitial();
-  const [quantity, setQuantity] = useState(initial?.target_quantity != null ? formatNumber(initial.target_quantity) : "");
+  const [quantityRaw, setQuantityRaw] = useState(initial?.target_quantity != null ? formatNumber(initial.target_quantity) : "");
+  const [quantityValue, setQuantityValue] = useState<number | null>(initial?.target_quantity ?? null);
   const [unit, setUnit] = useState<TaskUnit>(initial?.unit ?? TaskUnit.NONE);
 
+  function handleQuantityChange(text: string) {
+    setQuantityRaw(text);
+    const parsed = parseLocalizedNumber(text);
+    setQuantityValue(Number.isFinite(parsed) && parsed > 0 ? parsed : null);
+  }
+
   const handleConfirm = () => {
-    const parsed = parseLocalizedNumber(quantity);
-    const goal: GoalData | null = quantity.trim() && parsed > 0
-      ? { goal_type: TaskGoalType.FIXED, target_quantity: parsed, unit }
+    if (quantityRaw.trim() && quantityValue === null) {
+      showToast({ title: "Ugyldigt mål", message: "Angiv et gyldigt tal større end 0." });
+      return;
+    }
+    const goal: GoalData | null = quantityValue != null
+      ? { goal_type: TaskGoalType.FIXED, target_quantity: quantityValue, unit }
       : null;
     goalStore.call(goal);
     goalStore.clear();
@@ -85,8 +96,8 @@ export default function AddGoalPicker() {
           }}>
             <Text style={[typography.h6, { flex: 1 }]}>Mål</Text>
             <TextInput
-              value={quantity}
-              onChangeText={setQuantity}
+              value={quantityRaw}
+              onChangeText={handleQuantityChange}
               keyboardType="decimal-pad"
               placeholder="Valgfrit"
               placeholderTextColor={colors.textMuted}
