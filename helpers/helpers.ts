@@ -299,6 +299,6 @@ export function formatNumber(value: number | string): string {
   const trimmed = value.trim();
   if (!trimmed) return value;
 
-  const numericValue = Number(trimmed);
+  const numericValue = parseLocalizedNumber(trimmed);
   return Number.isFinite(numericValue) ? numericValue.toLocaleString("da-DK") : value;
 }
