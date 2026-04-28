@@ -1,6 +1,7 @@
 import { View, Text } from "react-native";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
+import { formatNumber } from "@/helpers/helpers";
 
 interface SectionHeaderProps {
   title: string;
@@ -17,7 +18,7 @@ export default function SectionHeader({ title, count, variant = "default" }: Sec
           className="rounded-2xl px-2 py-0.5"
           style={{ backgroundColor: variant === "overdue" ? colors.redLight : colors.border }}
         >
-          <Text style={typography.labelSmUppercase}>{count}</Text>
+          <Text style={typography.labelSmUppercase}>{formatNumber(count)}</Text>
         </View>
       </View>
     </View>

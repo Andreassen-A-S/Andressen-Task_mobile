@@ -1,3 +1,4 @@
+import parseDecimalNumber from "parse-decimal-number";
 import { ViewStyle, TextStyle } from "react-native";
 import { TaskPriority, TaskStatus } from "@/types/task";
 import { TaskAssignment } from "@/types/assignment";
@@ -267,4 +268,14 @@ export function getTodayAssignmentStats(assignments: TaskAssignment[]) {
     (a) => a.completed_at && toDateKey(a.completed_at) === today,
   ).length;
   return { assignedToday, completedToday };
+}
+
+export function parseLocalizedNumber(value: string): number {
+  const s = value.trim().replace(/[\s ]/g, "");
+  if (!s || s.endsWith(",") || s.endsWith(".")) return NaN;
+  return parseDecimalNumber(s, { thousands: ".", decimal: "," });
+}
+
+export function formatNumber(value: number | string): string {
+  return typeof value === "number" ? value.toLocaleString("da-DK") : value;
 }

@@ -1,4 +1,5 @@
 import { View, Text, ActivityIndicator } from "react-native";
+import { formatNumber } from "@/helpers/helpers";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
 import CommentBubble from "./CommentBubble";
@@ -25,7 +26,7 @@ export default function UserTaskComment({
   return (
     <View>
       <Text className="mb-4" style={typography.overline}>
-        Kommentarer ({comments.length})
+        Kommentarer ({formatNumber(comments.length)})
       </Text>
 
       {isLoading ? (

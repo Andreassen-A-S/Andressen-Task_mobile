@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
 import {
+  formatNumber,
   getPriorityAccentColor,
   translateTaskUnit,
 } from "@/helpers/helpers";
@@ -30,8 +31,8 @@ export default function UserTaskCard({ task, projectName, onClick }: Props) {
   const progressLabel = isPercent
     ? `${progressPct ?? 0}%`
     : target !== null
-      ? `${progress} / ${target}${unit ? ` ${unit}` : ""}`
-      : `${progress}${unit ? ` ${unit}` : ""}`;
+      ? `${formatNumber(progress)} / ${formatNumber(target)}${unit ? ` ${unit}` : ""}`
+      : `${formatNumber(progress)}${unit ? ` ${unit}` : ""}`;
 
   return (
     <TouchableOpacity

@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
+import { parseLocalizedNumber, formatNumber } from "@/helpers/helpers";
 
 interface Props {
   progressPct: number;
@@ -22,15 +23,18 @@ export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress
         {
           text: "Tilføj",
           onPress: (value?: string) => {
-            const num = Number(value ?? "");
+            const num = parseLocalizedNumber(value ?? "");
             if (Number.isFinite(num) && num > 0) {
-              onAddProgress(value ?? "");
+              onAddProgress(String(num));
             } else {
               handlePress("Indtast et tal større end 0");
             }
           },
         },
-      ]
+      ],
+      "plain-text",
+      "",
+      "decimal-pad"
     );
   };
 
@@ -39,7 +43,7 @@ export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress
       <View className="px-4 pt-4 pb-4">
         <View className="flex-row items-stretch justify-between mb-1">
           <Text className="leading-tight" style={[typography.h2, { color: colors.green }]}>
-            {clampedPct}%
+            {formatNumber(clampedPct)}%
           </Text>
           <TouchableOpacity
             onPress={() => handlePress()}
