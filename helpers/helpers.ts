@@ -285,7 +285,7 @@ export function parseLocalizedNumber(value: string): number {
     return Number(s.replace(",", "."));
   }
   // Only dot: thousands pattern if groups of 3 (e.g. "1.234"), else decimal
-  if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
+  if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) {
     return Number(s.replace(/\./g, ""));
   }
   if (s.includes(".") && !/^-?\d+\.\d+$/.test(s)) return NaN;
