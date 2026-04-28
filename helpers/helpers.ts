@@ -270,7 +270,21 @@ export function getTodayAssignmentStats(assignments: TaskAssignment[]) {
 }
 
 export function parseLocalizedNumber(value: string): number {
-  return parseFloat(value.replace(",", "."));
+  const s = value.trim().replace(/[\s ]/g, "");
+  if (!s) return NaN;
+  // Both separators: '.' is thousands, ',' is decimal  (e.g. "1.234,56")
+  if (s.includes(".") && s.includes(",")) {
+    return parseFloat(s.replace(/\./g, "").replace(",", "."));
+  }
+  // Only comma: da-DK decimal separator (e.g. "1,5")
+  if (s.includes(",")) {
+    return parseFloat(s.replace(",", "."));
+  }
+  // Only dot: thousands pattern if groups of 3 (e.g. "1.234"), else decimal
+  if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
+    return parseFloat(s.replace(/\./g, ""));
+  }
+  return parseFloat(s);
 }
 
 export function formatNumber(value: number): string {

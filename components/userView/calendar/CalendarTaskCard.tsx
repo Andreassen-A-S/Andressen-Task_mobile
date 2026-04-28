@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function CalendarTaskCard({ task, onClick }: Props) {
-  const hasFixedProgress = task.current_quantity != null && task.goal_type === TaskGoalType.FIXED;
+  const hasFixedProgress = task.current_quantity != null && task.target_quantity != null && task.goal_type === TaskGoalType.FIXED;
   const isPercent = task.unit === TaskUnit.NONE;
   const progressPct = hasFixedProgress && task.target_quantity
     ? Math.min(Math.round((task.current_quantity! / task.target_quantity) * 100), 100)
@@ -35,7 +35,7 @@ export default function CalendarTaskCard({ task, onClick }: Props) {
             <Text style={typography.monoXsAccent}>
               {"  "}{isPercent
                 ? `${progressPct ?? 0}%`
-                : `${formatNumber(task.current_quantity!)}/${formatNumber(task.target_quantity!)} ${translateTaskUnit(task.unit)}`}
+                : `${formatNumber(task.current_quantity ?? 0)}/${formatNumber(task.target_quantity ?? 0)} ${translateTaskUnit(task.unit)}`}
             </Text>
           )}
         </Text>
