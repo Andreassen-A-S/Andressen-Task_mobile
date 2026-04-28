@@ -8,6 +8,7 @@ import { TaskAttachment } from "@/types/comment";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { getFileIcon } from "@/helpers/attachmentHelpers";
+import { formatNumber } from "@/helpers/helpers";
 
 interface Props {
   attachments: TaskAttachment[];
@@ -47,7 +48,7 @@ function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-s
   return (
     <>
       <Text style={[typography.bodyXs, { color: colors.textMuted, marginBottom: 6, alignSelf: align }]}>
-        {images.length} billeder
+        {formatNumber(images.length)} billeder
       </Text>
       <View style={{ width: containerSize, height: containerSize, alignSelf: align }}>
         {Array.from({ length: visibleCount }).map((_, i) => {

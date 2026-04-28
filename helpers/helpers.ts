@@ -268,3 +268,11 @@ export function getTodayAssignmentStats(assignments: TaskAssignment[]) {
   ).length;
   return { assignedToday, completedToday };
 }
+
+export function parseLocalizedNumber(value: string): number {
+  return parseFloat(value.replace(",", "."));
+}
+
+export function formatNumber(value: number): string {
+  return value.toLocaleString("da-DK");
+}

@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { getUserAssignments } from "@/lib/api";
 import { Task, TaskStatus } from "@/types/task";
 import { useAuth } from "@/hooks/useAuth";
-import { formatLocalDate, toDateKey } from "@/helpers/helpers";
+import { formatLocalDate, formatNumber, toDateKey } from "@/helpers/helpers";
 import CalendarMonthNavigator from "./CalendarMonthNavigator";
 import CalendarTaskCard from "./CalendarTaskCard";
 import UserHeader from "../common/UserHeader";
@@ -182,7 +182,7 @@ export default function CalendarPage() {
                         className="rounded-2xl px-2 py-0.5"
                         style={{ backgroundColor: isCarriedOverSection ? colors.redLight : colors.border }}
                       >
-                        <Text style={typography.labelSmUppercase}>{data.length}</Text>
+                        <Text style={typography.labelSmUppercase}>{formatNumber(data.length)}</Text>
                       </View>
                     </View>
                   </View>

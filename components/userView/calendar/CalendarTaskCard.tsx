@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { Task, TaskGoalType, TaskUnit } from "@/types/task";
-import { formatLocalDate, getPriorityAccentColor, translateTaskUnit } from "@/helpers/helpers";
+import { formatLocalDate, formatNumber, getPriorityAccentColor, translateTaskUnit } from "@/helpers/helpers";
 import { typography } from "@/constants/typography";
 import Badge from "../common/label/badge";
 import { colors } from "@/constants/colors";
@@ -35,7 +35,7 @@ export default function CalendarTaskCard({ task, onClick }: Props) {
             <Text style={typography.monoXsAccent}>
               {"  "}{isPercent
                 ? `${progressPct ?? 0}%`
-                : `${task.current_quantity}/${task.target_quantity} ${translateTaskUnit(task.unit)}`}
+                : `${formatNumber(task.current_quantity!)}/${formatNumber(task.target_quantity!)} ${translateTaskUnit(task.unit)}`}
             </Text>
           )}
         </Text>

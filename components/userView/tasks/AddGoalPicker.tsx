@@ -7,7 +7,7 @@ import GlassIconButton from "@/components/userView/common/buttons/GlassIconButto
 import { pickerStore } from "@/lib/pickerStore";
 import { goalStore, GoalData } from "@/lib/goalStore";
 import { TaskGoalType, TaskUnit } from "@/types/task";
-import { translateTaskUnit } from "@/helpers/helpers";
+import { translateTaskUnit, parseLocalizedNumber, formatNumber } from "@/helpers/helpers";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 import { ListModalOption } from "@/types/picker";
@@ -36,11 +36,11 @@ export default function AddGoalPicker() {
   useEffect(() => () => goalStore.clear(), []);
 
   const initial = goalStore.getInitial();
-  const [quantity, setQuantity] = useState(initial?.target_quantity?.toString() ?? "");
+  const [quantity, setQuantity] = useState(initial?.target_quantity != null ? formatNumber(initial.target_quantity) : "");
   const [unit, setUnit] = useState<TaskUnit>(initial?.unit ?? TaskUnit.NONE);
 
   const handleConfirm = () => {
-    const parsed = Number(quantity);
+    const parsed = parseLocalizedNumber(quantity);
     const goal: GoalData | null = quantity.trim() && parsed > 0
       ? { goal_type: TaskGoalType.FIXED, target_quantity: parsed, unit }
       : null;
@@ -87,7 +87,7 @@ export default function AddGoalPicker() {
             <TextInput
               value={quantity}
               onChangeText={setQuantity}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               placeholder="Valgfrit"
               placeholderTextColor={colors.textMuted}
               style={[typography.bodySm, { color: colors.textPrimary, textAlign: "right", minWidth: 80 }]}

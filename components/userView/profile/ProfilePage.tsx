@@ -13,7 +13,7 @@ import { getMyStats, getUser, getUserAssignments } from "@/lib/api";
 import { UserStats } from "@/types/stats";
 import { User } from "@/types/users";
 import { TaskAssignment } from "@/types/assignment";
-import { getTodayAssignmentStats } from "@/helpers/helpers";
+import { formatNumber, getTodayAssignmentStats } from "@/helpers/helpers";
 import UserHeader from "../common/UserHeader";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
@@ -67,19 +67,19 @@ export default function ProfilePage() {
           <View className="flex-row gap-2">
             <View className="flex-1 bg-white border rounded-lg p-3" style={{ borderColor: colors.border }}>
               <Text style={typography.h3}>
-                {isLoading ? "—" : assignedToday || "0"}
+                {isLoading ? "—" : formatNumber(assignedToday || 0)}
               </Text>
               <Text style={typography.labelSmUppercase}>I dag</Text>
             </View>
             <View className="flex-1 bg-white border rounded-lg p-3" style={{ borderColor: colors.border }}>
               <Text style={[typography.h3, { color: colors.greenMid }]}>
-                {isLoading ? "—" : completedToday || "0"}
+                {isLoading ? "—" : formatNumber(completedToday || 0)}
               </Text>
               <Text style={typography.labelSmUppercase}>Færdige</Text>
             </View>
             <View className="flex-1 bg-white border rounded-lg p-3" style={{ borderColor: colors.border }}>
               <Text style={[typography.h3, { color: colors.red }]}>
-                {isLoading ? "—" : stats?.overdue_tasks ?? "0"}
+                {isLoading ? "—" : formatNumber(stats?.overdue_tasks ?? 0)}
               </Text>
               <Text style={typography.labelSmUppercase}>Forfaldne</Text>
             </View>
@@ -96,7 +96,7 @@ export default function ProfilePage() {
               </View>
               <Text style={typography.labelLg} className="flex-1">Fuldførelsesrate</Text>
               <Text style={typography.monoMd}>
-                {isLoading ? "—" : `${stats?.weekly_stats?.completion_rate ?? "n/a"}%`}
+                {isLoading ? "—" : stats?.weekly_stats?.completion_rate != null ? `${formatNumber(stats.weekly_stats.completion_rate)}%` : "n/a"}
               </Text>
             </View>
             <View className="flex-row items-center px-4 py-3 border-b" style={{ borderColor: colors.border }}>
@@ -105,7 +105,7 @@ export default function ProfilePage() {
               </View>
               <Text style={typography.labelLg} className="flex-1">Opgaver tildelt</Text>
               <Text style={typography.monoMd}>
-                {isLoading ? "—" : stats?.weekly_stats?.assigned_tasks ?? "n/a"}
+                {isLoading ? "—" : stats?.weekly_stats?.assigned_tasks != null ? formatNumber(stats.weekly_stats.assigned_tasks) : "n/a"}
               </Text>
             </View>
             <View className="flex-row items-center px-4 py-3">
@@ -114,7 +114,7 @@ export default function ProfilePage() {
               </View>
               <Text style={typography.labelLg} className="flex-1">Fuldført</Text>
               <Text style={typography.monoMd}>
-                {isLoading ? "—" : stats?.weekly_stats?.completed_tasks ?? "n/a"}
+                {isLoading ? "—" : stats?.weekly_stats?.completed_tasks != null ? formatNumber(stats.weekly_stats.completed_tasks) : "n/a"}
               </Text>
             </View>
           </View>
