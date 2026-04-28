@@ -276,19 +276,29 @@ export function parseLocalizedNumber(value: string): number {
 
   // Both separators: '.' is thousands, ',' is decimal  (e.g. "1.234,56")
   if (s.includes(".") && s.includes(",")) {
+    if (!/^-?\d{1,3}(\.\d{3})+,\d+$/.test(s)) return NaN;
     return Number(s.replace(/\./g, "").replace(",", "."));
   }
   // Only comma: da-DK decimal separator (e.g. "1,5")
   if (s.includes(",")) {
+    if (!/^-?\d+,\d+$/.test(s)) return NaN;
     return Number(s.replace(",", "."));
   }
   // Only dot: thousands pattern if groups of 3 (e.g. "1.234"), else decimal
   if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
     return Number(s.replace(/\./g, ""));
   }
+  if (s.includes(".") && !/^-?\d+\.\d+$/.test(s)) return NaN;
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return NaN;
   return Number(s);
 }
 
-export function formatNumber(value: number): string {
-  return value.toLocaleString("da-DK");
+export function formatNumber(value: number | string): string {
+  if (typeof value === "number") return value.toLocaleString("da-DK");
+
+  const trimmed = value.trim();
+  if (!trimmed) return value;
+
+  const numericValue = Number(trimmed);
+  return Number.isFinite(numericValue) ? numericValue.toLocaleString("da-DK") : value;
 }
