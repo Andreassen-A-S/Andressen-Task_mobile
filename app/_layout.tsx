@@ -1,4 +1,3 @@
-import "../global.css";
 import { Toaster } from "sonner-native";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect, useRef } from "react";
