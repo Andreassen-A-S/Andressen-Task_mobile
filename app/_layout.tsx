@@ -81,14 +81,16 @@ function RootGuard() {
     // so the URL is still available on platforms that clear it after launch.
     if (!hasHandledInitialUrlRef.current) {
       hasHandledInitialUrlRef.current = true;
-      Linking.getInitialURL().then((url) => {
-        if (!url) return;
-        if (isAuthenticated && !isLoading) {
-          InteractionManager.runAfterInteractions(() => navigate(url));
-        } else {
-          pendingDeepLinkRef.current = url;
-        }
-      });
+      Linking.getInitialURL()
+        .then((url) => {
+          if (!url) return;
+          if (isAuthenticated && !isLoading) {
+            InteractionManager.runAfterInteractions(() => navigate(url));
+          } else {
+            pendingDeepLinkRef.current = url;
+          }
+        })
+        .catch((e) => { if (__DEV__) console.warn("getInitialURL failed", e); });
     }
 
     // After auth resolves: drain any buffered URL (cold-start or runtime while logged out)
