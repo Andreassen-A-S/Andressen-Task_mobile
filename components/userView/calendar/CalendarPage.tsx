@@ -54,6 +54,7 @@ export default function CalendarPage() {
   const { width, height } = useWindowDimensions();
   const monthListRef = useRef<FlatList<Date>>(null);
   const agendaListRef = useRef<SectionList<Task, MonthAgendaSection>>(null);
+  const hasLoadedRef = useRef(false);
   const pageWidth = Math.max(1, width);
 
   const [today, setToday] = useState(() => new Date());
@@ -100,7 +101,8 @@ export default function CalendarPage() {
     useCallback(() => {
       const now = new Date();
       setToday((prev) => (prev.toDateString() === now.toDateString() ? prev : now));
-      fetchTasks();
+      fetchTasks(hasLoadedRef.current);
+      hasLoadedRef.current = true;
     }, [fetchTasks])
   );
 
