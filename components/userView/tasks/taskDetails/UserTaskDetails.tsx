@@ -172,6 +172,7 @@ export default function UserTaskDetails() {
       <TaskDetailsHeader
         title={task?.title}
         path={task?.project?.name}
+        taskId={taskId}
         menuActions={menuActions}
       />
 

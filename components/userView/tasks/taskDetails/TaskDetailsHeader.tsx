@@ -1,4 +1,4 @@
-import { Share } from "react-native";
+import { Platform, Share } from "react-native";
 import PathHeader from "@/components/userView/common/PathHeader";
 import GlassPillButton from "@/components/userView/common/buttons/GlassPillButton";
 import { MenuAction } from "@/types/pill";
@@ -6,10 +6,11 @@ import { MenuAction } from "@/types/pill";
 interface Props {
   title?: string;
   path?: string;
+  taskId?: string;
   menuActions?: MenuAction[];
 }
 
-export default function TaskDetailsHeader({ title, path, menuActions = [] }: Props) {
+export default function TaskDetailsHeader({ title, path, taskId, menuActions = [] }: Props) {
   return (
     <PathHeader
       title={title}
@@ -21,7 +22,13 @@ export default function TaskDetailsHeader({ title, path, menuActions = [] }: Pro
             {
               systemName: "square.and.arrow.up",
               onPress: async () => {
-                if (title) await Share.share({ message: title });
+                if (!taskId) return;
+                const url = `andreassentask://tasks?taskId=${taskId}`;
+                await Share.share(
+                  Platform.OS === "ios"
+                    ? { url, message: title ?? "" }
+                    : { message: url },
+                );
               },
             },
             ...(menuActions.length > 0 ? [{ systemName: "ellipsis" as const, menuActions }] : []),
