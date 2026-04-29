@@ -44,6 +44,7 @@ function RootGuard() {
   const router = useRouter();
   const lastNotificationResponse = useLastNotificationResponse();
   const hasHandledInitialUrlRef = useRef(false);
+  const pendingDeepLinkRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (isLoading) return;
@@ -70,21 +71,36 @@ function RootGuard() {
   }, [lastNotificationResponse, isAuthenticated, isLoading]);
 
   useEffect(() => {
-    if (!isAuthenticated || isLoading) return;
-
     const navigate = (url: string) => {
       const link = resolveDeepLink(url);
       if (link?.screen === "task") router.push(`/(tabs)/tasks/${link.taskId}`);
     };
 
-    if (!hasHandledInitialUrlRef.current) {
-      hasHandledInitialUrlRef.current = true;
-      Linking.getInitialURL().then((url) => {
-        if (url) InteractionManager.runAfterInteractions(() => navigate(url));
-      });
+    if (isAuthenticated && !isLoading) {
+      // Drain any URL that arrived while logged out
+      if (pendingDeepLinkRef.current) {
+        const url = pendingDeepLinkRef.current;
+        pendingDeepLinkRef.current = null;
+        InteractionManager.runAfterInteractions(() => navigate(url));
+      }
+
+      // Cold-start initial URL (once only)
+      if (!hasHandledInitialUrlRef.current) {
+        hasHandledInitialUrlRef.current = true;
+        Linking.getInitialURL().then((url) => {
+          if (url) InteractionManager.runAfterInteractions(() => navigate(url));
+        });
+      }
     }
 
-    const sub = Linking.addEventListener("url", ({ url }) => navigate(url));
+    // Always listen: navigate immediately if authenticated, buffer otherwise
+    const sub = Linking.addEventListener("url", ({ url }) => {
+      if (isAuthenticated) {
+        navigate(url);
+      } else {
+        pendingDeepLinkRef.current = url;
+      }
+    });
     return () => sub.remove();
   }, [isAuthenticated, isLoading, router]);
 
