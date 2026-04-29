@@ -19,18 +19,23 @@ export default function TaskDetailsHeader({ title, path, taskId, menuActions = [
         <GlassPillButton
           variant="lg"
           items={[
-            {
-              systemName: "square.and.arrow.up",
-              onPress: async () => {
-                if (!taskId) return;
-                const url = `andreassentask://tasks?taskId=${taskId}`;
-                await Share.share(
-                  Platform.OS === "ios"
-                    ? { url, message: title ?? "" }
-                    : { message: title ? `${title}\n${url}` : url },
-                );
-              },
-            },
+            ...(taskId
+              ? [{
+                  systemName: "square.and.arrow.up" as const,
+                  onPress: async () => {
+                    const url = `andreassentask://tasks?taskId=${taskId}`;
+                    try {
+                      await Share.share(
+                        Platform.OS === "ios"
+                          ? { url, message: title ?? "" }
+                          : { message: title ? `${title}\n${url}` : url },
+                      );
+                    } catch {
+                      // user dismissed or share sheet failed — no action needed
+                    }
+                  },
+                }]
+              : []),
             ...(menuActions.length > 0 ? [{ systemName: "ellipsis" as const, menuActions }] : []),
           ]}
         />
