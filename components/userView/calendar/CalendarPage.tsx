@@ -1,211 +1,248 @@
-import { useState, useEffect } from "react";
+import React, { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
+  ScrollView,
+  RefreshControl,
   SectionList,
-  ActivityIndicator,
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  TouchableOpacity,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { getUserAssignments } from "@/lib/api";
-import { Task, TaskStatus } from "@/types/task";
+import { Task } from "@/types/task";
 import { useAuth } from "@/hooks/useAuth";
-import { formatLocalDate, formatNumber, toDateKey } from "@/helpers/helpers";
+import { formatLocalDate, toDateKey } from "@/helpers/helpers";
 import CalendarMonthNavigator from "./CalendarMonthNavigator";
-import CalendarTaskCard from "./CalendarTaskCard";
 import UserHeader from "../common/UserHeader";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
+import { typography } from "@/constants/typography";
+import CalendarMonthPager from "./CalendarMonthPager";
+import CalendarAgenda, { MonthAgendaSection } from "./CalendarAgenda";
+import {
+  YEAR_RANGE,
+  addMonths,
+  getDaysInMonth,
+  getGridHeight,
+  getMonthDiff,
+  getMonthStart,
+} from "./calendarUtils";
 
-const WEEKDAYS = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
+const MONTH_COUNT = YEAR_RANGE * 12 * 2 + 1;
+
+function clampIndex(index: number) {
+  return Math.min(Math.max(index, 0), MONTH_COUNT - 1);
+}
+
+function buildMonths(today: Date): Date[] {
+  const months: Date[] = [];
+  const startMonth = addMonths(getMonthStart(today), -YEAR_RANGE * 12);
+  for (let i = 0; i < MONTH_COUNT; i++) {
+    months.push(addMonths(startMonth, i));
+  }
+  return months;
+}
 
 export default function CalendarPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { width, height } = useWindowDimensions();
+  const monthListRef = useRef<FlatList<Date>>(null);
+  const agendaListRef = useRef<SectionList<Task, MonthAgendaSection>>(null);
+  const pageWidth = Math.max(1, width);
+
+  const [today, setToday] = useState(() => new Date());
+  const todayStr = today.toDateString();
+
+  const allMonths = useMemo(() => buildMonths(today), [today]);
+  const prevAllMonthsRef = useRef(allMonths);
+
+  // visibleMonth is the source of truth; visibleMonthIndex is derived
+  const [visibleMonth, setVisibleMonth] = useState(() => getMonthStart(new Date()));
+  const visibleMonthIndex = useMemo(
+    () => clampIndex(getMonthDiff(allMonths[0], visibleMonth)),
+    [allMonths, visibleMonth]
+  );
+
+  // Re-anchor FlatList when allMonths rebuilds (e.g. midnight month rollover)
+  useEffect(() => {
+    if (prevAllMonthsRef.current === allMonths) return;
+    prevAllMonthsRef.current = allMonths;
+    monthListRef.current?.scrollToIndex({ index: visibleMonthIndex, animated: false });
+  }, [allMonths, visibleMonthIndex]);
+
+  const [selectedDate, setSelectedDate] = useState(today);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTasks = useCallback(async (refresh = false) => {
+    if (!user?.user_id) return;
+    try {
+      refresh ? setIsRefreshing(true) : setIsLoading(true);
+      setError(null);
+      const assignments = await getUserAssignments(user.user_id);
+      setTasks(assignments.map((a) => a.task).filter(Boolean));
+    } catch {
+      setError("Kunne ikke hente opgaver. Prøv igen senere.");
+    } finally {
+      refresh ? setIsRefreshing(false) : setIsLoading(false);
+    }
+  }, [user?.user_id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const now = new Date();
+      setToday((prev) => (prev.toDateString() === now.toDateString() ? prev : now));
+      fetchTasks();
+    }, [fetchTasks])
+  );
+
+  const tasksByDate = useMemo(() => {
+    const byDate = new Map<string, Task[]>();
+    for (const task of tasks) {
+      const startKey = toDateKey(task.start_date);
+      const dayTasks = byDate.get(startKey);
+      if (dayTasks) {
+        dayTasks.push(task);
+      } else {
+        byDate.set(startKey, [task]);
+      }
+    }
+    return byDate;
+  }, [tasks]);
+
+  const getTaskCountForDate = useCallback((date: Date) => {
+    return tasksByDate.get(toDateKey(date))?.length ?? 0;
+  }, [tasksByDate]);
+
+  const scrollToMonthIndex = useCallback((index: number, animated = true) => {
+    const nextIndex = clampIndex(index);
+    const nextMonth = allMonths[nextIndex];
+    if (nextMonth) {
+      setVisibleMonth(nextMonth);
+      monthListRef.current?.scrollToIndex({ index: nextIndex, animated });
+    }
+  }, [allMonths]);
+
+  const handleSelectDate = useCallback((date: Date) => {
+    setSelectedDate(date);
+    const monthStart = getMonthStart(date);
+    const nextIndex = clampIndex(getMonthDiff(allMonths[0], monthStart));
+    if (nextIndex !== visibleMonthIndex) {
+      setVisibleMonth(monthStart);
+      monthListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+    }
+  }, [allMonths, visibleMonthIndex]);
+
+  const handleMomentumScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = clampIndex(Math.round(event.nativeEvent.contentOffset.x / pageWidth));
+    const month = allMonths[index];
+    if (month && month.getTime() !== visibleMonth.getTime()) {
+      setVisibleMonth(month);
+    }
+  }, [allMonths, pageWidth, visibleMonth]);
+
+  const monthName = formatLocalDate(visibleMonth, "da-DK", { month: "long", year: "numeric" }).replace(/^\w/, (c) => c.toUpperCase());
+  const gridHeight = getGridHeight(visibleMonth);
+  const selectedDateKey = toDateKey(selectedDate);
+
+  const monthSections = useMemo<MonthAgendaSection[]>(() => {
+    return getDaysInMonth(visibleMonth)
+      .filter((day) => day.isCurrentMonth)
+      .map((day) => {
+        const dateKey = toDateKey(day.date);
+        return { date: day.date, dateKey, data: tasksByDate.get(dateKey) ?? [] };
+      })
+      .filter((section) => section.data.length > 0);
+  }, [tasksByDate, visibleMonth]);
+
+  const agendaPaddingBottom = useMemo(() => {
+    const sectionIndex = monthSections.findIndex((s) => s.dateKey === selectedDateKey);
+    if (sectionIndex >= 0 && sectionIndex >= monthSections.length - 3) {
+      return height * 0.3;
+    }
+    return 24;
+  }, [monthSections, selectedDateKey, height]);
 
   useEffect(() => {
-    if (!user) return;
-    const fetchTasks = async () => {
-      try {
-        setIsLoading(true);
-        const assignments = await getUserAssignments(user.user_id);
-        setTasks(assignments.map((a) => a.task).filter(Boolean));
-      } catch {
-        console.error("Error fetching tasks");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchTasks();
-  }, [user]);
+    const sectionIndex = monthSections.findIndex((section) => section.dateKey === selectedDateKey);
+    if (sectionIndex < 0) return;
 
-  const changeMonth = (delta: number) => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1));
-  };
-
-  const getDaysInMonth = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const startDow = firstDay.getDay();
-    const prevMonthDays = startDow === 0 ? 6 : startDow - 1;
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const days: Array<{ date: Date; isCurrentMonth: boolean }> = [];
-
-    for (let i = prevMonthDays; i > 0; i--) {
-      days.push({ date: new Date(year, month - 1, prevMonthLastDay - i + 1), isCurrentMonth: false });
-    }
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push({ date: new Date(year, month, i), isCurrentMonth: true });
-    }
-    const remaining = days.length % 7 === 0 ? 0 : 7 - (days.length % 7);
-    for (let i = 1; i <= remaining; i++) {
-      days.push({ date: new Date(year, month + 1, i), isCurrentMonth: false });
-    }
-    return days;
-  };
-
-  const todayKey = toDateKey(new Date());
-
-  const isCarriedOver = (task: Task) =>
-    toDateKey(task.start_date) < todayKey &&
-    (task.status === TaskStatus.PENDING || task.status === TaskStatus.IN_PROGRESS);
-
-  const getTasksForDate = (date: Date) => {
-    const dateStr = toDateKey(date);
-    return tasks.filter((t) => {
-      if (toDateKey(t.start_date) === dateStr) return true;
-      return dateStr === todayKey && isCarriedOver(t);
+    requestAnimationFrame(() => {
+      agendaListRef.current?.scrollToLocation({
+        sectionIndex,
+        itemIndex: 0,
+        viewPosition: 0,
+        animated: true,
+      });
     });
-  };
-
-  const isToday = (date: Date) => date.toDateString() === new Date().toDateString();
-  const isSameDay = (d1: Date, d2: Date) => d1.toDateString() === d2.toDateString();
-
-  const days = getDaysInMonth();
-  const monthName = formatLocalDate(currentDate, "da-DK", { month: "long", year: "numeric" });
-  const selectedDateKey = toDateKey(selectedDate);
-  const startDateTasks = tasks.filter((t) => toDateKey(t.start_date) === selectedDateKey);
-  const carriedOverTasks = selectedDateKey === todayKey ? tasks.filter(isCarriedOver) : [];
-  const totalCount = startDateTasks.length + carriedOverTasks.length;
-  const hasBothSections = startDateTasks.length > 0 && carriedOverTasks.length > 0;
-  const sections = [
-    ...(startDateTasks.length > 0
-      ? [{ title: "Startdato", data: startDateTasks }]
-      : []),
-    ...(carriedOverTasks.length > 0
-      ? [{ title: "Overført", data: carriedOverTasks }]
-      : []),
-  ];
+  }, [monthSections, selectedDateKey]);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["left", "right"]}>
-      <View className="flex-1 bg-[#F6F5F1]">
-        {/* Header */}
+    <SafeAreaView className="flex-1" edges={["left", "right"]} style={{ backgroundColor: colors.charcoal }}>
+      <View className="flex-1" style={{ backgroundColor: colors.eggWhite }}>
         <UserHeader variant="user" heading="Kalender" sub="Overblik over kommende opgaver" user={user} />
 
-        {/* Month Navigator */}
-        <CalendarMonthNavigator monthName={monthName} onPrev={() => changeMonth(-1)} onNext={() => changeMonth(1)} />
+        <View className="pb-3 border-b" style={{ backgroundColor: colors.white, borderBottomColor: colors.border }}>
+          <CalendarMonthNavigator
+            monthName={monthName}
+            onPrev={() => scrollToMonthIndex(visibleMonthIndex - 1)}
+            onNext={() => scrollToMonthIndex(visibleMonthIndex + 1)}
+          />
 
-        {/* Calendar Grid */}
-        <View className="px-3 pt-3 pb-2">
-          {/* Weekday headers */}
-          <View className="flex-row gap-0.5 mb-1">
-            {WEEKDAYS.map((d) => (
-              <View key={d} className="flex-1 items-center py-1">
-                <Text style={typography.labelSm}>{d}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Days */}
-          <View className="flex-row flex-wrap gap-0.5">
-            {days.map((day, idx) => {
-              const hasTasks = getTasksForDate(day.date).length > 0;
-              const isSelected = isSameDay(day.date, selectedDate);
-              const isTodayDate = isToday(day.date);
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  onPress={() => setSelectedDate(day.date)}
-                  style={{ width: `${(100 - 6 * 0.5) / 7}%` }}
-                  className={`h-10 items-center justify-center rounded-lg ${!day.isCurrentMonth ? "opacity-30" : ""
-                    } ${isTodayDate ? "bg-[#0f6e56]" : isSelected ? "bg-[#E8E6E1]" : ""}`}
-                >
-                  <Text style={[isTodayDate ? typography.labelSmWhite : typography.labelSm]}>
-                    {day.date.getDate()}
-                  </Text>
-                  {hasTasks && (
-                    <View
-                      className="w-1 h-1 rounded-full mt-0.5"
-                      style={{ backgroundColor: isTodayDate ? "rgba(255,255,255,0.7)" : "#0f6e56" }}
-                    />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <CalendarMonthPager
+            months={allMonths}
+            initialMonthIndex={visibleMonthIndex}
+            listRef={monthListRef}
+            pageWidth={pageWidth}
+            gridHeight={gridHeight}
+            selectedDate={selectedDate}
+            todayStr={todayStr}
+            getTaskCountForDate={getTaskCountForDate}
+            onSelectDate={handleSelectDate}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+          />
         </View>
 
-        <View className="h-px bg-[#E8E6E1] mx-3" />
-
-        {/* Selected day tasks */}
-        <View className="flex-1 px-3 pt-2">
-          <Text style={typography.labelSmUppercase} className="mb-2.5 px-1">
-            {formatLocalDate(selectedDate, "da-DK", { weekday: "long", day: "numeric", month: "long" })} - {totalCount} {totalCount === 1 ? "opgave" : "opgaver"}
-          </Text>
-
-          {isLoading ? (
-            <ActivityIndicator color={colors.green} size="large" />
-          ) : (
-            <SectionList
-              sections={sections}
-              keyExtractor={(item) => item.task_id}
-              renderItem={({ item }) => (
-                <CalendarTaskCard task={item} onClick={() => router.push(`/(tabs)/calendar/${item.task_id}`)} />
-              )}
-              renderSectionHeader={({ section: { title, data } }) => {
-                if (title === "Startdato" && !hasBothSections) return null;
-                const isCarriedOverSection = title === "Overført";
-                return (
-                  <View>
-                    <View className="flex-row items-center justify-between pt-2.5 bg-[#F6F5F1]">
-                      <Text style={typography.labelSmUppercase}>{title}</Text>
-                      <View
-                        className="rounded-2xl px-2 py-0.5"
-                        style={{ backgroundColor: isCarriedOverSection ? colors.redLight : colors.border }}
-                      >
-                        <Text style={typography.labelSmUppercase}>{formatNumber(data.length)}</Text>
-                      </View>
-                    </View>
-                  </View>
-                );
-              }}
-              ItemSeparatorComponent={() => <View className="h-3" />}
-              SectionSeparatorComponent={() => <View className="h-3" />}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
-              stickySectionHeadersEnabled={false}
-              ListEmptyComponent={
-                <View className="flex-1 items-center justify-center pb-20">
-                  <View className="w-14 h-14 bg-white border border-[#E8E6E1] rounded-lg items-center justify-center mb-3">
-                    <Ionicons name="clipboard-outline" size={24} color={colors.textSecondary} />
-                  </View>
-                  <Text style={typography.bodyMd}>Ingen opgaver</Text>
-                  <Text style={typography.bodyXs}>Der er ingen planlagte opgaver denne dag</Text>
-                </View>
-              }
-            />
-          )}
-        </View>
-
+        {error ? (
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}
+            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchTasks(true)} />}
+          >
+            <View
+              className="rounded-xl p-4 w-full items-center border-2"
+              style={{ backgroundColor: colors.redLight, borderColor: colors.redBorder }}
+            >
+              <Text className="font-semibold text-center mb-3" style={{ color: colors.redText }}>{error}</Text>
+              <TouchableOpacity
+                onPress={() => fetchTasks()}
+                className="px-4 py-2.5 rounded-[10px]"
+                style={{ backgroundColor: colors.red }}
+              >
+                <Text style={typography.btnMdWhite}>Prøv igen</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        ) : (
+          <CalendarAgenda
+            ref={agendaListRef}
+            sections={monthSections}
+            selectedDateKey={selectedDateKey}
+            isLoading={isLoading}
+            isRefreshing={isRefreshing}
+            paddingBottom={agendaPaddingBottom}
+            onRefresh={() => fetchTasks(true)}
+            onTaskPress={(taskId) => router.push(`/(tabs)/calendar/${taskId}`)}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
