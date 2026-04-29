@@ -1,5 +1,7 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { colors } from "@/constants/colors";
+import { typography } from "@/constants/typography";
 
 interface Props {
   monthName: string;
@@ -9,19 +11,22 @@ interface Props {
 
 export default function CalendarMonthNavigator({ monthName, onPrev, onNext }: Props) {
   return (
-    <View className="bg-white border-b border-gray-200 flex-row items-center justify-between px-4 h-12">
+    <View
+      className="flex-row items-center justify-between px-4 h-12 pt-3"
+      style={{ backgroundColor: colors.surface }}
+    >
       <TouchableOpacity
         onPress={onPrev}
-        className="w-8 h-8 border border-gray-200 rounded-lg items-center justify-center"
+        className="w-10 h-10 rounded-lg items-center justify-center"
       >
-        <Ionicons name="chevron-back" size={16} color="#6B7084" />
+        <Ionicons name="chevron-back" size={16} color={colors.textSecondary} />
       </TouchableOpacity>
-      <Text className="text-base font-semibold text-gray-900">{monthName}</Text>
+      <Text style={[typography.h6, { color: colors.textPrimary }]}>{monthName}</Text>
       <TouchableOpacity
         onPress={onNext}
-        className="w-8 h-8 border border-gray-200 rounded-lg items-center justify-center"
+        className="w-10 h-10 rounded-lg items-center justify-center"
       >
-        <Ionicons name="chevron-forward" size={16} color="#6B7084" />
+        <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
       </TouchableOpacity>
     </View>
   );
