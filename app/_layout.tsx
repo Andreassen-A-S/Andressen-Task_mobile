@@ -1,3 +1,4 @@
+// @ts-expect-error -- NativeWind CSS side-effect, processed by Metro not TypeScript
 import "../global.css";
 import { Toaster } from "sonner-native";
 import { Slot, useRouter, useSegments } from "expo-router";
@@ -76,21 +77,25 @@ function RootGuard() {
       if (link?.screen === "task") router.push(`/(tabs)/tasks/${link.taskId}`);
     };
 
-    if (isAuthenticated && !isLoading) {
-      // Drain any URL that arrived while logged out
-      if (pendingDeepLinkRef.current) {
-        const url = pendingDeepLinkRef.current;
-        pendingDeepLinkRef.current = null;
-        InteractionManager.runAfterInteractions(() => navigate(url));
-      }
+    // Call getInitialURL once as early as possible — before auth is known —
+    // so the URL is still available on platforms that clear it after launch.
+    if (!hasHandledInitialUrlRef.current) {
+      hasHandledInitialUrlRef.current = true;
+      Linking.getInitialURL().then((url) => {
+        if (!url) return;
+        if (isAuthenticated && !isLoading) {
+          InteractionManager.runAfterInteractions(() => navigate(url));
+        } else {
+          pendingDeepLinkRef.current = url;
+        }
+      });
+    }
 
-      // Cold-start initial URL (once only)
-      if (!hasHandledInitialUrlRef.current) {
-        hasHandledInitialUrlRef.current = true;
-        Linking.getInitialURL().then((url) => {
-          if (url) InteractionManager.runAfterInteractions(() => navigate(url));
-        });
-      }
+    // After auth resolves: drain any buffered URL (cold-start or runtime while logged out)
+    if (isAuthenticated && !isLoading && pendingDeepLinkRef.current) {
+      const url = pendingDeepLinkRef.current;
+      pendingDeepLinkRef.current = null;
+      InteractionManager.runAfterInteractions(() => navigate(url));
     }
 
     // Always listen: navigate immediately if authenticated, buffer otherwise
