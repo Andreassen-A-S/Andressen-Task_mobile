@@ -27,7 +27,7 @@ export default function TaskDetailsHeader({ title, path, taskId, menuActions = [
                 await Share.share(
                   Platform.OS === "ios"
                     ? { url, message: title ?? "" }
-                    : { message: url },
+                    : { message: title ? `${title}\n${url}` : url },
                 );
               },
             },

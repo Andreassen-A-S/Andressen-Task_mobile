@@ -30,7 +30,9 @@ function resolveDeepLink(url: string): { screen: "task"; taskId: string } | null
     if (!taskId) return null;
     const isTasksRoute = parsed.hostname === "tasks" || parsed.pathname === "/tasks";
     if (isTasksRoute) return { screen: "task", taskId };
-  } catch {}
+  } catch (e) {
+    if (__DEV__) console.warn("resolveDeepLink: failed to parse URL", url, e);
+  }
   return null;
 }
 
@@ -75,7 +77,9 @@ function RootGuard() {
 
     if (!hasHandledInitialUrlRef.current) {
       hasHandledInitialUrlRef.current = true;
-      Linking.getInitialURL().then((url) => { if (url) navigate(url); });
+      Linking.getInitialURL().then((url) => {
+        if (url) setTimeout(() => navigate(url), 0);
+      });
     }
 
     const sub = Linking.addEventListener("url", ({ url }) => navigate(url));
