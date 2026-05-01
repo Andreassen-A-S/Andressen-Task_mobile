@@ -2,6 +2,7 @@ import { useRef, useCallback } from "react";
 import { useIsFocused } from "@react-navigation/native";
 import { Host, Button, HStack, Image, Text } from "@expo/ui/swift-ui";
 import { buttonStyle, glassEffect, padding, fixedSize, tint as t, font, foregroundStyle, frame, background, clipShape } from "@expo/ui/swift-ui/modifiers";
+import type { SFSymbol } from "sf-symbols-typescript";
 
 interface Props {
   icon?: string;
@@ -46,12 +47,12 @@ export default function GlassFilterButton({ icon, label, variant, count, onPress
               {String(count)}
             </Text>
           ) : isActive && icon ? (
-            <Image systemName={icon} size={12} color="#007AFF" />
+            <Image systemName={icon as SFSymbol} size={12} color="#007AFF" />
           ) : null}
           <Text modifiers={[font({ weight: "medium", size: 12 }), foregroundStyle(isActive ? "#007AFF" : "secondary")]}>
             {label}
           </Text>
-          <Image systemName="chevron.down" size={9} color={isActive ? "#007AFF" : "gray"} />
+          <Image systemName={"chevron.down" as SFSymbol} size={9} color={isActive ? "#007AFF" : "gray"} />
         </HStack>
       </Button>
     </Host>

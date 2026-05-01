@@ -1,4 +1,4 @@
-// @ts-expect-error -- NativeWind CSS side-effect, processed by Metro not TypeScript
+// @ts-ignore -- NativeWind CSS side-effect, processed by Metro not TypeScript
 import "../global.css";
 import { Toaster } from "sonner-native";
 import { Slot, useRouter, useSegments } from "expo-router";
