@@ -1,15 +1,19 @@
 import { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Platform, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
+import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
 import { getProjects } from "@/lib/api";
 import { Project } from "@/types/project";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ProjectAvatar from "@/components/userView/common/label/ProjectAvatar";
+
+const SEARCH_KEYBOARD_GAP = 8;
 
 export default function AddProjectPicker() {
   const router = useRouter();
@@ -33,69 +37,72 @@ export default function AddProjectPicker() {
 
   return (
     <ModalScreen title="Tilføj en ny opgave" sub="Vælg et projekt">
-      <View style={{ flex: 1 }}>
-        {isLoading ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <ActivityIndicator color={colors.green} />
-          </View>
-        ) : error ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
-            <Text style={[typography.bodySm, { textAlign: "center" }]}>{error}</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.project_id}
-            contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 80 + insets.bottom, flexGrow: 1 }}
-            showsVerticalScrollIndicator={false}
-            ListHeaderComponent={() => (
-              <View style={{ height: 1, backgroundColor: colors.border }} />
-            )}
-            ListFooterComponent={() => (
-              <View style={{ height: 1, backgroundColor: colors.border }} />
-            )}
-            ItemSeparatorComponent={() => (
-              <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 72 }} />
-            )}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() =>
-                  router.push({
-                    pathname: "/(tabs)/tasks/add-task-form",
-                    params: { projectId: item.project_id, projectName: item.name },
-                  })
-                }
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                }}
-              >
-                <View style={{ marginRight: 12 }}>
-                  <ProjectAvatar name={item.name} color={item.color} size="md" />
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
+        <View style={{ flex: 1 }}>
+          {isLoading ? (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+              <ActivityIndicator color={colors.green} />
+            </View>
+          ) : error ? (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+              <Text style={[typography.bodySm, { textAlign: "center" }]}>{error}</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.project_id}
+              contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 16, flexGrow: 1 }}
+              showsVerticalScrollIndicator={false}
+              ListHeaderComponent={() => (
+                <View style={{ height: 1, backgroundColor: colors.border }} />
+              )}
+              ListFooterComponent={() => (
+                <View style={{ height: 1, backgroundColor: colors.border }} />
+              )}
+              ItemSeparatorComponent={() => (
+                <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 72 }} />
+              )}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/tasks/add-task-form",
+                      params: { projectId: item.project_id, projectName: item.name },
+                    })
+                  }
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                  }}
+                >
+                  <View style={{ marginRight: 12 }}>
+                    <ProjectAvatar name={item.name} color={item.color} size="md" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    {item.description ? (
+                      <Text style={[typography.bodyXs, { marginBottom: 1 }]} numberOfLines={1}>
+                        {item.description}
+                      </Text>
+                    ) : null}
+                    <Text style={typography.h6} numberOfLines={1}>{item.name}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 48 }}>
+                  <Text style={typography.bodySm}>Ingen projekter fundet</Text>
                 </View>
-                <View style={{ flex: 1 }}>
-                  {item.description ? (
-                    <Text style={[typography.bodyXs, { marginBottom: 1 }]} numberOfLines={1}>
-                      {item.description}
-                    </Text>
-                  ) : null}
-                  <Text style={typography.h6} numberOfLines={1}>{item.name}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 48 }}>
-                <Text style={typography.bodySm}>Ingen projekter fundet</Text>
-              </View>
-            }
-          />
-        )}
-      </View>
-
-      <NativeSearchBar placeholder="Søg" onChangeText={setSearch} />
+              }
+            />
+          )}
+        </View>
+        <NativeSearchBar placeholder="Søg" onChangeText={setSearch} />
+        <KeyboardSafeAreaSpacer bottomInset={0} keyboardGap={SEARCH_KEYBOARD_GAP} />
+      </KeyboardAvoidingView>
+      <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />
     </ModalScreen>
   );
 }

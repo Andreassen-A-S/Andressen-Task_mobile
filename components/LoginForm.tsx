@@ -6,9 +6,8 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,7 +41,7 @@ export default function LoginForm() {
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.eggWhite }}>
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior="padding"
       >
         <View className="flex-1 justify-center px-6">
           {/* Logo */}

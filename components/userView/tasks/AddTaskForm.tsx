@@ -4,9 +4,10 @@ import {
   Text,
   TextInput,
   ScrollView,
+  Platform,
 } from "react-native";
 import Animated, { useAnimatedStyle } from "react-native-reanimated";
-import { KeyboardAwareScrollView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
+import { KeyboardAwareScrollView, KeyboardAvoidingView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +22,7 @@ import { goalStore, GoalData } from "@/lib/goalStore";
 import ToolbarGlassButton from "@/components/userView/common/buttons/ToolbarGlassButton";
 import GlassTextButton from "@/components/userView/common/buttons/GlassTextButton";
 import ModalScreen from "@/components/userView/common/ModalScreen";
+import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
 import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
 import { ListModalOption } from "@/types/picker";
 import Badge from "@/components/userView/common/label/badge";
@@ -31,6 +33,8 @@ const PRIORITY_OPTIONS: ListModalOption[] = [
   { value: TaskPriority.HIGH, icon: <Badge variant="priority" value={TaskPriority.HIGH} size="lg" /> },
 ];
 
+const TOOLBAR_HEIGHT = 44;
+const TOOLBAR_KEYBOARD_GAP = 8;
 
 export default function AddTaskForm() {
   const router = useRouter();
@@ -39,9 +43,9 @@ export default function AddTaskForm() {
   const insets = useSafeAreaInsets();
   const { height: keyboardHeight } = useReanimatedKeyboardAnimation();
   const headerHeight = usePathHeaderHeight(true);
-  const toolbarHeight = 44 + insets.bottom;
+  const iosToolbarHeight = TOOLBAR_HEIGHT + insets.bottom;
 
-  const toolbarStyle = useAnimatedStyle(() => ({
+  const iosToolbarStyle = useAnimatedStyle(() => ({
     marginBottom: -keyboardHeight.value - 12,
   }));
 
@@ -111,6 +115,57 @@ export default function AddTaskForm() {
     });
   };
 
+  const formFields = (
+    <>
+      <TextInput
+        ref={titleRef}
+        value={title}
+        onChangeText={setTitle}
+        onFocus={() => { lastFocusedRef.current = "title"; }}
+        underlineColorAndroid="transparent"
+        placeholder="Titel"
+        placeholderTextColor={colors.textMuted}
+        style={[typography.h3, { color: colors.textPrimary, marginBottom: 22, padding: 0 }]}
+        multiline
+      />
+      <TextInput
+        ref={descriptionRef}
+        value={description}
+        onChangeText={setDescription}
+        onFocus={() => { lastFocusedRef.current = "description"; }}
+        underlineColorAndroid="transparent"
+        placeholder="Tilføj en beskrivelse"
+        placeholderTextColor={colors.textMuted}
+        style={[typography.bodyMd, { color: colors.textPrimary, minHeight: 250, padding: 0, textAlignVertical: "top" }]}
+        multiline
+        scrollEnabled={false}
+        autoCorrect={true}
+        spellCheck={true}
+      />
+      {error ? (
+        <View style={{
+          marginTop: 12,
+          padding: 12,
+          borderRadius: 10,
+          backgroundColor: colors.redLight,
+          borderWidth: 1,
+          borderColor: colors.redBorder,
+        }}>
+          <Text style={[typography.bodySm, { color: colors.redText }]}>{error}</Text>
+        </View>
+      ) : null}
+    </>
+  );
+
+  const toolbarButtons = (
+    <>
+      <ToolbarGlassButton icon="flag" label={translatePriority(priority).charAt(0) + translatePriority(priority).slice(1).toLowerCase()} tint={priority ? "#007AFF" : undefined} onPress={() => openPicker("Prioritet", PRIORITY_OPTIONS, priority, (v) => setPriority(v as TaskPriority))} />
+      <ToolbarGlassButton icon="calendar" label={startDate ? formatRelativeDate(startDate) : "Startdato"} tint={startDate ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setStartDate(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Startdato", selected: toDateKey(startDate ?? new Date()) } }); }} />
+      <ToolbarGlassButton icon="clock" label={deadline ? formatRelativeDate(deadline) : "Deadline"} tint={deadline ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setDeadline(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Deadline", selected: toDateKey(deadline ?? new Date()) } }); }} />
+      <ToolbarGlassButton icon="target" label={goal?.target_quantity ? translateTaskUnit(goal.unit).replace(/^./, (c) => c.toUpperCase()) : "Mål"} tint={goal ? "#007AFF" : undefined} onPress={() => { goalStore.set(setGoal, goal); router.push({ pathname: "/(tabs)/tasks/add-goal-picker" }); }} />
+      <ToolbarGlassButton icon="person" label={assignedUsers.length > 0 ? `${assignedUsers.length} Tildelt${assignedUsers.length === 1 ? "" : "e"}` : "Tildelte"} tint={assignedUsers.length > 0 ? "#007AFF" : undefined} onPress={() => { multiSelectStore.set(setAssignedUsers, assignedUsers); router.push({ pathname: "/(tabs)/tasks/add-assignees-picker" }); }} />
+    </>
+  );
 
   return (
     <ModalScreen
@@ -123,66 +178,58 @@ export default function AddTaskForm() {
         />
       }
     >
-      <KeyboardAwareScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingTop: headerHeight + 16, paddingHorizontal: 16, paddingBottom: toolbarHeight + 16 }}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="always"
-        keyboardDismissMode="none"
-        bottomOffset={toolbarHeight}
-      >
-        <TextInput
-          ref={titleRef}
-          value={title}
-          onChangeText={setTitle}
-          onFocus={() => { lastFocusedRef.current = "title"; }}
-          placeholder="Titel"
-          placeholderTextColor={colors.textMuted}
-          style={[typography.h3, { color: colors.textPrimary, marginBottom: 22 }]}
-          multiline
-        />
-        <TextInput
-          ref={descriptionRef}
-          value={description}
-          onChangeText={setDescription}
-          onFocus={() => { lastFocusedRef.current = "description"; }}
-          placeholder="Tilføj en beskrivelse"
-          placeholderTextColor={colors.textMuted}
-          style={[typography.bodyMd, { color: colors.textPrimary, minHeight: 250 }]}
-          multiline
-          scrollEnabled={false}
-          autoCorrect={true}
-          spellCheck={true}
-        />
-        {error ? (
-          <View style={{
-            marginTop: 12,
-            padding: 12,
-            borderRadius: 10,
-            backgroundColor: colors.redLight,
-            borderWidth: 1,
-            borderColor: colors.redBorder,
-          }}>
-            <Text style={[typography.bodySm, { color: colors.redText }]}>{error}</Text>
-          </View>
-        ) : null}
-      </KeyboardAwareScrollView>
+      {Platform.OS === "ios" ? (
+        <>
+          <KeyboardAwareScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingTop: headerHeight + 16, paddingHorizontal: 16, paddingBottom: iosToolbarHeight + 16 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="always"
+            keyboardDismissMode="none"
+            bottomOffset={iosToolbarHeight}
+          >
+            {formFields}
+          </KeyboardAwareScrollView>
 
+          <Animated.View style={[{ height: iosToolbarHeight }, iosToolbarStyle]}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              contentContainerStyle={{ paddingHorizontal: 12, gap: 8, alignItems: "center" }}
+            >
+              {toolbarButtons}
+            </ScrollView>
+          </Animated.View>
+        </>
+      ) : (
+        <>
+          <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={0}>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingTop: headerHeight + 16, paddingHorizontal: 16, paddingBottom: 16 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              keyboardDismissMode="none"
+            >
+              {formFields}
+            </ScrollView>
 
-      <Animated.View style={[{ height: toolbarHeight }, toolbarStyle]}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyboardShouldPersistTaps="always"
-          contentContainerStyle={{ paddingHorizontal: 12, gap: 8, alignItems: 'center' }}
-        >
-          <ToolbarGlassButton icon="flag" label={translatePriority(priority).charAt(0) + translatePriority(priority).slice(1).toLowerCase()} tint={priority ? "#007AFF" : undefined} onPress={() => openPicker("Prioritet", PRIORITY_OPTIONS, priority, (v) => setPriority(v as TaskPriority))} />
-          <ToolbarGlassButton icon="calendar" label={startDate ? formatRelativeDate(startDate) : "Startdato"} tint={startDate ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setStartDate(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Startdato", selected: toDateKey(startDate ?? new Date()) } }); }} />
-          <ToolbarGlassButton icon="clock" label={deadline ? formatRelativeDate(deadline) : "Deadline"} tint={deadline ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setDeadline(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Deadline", selected: toDateKey(deadline ?? new Date()) } }); }} />
-          <ToolbarGlassButton icon="target" label={goal?.target_quantity ? translateTaskUnit(goal.unit).replace(/^./, (c) => c.toUpperCase()) : "Mål"} tint={goal ? "#007AFF" : undefined} onPress={() => { goalStore.set(setGoal, goal); router.push({ pathname: "/(tabs)/tasks/add-goal-picker" }); }} />
-          <ToolbarGlassButton icon="person" label={assignedUsers.length > 0 ? `${assignedUsers.length} Tildelt${assignedUsers.length === 1 ? "" : "e"}` : "Tildelte"} tint={assignedUsers.length > 0 ? "#007AFF" : undefined} onPress={() => { multiSelectStore.set(setAssignedUsers, assignedUsers); router.push({ pathname: "/(tabs)/tasks/add-assignees-picker" }); }} />
-        </ScrollView>
-      </Animated.View>
+            <View style={{ height: TOOLBAR_HEIGHT }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="always"
+                contentContainerStyle={{ paddingHorizontal: 12, gap: 8, alignItems: "center" }}
+              >
+                {toolbarButtons}
+              </ScrollView>
+            </View>
+            <KeyboardSafeAreaSpacer bottomInset={0} keyboardGap={TOOLBAR_KEYBOARD_GAP} />
+          </KeyboardAvoidingView>
+          <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />
+        </>
+      )}
     </ModalScreen>
   );
 }
