@@ -12,6 +12,11 @@ export function useDeepLinkNavigation({ isAuthenticated, isLoading }: UseDeepLin
   const router = useRouter();
   const hasHandledInitialUrlRef = useRef(false);
   const pendingDeepLinkRef = useRef<string | null>(null);
+  const isAuthenticatedRef = useRef(isAuthenticated);
+  const isLoadingRef = useRef(isLoading);
+
+  useEffect(() => { isAuthenticatedRef.current = isAuthenticated; });
+  useEffect(() => { isLoadingRef.current = isLoading; });
 
   const navigate = useCallback((url: string) => {
     const link = resolveDeepLink(url);
@@ -27,7 +32,7 @@ export function useDeepLinkNavigation({ isAuthenticated, isLoading }: UseDeepLin
       Linking.getInitialURL()
         .then((url) => {
           if (!url) return;
-          if (isAuthenticated && !isLoading) {
+          if (isAuthenticatedRef.current && !isLoadingRef.current) {
             InteractionManager.runAfterInteractions(() => navigate(url));
           } else {
             pendingDeepLinkRef.current = url;
