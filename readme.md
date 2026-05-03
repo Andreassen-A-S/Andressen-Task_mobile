@@ -37,3 +37,4 @@ React Native mobile app for the AndressenTask task management system, built with
 | `npx expo start --ios`                           | Open in iOS simulator                            |
 | `npx expo start --android`                       | Open in Android emulator                         |
 | `eas build --platform android --profile preview` | Build Android APK for distribution               |
+| `eas submit --platform ios --profile production` | Submit iOS app for review                        |

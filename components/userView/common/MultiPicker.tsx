@@ -1,16 +1,20 @@
 import { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Platform, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
+import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
 import SingleAvatar from "@/components/userView/common/label/singleAvatar";
 import ProjectAvatar from "@/components/userView/common/label/ProjectAvatar";
 import { multiSelectStore } from "@/lib/multiSelectStore";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
+
+const SEARCH_KEYBOARD_GAP = 8;
 
 export interface MultiSelectOption {
   label: string;
@@ -143,34 +147,38 @@ export default function MultiPicker({ title, options, isLoading, error, searchab
         <GlassIconButton variant="active" systemName="checkmark" onPress={handleConfirm} />
       }
     >
-      <View style={{ flex: 1 }}>
-        {isLoading ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-            <ActivityIndicator color={colors.green} />
-          </View>
-        ) : error ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
-            <Text style={[typography.bodySm, { textAlign: "center" }]}>{error}</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={data}
-            keyExtractor={keyExtractor}
-            renderItem={renderItem}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: insets.bottom + 80 }}
-            ItemSeparatorComponent={({ leadingItem }) => {
-              if (leadingItem.type !== "option" || leadingItem.isLast) return null;
-              return (
-                <View style={{ backgroundColor: colors.white }}>
-                  <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 68 }} />
-                </View>
-              );
-            }}
-          />
-        )}
-      </View>
-      {searchable && <NativeSearchBar placeholder="Søg" onChangeText={setSearch} />}
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
+        <View style={{ flex: 1 }}>
+          {isLoading ? (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+              <ActivityIndicator color={colors.green} />
+            </View>
+          ) : error ? (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+              <Text style={[typography.bodySm, { textAlign: "center" }]}>{error}</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={data}
+              keyExtractor={keyExtractor}
+              renderItem={renderItem}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: searchable ? 16 : insets.bottom + 16 }}
+              ItemSeparatorComponent={({ leadingItem }) => {
+                if (leadingItem.type !== "option" || leadingItem.isLast) return null;
+                return (
+                  <View style={{ backgroundColor: colors.white }}>
+                    <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 68 }} />
+                  </View>
+                );
+              }}
+            />
+          )}
+        </View>
+        {searchable && <NativeSearchBar placeholder="Søg" onChangeText={setSearch} />}
+        {searchable && <KeyboardSafeAreaSpacer bottomInset={0} keyboardGap={SEARCH_KEYBOARD_GAP} />}
+      </KeyboardAvoidingView>
+      {searchable && <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />}
     </ModalScreen>
   );
 }

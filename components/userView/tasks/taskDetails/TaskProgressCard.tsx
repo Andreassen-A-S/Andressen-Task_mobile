@@ -6,9 +6,8 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { parseLocalizedNumber, formatNumber } from "@/helpers/helpers";
@@ -81,7 +80,7 @@ export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress
 
       <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancel}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior="padding"
           style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.4)" }}
         >
           <View style={{ width: 280, backgroundColor: colors.surface, borderRadius: 16, padding: 24, gap: 16 }}>

@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import { useIsFocused } from "@react-navigation/native";
 import { Host, ScrollView, HStack } from "@expo/ui/swift-ui";
 import { padding } from "@expo/ui/swift-ui/modifiers";
 import ToolbarGlassButton from "@/components/userView/common/buttons/ToolbarGlassButton";
@@ -16,7 +15,6 @@ interface Props {
 }
 
 export default function TaskToolbar({ items }: Props) {
-  const isFocused = useIsFocused();
   const pressRefs = useRef<Array<() => void>>([]);
   pressRefs.current = items.map((item) => item.onPress);
 
@@ -30,7 +28,6 @@ export default function TaskToolbar({ items }: Props) {
               icon={item.icon}
               label={item.label}
               tint={item.tint}
-              isFocused={isFocused}
               onPress={() => pressRefs.current[i]?.()}
             />
           ))}

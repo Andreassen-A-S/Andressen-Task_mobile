@@ -21,7 +21,7 @@ interface Props {
 export default function GlassFilterButton({ icon, label, variant, count, onPress }: Props) {
   const isMulti = variant === "active" && count !== undefined && count > 1;
   const active = variant === "active";
-  const ionicon = (ICON_MAP[icon] ?? icon) as keyof typeof Ionicons.glyphMap;
+  const ionicon = icon ? ((ICON_MAP[icon] ?? icon) as keyof typeof Ionicons.glyphMap) : undefined;
 
   return (
     <View style={{
@@ -40,7 +40,7 @@ export default function GlassFilterButton({ icon, label, variant, count, onPress
           <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#007AFF", alignItems: "center", justifyContent: "center" }}>
             <Text style={[typography.btnSm, { color: colors.white, fontSize: 11 }]}>{count}</Text>
           </View>
-        ) : active && icon ? (
+        ) : active && ionicon ? (
           <Ionicons name={ionicon} size={13} color={colors.white} />
         ) : null}
         <Text style={[typography.btnSm, { color: isMulti ? "#007AFF" : active ? colors.white : colors.textSecondary }]}>{label}</Text>

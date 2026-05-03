@@ -19,7 +19,6 @@ const STACK_OFFSET = 8;
 const MAX_VISIBLE = 3;
 const IMAGE_SIZE = 160;
 
-
 function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-start" | "flex-end" }) {
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const imageUris = images.map((img) => ({ uri: img.url }));
@@ -28,14 +27,15 @@ function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-s
     return (
       <>
         <TouchableOpacity onPress={() => setViewerIndex(0)} activeOpacity={0.9} style={{ alignSelf: align }}>
-          <Image
-            source={{ uri: images[0].url }}
-            cacheKey={images[0].attachment_id}
-            cachePolicy="memory-disk"
-            style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10, borderWidth: 0.5, borderColor: colors.border, backgroundColor: colors.border }}
-            contentFit="cover"
-            transition={200}
-          />
+          <View style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10, overflow: "hidden", borderWidth: 0.5, borderColor: colors.border, backgroundColor: colors.border }}>
+            <Image
+              source={{ uri: images[0].url, cacheKey: images[0].attachment_id }}
+              cachePolicy="memory-disk"
+              style={{ width: "100%", height: "100%" }}
+              contentFit="cover"
+              transition={200}
+            />
+          </View>
         </TouchableOpacity>
         <ImageView images={imageUris} imageIndex={0} visible={viewerIndex !== null} onRequestClose={() => setViewerIndex(null)} />
       </>
@@ -61,14 +61,14 @@ function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-s
               onPress={() => setViewerIndex(imgIndex)}
               activeOpacity={0.9}
             >
-              <Image
-                source={{ uri: images[imgIndex].url }}
-                cacheKey={images[imgIndex].attachment_id}
-                style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10, borderWidth: 0.5, borderColor: colors.border }}
-                contentFit="cover"
-                transition={200}
-                placeholder={{ color: colors.muted }}
-              />
+              <View style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10, overflow: "hidden", borderWidth: 0.5, borderColor: colors.border, backgroundColor: colors.muted }}>
+                <Image
+                  source={{ uri: images[imgIndex].url, cacheKey: images[imgIndex].attachment_id }}
+                  style={{ width: "100%", height: "100%" }}
+                  contentFit="cover"
+                  transition={200}
+                />
+              </View>
             </TouchableOpacity>
           );
         })}

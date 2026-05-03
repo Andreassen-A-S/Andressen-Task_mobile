@@ -77,8 +77,7 @@ export default function TaskPhotos() {
             renderItem={({ item, index }) => (
               <TouchableOpacity onPress={() => setViewerIndex(index)} activeOpacity={0.9}>
                 <Image
-                  source={{ uri: item.url }}
-                  cacheKey={item.attachment_id}
+                  source={{ uri: item.url, cacheKey: item.attachment_id }}
                   cachePolicy="memory-disk"
                   style={{ width: TILE_SIZE, height: TILE_SIZE, backgroundColor: colors.border }}
                   contentFit="cover"

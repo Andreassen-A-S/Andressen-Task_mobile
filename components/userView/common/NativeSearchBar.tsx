@@ -1,7 +1,6 @@
 import { View, TextInput } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 
@@ -11,24 +10,15 @@ interface Props {
 }
 
 export default function NativeSearchBar({ placeholder = "Søg...", onChangeText }: Props) {
-  const insets = useSafeAreaInsets();
-  const searchBarHeight = 8 + 56 + insets.bottom;
+  const searchBarHeight = 8 + 56;
 
   return (
-    <>
+    <View style={{ height: searchBarHeight }}>
       <LinearGradient
         colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
-        style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: searchBarHeight }}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
       />
-      <View style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        paddingBottom: insets.bottom,
-      }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View style={{
           flexDirection: "row",
           alignItems: "center",
@@ -38,7 +28,6 @@ export default function NativeSearchBar({ placeholder = "Søg...", onChangeText 
           paddingVertical: 6,
           borderColor: colors.border,
           borderWidth: 1,
-
         }}>
           <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
           <TextInput
@@ -49,6 +38,6 @@ export default function NativeSearchBar({ placeholder = "Søg...", onChangeText 
           />
         </View>
       </View>
-    </>
+    </View>
   );
 }

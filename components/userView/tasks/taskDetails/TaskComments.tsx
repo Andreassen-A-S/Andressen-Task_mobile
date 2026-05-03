@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Platform,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
@@ -32,6 +33,7 @@ import { colors } from "@/constants/colors";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
+import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
 import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
 import KeyboardInputBarAction from "@/components/userView/common/KeyboardInputBarAction";
 import CommentBubble from "./CommentBubble";
@@ -150,7 +152,6 @@ export default function TaskComments() {
   }, [fetchComments]));
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
-
 
   useEffect(() => {
     Animated.spring(scrollDownAnim, {
@@ -371,7 +372,7 @@ export default function TaskComments() {
 
   return (
     <ModalScreen title="Kommentarer">
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={insets.top}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
         <View style={{ flex: 1 }}>
           {isLoading ? (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
@@ -511,7 +512,7 @@ export default function TaskComments() {
         </View>
       )}
       </KeyboardAvoidingView>
-      <View style={{ height: insets.bottom }} />
+      <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />
     </ModalScreen>
   );
 }
