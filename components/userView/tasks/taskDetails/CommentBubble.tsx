@@ -7,6 +7,7 @@ import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import SingleAvatar from "../../common/label/singleAvatar";
 import CommentAttachments from "./CommentAttachments";
+import LinkedText from "../../common/LinkedText";
 
 type StatusState = "sending" | "afsendt" | "failed" | "idle";
 
@@ -79,7 +80,11 @@ export default function CommentBubble({ comment, isOwn, author, sending, failed,
           className="max-w-[75%] rounded-lg px-3 py-2"
           style={{ alignSelf: align, backgroundColor: isOwn ? colors.green : colors.white }}
         >
-          <Text style={isOwn ? typography.bodySmWhite : typography.bodySm}>{comment.message}</Text>
+          <LinkedText
+            text={comment.message}
+            style={isOwn ? typography.bodySmWhite : typography.bodySm}
+            linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
+          />
         </TouchableOpacity>
       ) : null}
 
