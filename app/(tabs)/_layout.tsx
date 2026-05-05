@@ -1,10 +1,16 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Text } from "react-native";
+import { Platform, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 
+const TAB_BAR_HEIGHT = 70;
+
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Platform.OS === "android" ? insets.bottom : 0;
+
   return (
     <Tabs
       screenOptions={{
@@ -13,7 +19,8 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colors.white,
           borderTopColor: colors.border,
-          height: 70,
+          height: TAB_BAR_HEIGHT + bottomInset,
+          paddingBottom: bottomInset,
         },
         tabBarLabel: ({ focused, children }) => (
           <Text style={focused ? typography.navItemActive : typography.navItem}>
