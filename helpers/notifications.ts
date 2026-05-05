@@ -5,6 +5,7 @@ import Constants from "expo-constants";
 import { registerPushToken } from "@/lib/api";
 
 type NotificationPermissionResult = {
+  // Android new architecture can return `granted` while older Expo typings expose `status`.
   granted?: boolean;
   status?: string;
 };
