@@ -1,7 +1,7 @@
 import { Linking, Text, type StyleProp, type TextProps, type TextStyle } from "react-native";
 
 const HTTP_URL_PATTERN = /https?:\/\/[^\s]+/gi;
-const TRAILING_PUNCTUATION = /[.,!?;:)\]}]+$/;
+const TRAILING_PUNCTUATION = /[.,!?;:)\]}>"']+$/;
 
 interface LinkedTextProps extends Omit<TextProps, "children"> {
   text: string;
