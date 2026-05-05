@@ -26,6 +26,10 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.andreassen.tms",
+      entitlements: {
+        "aps-environment": IS_PROD ? "production" : "development",
+        "com.apple.developer.associated-domains": ["applinks:mesterplan.app"],
+      },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSCameraUsageDescription: "Bruges til at tage billeder af opgaver.",
