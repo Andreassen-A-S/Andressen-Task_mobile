@@ -1,4 +1,5 @@
 const IS_PROD = process.env.APP_ENV === "production";
+const IS_DEV_CLIENT = process.env.APP_ENV === "development";
 
 const apiHost = (() => {
   try {
@@ -27,7 +28,7 @@ module.exports = {
       supportsTablet: true,
       bundleIdentifier: "com.andreassen.tms",
       entitlements: {
-        "aps-environment": IS_PROD ? "production" : "development",
+        "aps-environment": IS_DEV_CLIENT ? "development" : "production",
         "com.apple.developer.associated-domains": ["applinks:mesterplan.app"],
       },
       infoPlist: {
