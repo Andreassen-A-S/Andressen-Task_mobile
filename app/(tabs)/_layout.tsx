@@ -5,11 +5,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 
-const TAB_BAR_HEIGHT = 70;
+const TAB_BAR_HEIGHT = 50;
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const bottomInset = Platform.OS === "android" ? insets.bottom : 0;
+  const bottomInset = insets.bottom;
 
   return (
     <Tabs
