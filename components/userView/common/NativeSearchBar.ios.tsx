@@ -88,8 +88,8 @@ export default function NativeSearchBar({ placeholder = "Søg...", onChangeText 
                 <TextField
                   ref={textFieldRef}
                   placeholder={placeholder}
-                  onValueChange={(t: string) => { setText(t); onChangeText(t); }}
-                  onFocusChange={setFocused}
+                  onChangeText={(t) => { setText(t); onChangeText(t); }}
+                  onChangeFocus={setFocused}
                   modifiers={[
                     textFieldStyle("plain"),
                     frame({ maxWidth: 99999 }),

@@ -4,6 +4,11 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import { registerPushToken } from "@/lib/api";
 
+type NotificationPermissionResult = {
+  granted?: boolean;
+  status?: string;
+};
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -14,21 +19,25 @@ Notifications.setNotificationHandler({
   }),
 });
 
+function hasNotificationPermission(permission: NotificationPermissionResult): boolean {
+  return permission.granted === true || permission.status === "granted";
+}
+
 export async function registerForPushNotifications(): Promise<void> {
   if (!Device.isDevice) {
     // Push notifications don't work in simulators
     return;
   }
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
+  const existingPermissions = await Notifications.getPermissionsAsync() as NotificationPermissionResult;
+  let granted = hasNotificationPermission(existingPermissions);
 
-  if (existingStatus !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
+  if (!granted) {
+    const requestedPermissions = await Notifications.requestPermissionsAsync() as NotificationPermissionResult;
+    granted = hasNotificationPermission(requestedPermissions);
   }
 
-  if (finalStatus !== "granted") {
+  if (!granted) {
     await registerPushToken(null);
     return;
   }
