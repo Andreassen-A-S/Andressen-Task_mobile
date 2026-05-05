@@ -1,5 +1,13 @@
 const IS_PROD = process.env.APP_ENV === "production";
 
+const apiHost = (() => {
+  try {
+    return new URL(process.env.EXPO_PUBLIC_API_URL ?? "").hostname;
+  } catch {
+    return null;
+  }
+})();
+
 export default {
   expo: {
     name: "andreassentask-mobile",
@@ -22,10 +30,10 @@ export default {
         ITSAppUsesNonExemptEncryption: false,
         NSCameraUsageDescription: "Bruges til at tage billeder af opgaver.",
         NSPhotoLibraryUsageDescription: "Bruges til at vedhæfte billeder fra dit fotobibliotek.",
-        ...(!IS_PROD && {
+        ...(!IS_PROD && apiHost && {
           NSAppTransportSecurity: {
             NSExceptionDomains: {
-              "46.101.166.108": {
+              [apiHost]: {
                 NSExceptionAllowsInsecureHTTPLoads: true,
                 NSIncludesSubdomains: false,
               },
