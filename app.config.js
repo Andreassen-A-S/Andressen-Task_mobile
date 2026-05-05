@@ -8,7 +8,7 @@ const apiHost = (() => {
   }
 })();
 
-export default {
+module.exports = {
   expo: {
     name: "andreassentask-mobile",
     slug: "andreassentask-mobile",
