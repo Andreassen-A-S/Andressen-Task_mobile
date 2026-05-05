@@ -1,4 +1,4 @@
-const IS_PROD = process.env.APP_ENV === "production";
+const IS_LOCAL_DEV = !process.env.APP_ENV || process.env.APP_ENV === "development";
 
 const apiHost = (() => {
   try {
@@ -26,11 +26,15 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.andreassen.tms",
+      entitlements: {
+        "aps-environment": IS_LOCAL_DEV ? "development" : "production",
+        "com.apple.developer.associated-domains": ["applinks:mesterplan.app"],
+      },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSCameraUsageDescription: "Bruges til at tage billeder af opgaver.",
         NSPhotoLibraryUsageDescription: "Bruges til at vedhæfte billeder fra dit fotobibliotek.",
-        ...(!IS_PROD && apiHost && {
+        ...(IS_LOCAL_DEV && apiHost && {
           NSAppTransportSecurity: {
             NSExceptionDomains: {
               [apiHost]: {
@@ -50,7 +54,7 @@ module.exports = {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: "com.andreassen.tms",
-      usesCleartextTraffic: !IS_PROD,
+      usesCleartextTraffic: IS_LOCAL_DEV,
       googleServicesFile: "./google-services.json",
     },
     web: {
