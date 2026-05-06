@@ -23,7 +23,7 @@ export default function TaskDetailsHeader({ title, path, taskId, menuActions = [
               ? [{
                   systemName: "square.and.arrow.up" as const,
                   onPress: async () => {
-                    const url = `andreassentask://tasks?taskId=${taskId}`;
+                    const url = `${process.env.EXPO_PUBLIC_FE_URL}/tasks?taskId=${taskId}`;
                     try {
                       await Share.share(
                         Platform.OS === "ios"

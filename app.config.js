@@ -1,4 +1,5 @@
-const IS_LOCAL_DEV = !process.env.APP_ENV || process.env.APP_ENV === "development";
+const IS_LOCAL_DEV =
+  !process.env.APP_ENV || process.env.APP_ENV === "development";
 
 const apiHost = (() => {
   try {
@@ -10,9 +11,9 @@ const apiHost = (() => {
 
 module.exports = {
   expo: {
-    name: "andreassentask-mobile",
+    name: "MesterPlan",
     slug: "andreassentask-mobile",
-    scheme: "andreassentask",
+    scheme: "mesterplan",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -24,8 +25,8 @@ module.exports = {
       backgroundColor: "#ffffff",
     },
     ios: {
-      supportsTablet: true,
-      bundleIdentifier: "com.andreassen.tms",
+      supportsTablet: false,
+      bundleIdentifier: "app.mesterplan",
       entitlements: {
         "aps-environment": IS_LOCAL_DEV ? "development" : "production",
         "com.apple.developer.associated-domains": ["applinks:mesterplan.app"],
@@ -33,17 +34,19 @@ module.exports = {
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSCameraUsageDescription: "Bruges til at tage billeder af opgaver.",
-        NSPhotoLibraryUsageDescription: "Bruges til at vedhæfte billeder fra dit fotobibliotek.",
-        ...(IS_LOCAL_DEV && apiHost && {
-          NSAppTransportSecurity: {
-            NSExceptionDomains: {
-              [apiHost]: {
-                NSExceptionAllowsInsecureHTTPLoads: true,
-                NSIncludesSubdomains: false,
+        NSPhotoLibraryUsageDescription:
+          "Bruges til at vedhæfte billeder fra dit fotobibliotek.",
+        ...(IS_LOCAL_DEV &&
+          apiHost && {
+            NSAppTransportSecurity: {
+              NSExceptionDomains: {
+                [apiHost]: {
+                  NSExceptionAllowsInsecureHTTPLoads: true,
+                  NSIncludesSubdomains: false,
+                },
               },
             },
-          },
-        }),
+          }),
       },
     },
     android: {
@@ -53,7 +56,7 @@ module.exports = {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      package: "com.andreassen.tms",
+      package: "app.mesterplan",
       usesCleartextTraffic: IS_LOCAL_DEV,
       googleServicesFile: "./google-services.json",
     },
@@ -66,7 +69,8 @@ module.exports = {
       [
         "expo-image-picker",
         {
-          photosPermission: "Bruges til at vedhæfte billeder fra dit fotobibliotek.",
+          photosPermission:
+            "Bruges til at vedhæfte billeder fra dit fotobibliotek.",
           cameraPermission: "Bruges til at tage billeder af opgaver.",
         },
       ],
