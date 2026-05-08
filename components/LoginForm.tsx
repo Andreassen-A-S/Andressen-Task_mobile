@@ -68,7 +68,7 @@ export default function LoginForm() {
                 <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
                   <Ionicons name="mail-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
                   <View className="flex-1">
-                    {!email.trim() && (
+                    {!email && (
                       <Text
                         style={[typography.labelLgGray, { position: "absolute", color: colors.textMuted, lineHeight: undefined }]}
                         accessibilityElementsHidden
