@@ -97,7 +97,6 @@ export const typography = StyleSheet.create({
   labelLgGray: {
     fontFamily: "Outfit_500Medium",
     fontSize: 14,
-    lineHeight: 20,
     color: colors.textSecondary,
   },
   labelLgWhite: {

@@ -53,24 +53,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      const response = await apiLogin({ email, password });
+    const response = await apiLogin({ email, password });
 
-      if (!response.token || !response.user) {
-        throw new Error("Invalid login response");
-      }
-
-      await AsyncStorage.setItem("authToken", response.token);
-      setAuthToken(response.token);
-
-      setIsAuthenticated(true);
-      setUser(response.user);
-      setUserRole(response.user.role);
-      registerForPushNotifications().catch((err) => console.warn("Push registration failed:", err));
-    } finally {
-      setIsLoading(false);
+    if (!response.token || !response.user) {
+      throw new Error("Invalid login response");
     }
+
+    await AsyncStorage.setItem("authToken", response.token);
+    setAuthToken(response.token);
+
+    setIsAuthenticated(true);
+    setUser(response.user);
+    setUserRole(response.user.role);
+    registerForPushNotifications().catch((err) => console.warn("Push registration failed:", err));
   };
 
   const logout = async () => {

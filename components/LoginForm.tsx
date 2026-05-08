@@ -6,8 +6,8 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,57 +39,66 @@ export default function LoginForm() {
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.eggWhite }}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior="padding"
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 32 }}
+        keyboardShouldPersistTaps="handled"
       >
-        <View className="flex-1 justify-center px-6">
-          {/* Logo */}
-          <View className="items-center mb-10">
-            <Image
-              source={require("@/assets/logo.png")}
-              style={{ width: 140, height: 70 }}
-              resizeMode="contain"
-              className="mb-2"
-            />
-            <Text style={typography.h2}>Andreassen TMS</Text>
-            <Text style={[typography.bodySm, { marginTop: 4 }]}>Log ind for at fortsætte</Text>
-          </View>
+        {/* Logo */}
+        <View className="items-center mb-10">
+          <Image
+            source={require("@/assets/logo.png")}
+            className="mb-2"
+            style={{ height: 80, width: 150 }}
+            resizeMode="contain"
+          />
+          <Text style={typography.h2}>Andreassen TMS</Text>
+          <Text className="mt-1" style={typography.bodySm}>Log ind for at fortsætte</Text>
+        </View>
 
-          {/* Form */}
-          <View className="gap-4">
-            <View className="gap-1.5">
-              <Text style={typography.labelLg}>E-mail</Text>
-              <View
-                className="flex-row items-center bg-white border rounded-[10px] px-3 h-12"
-                style={{ borderColor: colors.border }}
-              >
+        {/* Form */}
+        <View className="gap-4">
+          <View className="gap-1.5">
+            <Text style={typography.labelLg}>E-mail</Text>
+            <View
+              className="flex-row items-center bg-white border rounded-[10px] px-3"
+              style={{ borderColor: colors.border, height: 48 }}
+            >
+              <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
                 <Ionicons name="mail-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
-                <TextInput
-                  className="flex-1"
-                  style={[typography.labelLgGray, { lineHeight: undefined, textAlignVertical: "center" }]}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="navn@andreassen.dk"
-                  placeholderTextColor={colors.textMuted}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  returnKeyType="next"
-                />
+                <View className="flex-1">
+                  {!email && (
+                    <Text style={[typography.labelLgGray, { position: "absolute", color: colors.textMuted }]} pointerEvents="none">
+                      navn@andreassen.dk
+                    </Text>
+                  )}
+                  <TextInput
+                    className="flex-1"
+                    style={typography.labelLgGray}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    textContentType="none"
+                    returnKeyType="next"
+                  />
+                </View>
               </View>
             </View>
+          </View>
 
-            <View className="gap-1.5">
-              <Text style={typography.labelLg}>Adgangskode</Text>
-              <View
-                className="flex-row items-center bg-white border rounded-[10px] px-3 h-12"
-                style={{ borderColor: colors.border }}
-              >
+          <View className="gap-1.5">
+            <Text style={typography.labelLg}>Adgangskode</Text>
+            <View
+              className="flex-row items-center bg-white border rounded-[10px] px-3"
+              style={{ borderColor: colors.border, height: 48 }}
+            >
+              <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
                 <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   className="flex-1"
-                  style={[typography.labelLgGray, { lineHeight: undefined, textAlignVertical: "center" }]}
+                  style={typography.labelLgGray}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="••••••••"
@@ -98,39 +107,43 @@ export default function LoginForm() {
                   returnKeyType="done"
                   onSubmitEditing={handleLogin}
                 />
-                <TouchableOpacity onPress={() => setShowPassword((v) => !v)} className="p-1">
-                  <Ionicons
-                    name={showPassword ? "eye-off-outline" : "eye-outline"}
-                    size={18}
-                    color={colors.textMuted}
-                  />
-                </TouchableOpacity>
               </View>
+              <TouchableOpacity onPress={() => setShowPassword((v) => !v)} className="p-1">
+                <Ionicons
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={18}
+                  color={colors.textMuted}
+                />
+              </TouchableOpacity>
             </View>
-
-            {error && (
-              <View className="border rounded-[10px] p-3" style={{ backgroundColor: "#FEF2F2", borderColor: "#FECACA" }}>
-                <Text style={[typography.bodySm, { color: colors.red, textAlign: "center" }]}>
-                  {error}
-                </Text>
-              </View>
-            )}
-
-            <TouchableOpacity
-              onPress={handleLogin}
-              disabled={isDisabled}
-              className="h-[52px] rounded-[10px] items-center justify-center mt-1"
-              style={{ backgroundColor: isDisabled ? colors.border : colors.green }}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={[typography.btnLg, { color: "white" }]}>Log ind</Text>
-              )}
-            </TouchableOpacity>
           </View>
+
+          {error && (
+            <View className="border rounded-[10px] p-3" style={{ backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
+              <Text className="text-center" style={[typography.bodySm, { color: colors.red }]}>
+                {error}
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            onPress={handleLogin}
+            disabled={isDisabled}
+            className="h-[52px] rounded-[10px] items-center justify-center mt-1"
+            style={{ backgroundColor: isDisabled ? colors.border : colors.green }}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={[typography.btnLg, { color: "white" }]}>Log ind</Text>
+            )}
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+
+        <Text className="text-center mt-6" style={[typography.bodySm, { color: colors.textMuted }]}>
+          Har du ikke en konto? Kontakt din administrator.
+        </Text>
+      </ScrollView>
     </SafeAreaView>
   );
 }
