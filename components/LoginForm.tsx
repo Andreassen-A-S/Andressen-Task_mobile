@@ -65,6 +65,7 @@ export default function LoginForm() {
                 className="flex-row items-center bg-white border rounded-[10px] px-3"
                 style={{ borderColor: colors.border, height: 48 }}
               >
+                {/* height: 20 works around a Fabric stale-view bug that clips the TextInput after navigating away and back */}
                 <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
                   <Ionicons name="mail-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
                   <View className="flex-1">
@@ -104,6 +105,7 @@ export default function LoginForm() {
                 className="flex-row items-center bg-white border rounded-[10px] px-3"
                 style={{ borderColor: colors.border, height: 48 }}
               >
+                {/* height: 20 works around a Fabric stale-view bug that clips the TextInput after navigating away and back */}
                 <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
                   <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
                   <TextInput
