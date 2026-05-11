@@ -74,6 +74,7 @@ export default function LoginForm() {
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
                         pointerEvents="none"
+                        allowFontScaling={false}
                       >
                         navn@andreassen.dk
                       </Text>
@@ -90,6 +91,7 @@ export default function LoginForm() {
                       autoComplete="email"
                       returnKeyType="next"
                       accessibilityLabel="E-mail"
+                      allowFontScaling={false}
                     />
                   </View>
                 </View>
@@ -114,6 +116,10 @@ export default function LoginForm() {
                     secureTextEntry={!showPassword}
                     returnKeyType="done"
                     onSubmitEditing={handleLogin}
+                    accessibilityLabel="Adgangskode"
+                    textContentType="password"
+                    autoComplete="current-password"
+                    allowFontScaling={false}
                   />
                 </View>
                 <TouchableOpacity onPress={() => setShowPassword((v) => !v)} className="p-1">

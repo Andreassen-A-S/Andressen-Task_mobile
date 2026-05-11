@@ -26,24 +26,24 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
 function RootGuard() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isInitializing } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const lastNotificationResponse = useLastNotificationResponse();
-  useDeepLinkNavigation({ isAuthenticated, isLoading });
+  useDeepLinkNavigation({ isAuthenticated, isInitializing });
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isInitializing) return;
     const inTabs = segments[0] === "(tabs)";
     if (!isAuthenticated && inTabs) {
       router.replace("/login");
     } else if (isAuthenticated && !inTabs) {
       router.replace("/(tabs)/tasks");
     }
-  }, [isAuthenticated, isLoading, segments[0]]);
+  }, [isAuthenticated, isInitializing, segments[0]]);
 
   useEffect(() => {
-    if (!isAuthenticated || isLoading) return;
+    if (!isAuthenticated || isInitializing) return;
     const data = lastNotificationResponse?.notification.request.content.data;
     if (typeof data?.taskId === "string") {
       router.push(`/(tabs)/tasks/${data.taskId}`);
@@ -54,9 +54,9 @@ function RootGuard() {
     } else if (data?.screen === "tasks") {
       router.push("/(tabs)/tasks");
     }
-  }, [lastNotificationResponse, isAuthenticated, isLoading]);
+  }, [lastNotificationResponse, isAuthenticated, isInitializing]);
 
-  if (isLoading) {
+  if (isInitializing) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.eggWhite }}>
         <ActivityIndicator size="large" color={colors.green} />

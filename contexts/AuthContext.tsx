@@ -9,7 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   userRole: UserRole | null;
   user: User | null;
-  isLoading: boolean;
+  isInitializing: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -17,7 +17,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setUserRole(null);
       } finally {
-        setIsLoading(false);
+        setIsInitializing(false);
       }
     };
 
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userRole, user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, userRole, user, isInitializing, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
