@@ -8,7 +8,6 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  TouchableOpacity,
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,7 +21,6 @@ import CalendarMonthNavigator from "./CalendarMonthNavigator";
 import UserHeader from "../common/UserHeader";
 import { colors } from "@/constants/colors";
 import ErrorState from "../common/ErrorState";
-import { typography } from "@/constants/typography";
 import CalendarMonthPager from "./CalendarMonthPager";
 import CalendarAgenda, { MonthAgendaSection } from "./CalendarAgenda";
 import {
@@ -217,7 +215,7 @@ export default function CalendarPage() {
         {error ? (
           <ScrollView
             className="flex-1"
-            contentContainerStyle={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchTasks(true)} />}
           >
             <ErrorState message={error} onRetry={() => fetchTasks()} />
