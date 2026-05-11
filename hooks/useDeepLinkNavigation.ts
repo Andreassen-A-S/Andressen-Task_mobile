@@ -5,18 +5,18 @@ import { resolveDeepLink } from "@/lib/deepLinks";
 
 interface UseDeepLinkNavigationOptions {
   isAuthenticated: boolean;
-  isLoading: boolean;
+  isInitializing: boolean;
 }
 
-export function useDeepLinkNavigation({ isAuthenticated, isLoading }: UseDeepLinkNavigationOptions) {
+export function useDeepLinkNavigation({ isAuthenticated, isInitializing }: UseDeepLinkNavigationOptions) {
   const router = useRouter();
   const hasHandledInitialUrlRef = useRef(false);
   const pendingDeepLinkRef = useRef<string | null>(null);
   const isAuthenticatedRef = useRef(isAuthenticated);
-  const isLoadingRef = useRef(isLoading);
+  const isInitializingRef = useRef(isInitializing);
 
   useEffect(() => { isAuthenticatedRef.current = isAuthenticated; });
-  useEffect(() => { isLoadingRef.current = isLoading; });
+  useEffect(() => { isInitializingRef.current = isInitializing; });
 
   const navigate = useCallback((url: string) => {
     const link = resolveDeepLink(url);
@@ -32,7 +32,7 @@ export function useDeepLinkNavigation({ isAuthenticated, isLoading }: UseDeepLin
       Linking.getInitialURL()
         .then((url) => {
           if (!url) return;
-          if (isAuthenticatedRef.current && !isLoadingRef.current) {
+          if (isAuthenticatedRef.current && !isInitializingRef.current) {
             InteractionManager.runAfterInteractions(() => navigate(url));
           } else {
             pendingDeepLinkRef.current = url;
@@ -43,14 +43,14 @@ export function useDeepLinkNavigation({ isAuthenticated, isLoading }: UseDeepLin
         });
     }
 
-    if (isAuthenticated && !isLoading && pendingDeepLinkRef.current) {
+    if (isAuthenticated && !isInitializing && pendingDeepLinkRef.current) {
       const url = pendingDeepLinkRef.current;
       pendingDeepLinkRef.current = null;
       InteractionManager.runAfterInteractions(() => navigate(url));
     }
 
     const sub = Linking.addEventListener("url", ({ url }) => {
-      if (isAuthenticated && !isLoading) {
+      if (isAuthenticated && !isInitializing) {
         navigate(url);
       } else {
         pendingDeepLinkRef.current = url;
@@ -58,5 +58,5 @@ export function useDeepLinkNavigation({ isAuthenticated, isLoading }: UseDeepLin
     });
 
     return () => sub.remove();
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isInitializing, navigate]);
 }
