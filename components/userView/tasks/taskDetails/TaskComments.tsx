@@ -104,7 +104,7 @@ export default function TaskComments() {
           const converted = await ImageManipulator.manipulateAsync(uri, [], { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG });
           effectiveUri = converted.uri;
           effectiveMime = "image/jpeg";
-          effectiveFileName = fileName.replace(/\.heic$/i, ".jpg");
+          effectiveFileName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
         }
         const blob = await fetch(effectiveUri).then((r) => r.blob());
         const maxBytes = MAX_FILE_SIZE[effectiveMime] ?? 10 * 1024 * 1024;
