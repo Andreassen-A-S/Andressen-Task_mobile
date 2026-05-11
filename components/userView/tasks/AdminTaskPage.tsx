@@ -28,6 +28,7 @@ import UserHeader from "../common/UserHeader";
 import FilterToolbar from "../common/FilterToolbar";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
+import ErrorState from "../common/ErrorState";
 
 const SORT_GROUPS: GroupedSelectGroup[] = [
   {
@@ -213,15 +214,8 @@ export default function AdminTaskPage() {
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
-        <View className="flex-1 bg-[#F6F5F1] items-center justify-center px-6">
-          <View className="rounded-xl p-4 w-full items-center border-2"
-            style={{ backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
-            <Text className="font-semibold text-center mb-3" style={{ color: colors.redText }}>{error}</Text>
-            <TouchableOpacity onPress={() => fetchData()} className="px-4 py-2.5 rounded-[10px]"
-              style={{ backgroundColor: colors.red }}>
-              <Text style={typography.btnMdWhite}>Prøv igen</Text>
-            </TouchableOpacity>
-          </View>
+        <View className="flex-1 bg-[#F6F5F1]">
+          <ErrorState message={error} onRetry={() => fetchData()} />
         </View>
       </SafeAreaView>
     );

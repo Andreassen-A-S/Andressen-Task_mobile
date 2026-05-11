@@ -29,8 +29,13 @@ export default function LoginForm() {
       setIsLoading(true);
       setError(null);
       await login(email.trim(), password);
-    } catch {
-      setError("Forkert e-mail eller adgangskode. Prøv igen.");
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      if (status === 401 || status === 403) {
+        setError("Forkert e-mail eller adgangskode. Prøv igen.");
+      } else {
+        setError("Kunne ikke forbinde til serveren. Prøv igen senere.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -157,7 +162,7 @@ export default function LoginForm() {
           </View>
 
           <Text className="text-center mt-6" style={[typography.bodySm, { color: colors.textMuted }]}>
-            Har du ikke en konto? Kontakt din administrator.
+            Har du glemt dine loginoplysninger eller mangler du en konto?{"\n"}Kontakt din administrator.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

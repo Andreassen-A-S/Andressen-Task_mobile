@@ -21,6 +21,7 @@ import { formatLocalDate, toDateKey } from "@/helpers/helpers";
 import CalendarMonthNavigator from "./CalendarMonthNavigator";
 import UserHeader from "../common/UserHeader";
 import { colors } from "@/constants/colors";
+import ErrorState from "../common/ErrorState";
 import { typography } from "@/constants/typography";
 import CalendarMonthPager from "./CalendarMonthPager";
 import CalendarAgenda, { MonthAgendaSection } from "./CalendarAgenda";
@@ -216,22 +217,10 @@ export default function CalendarPage() {
         {error ? (
           <ScrollView
             className="flex-1"
-            contentContainerStyle={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}
+            contentContainerStyle={{ flex: 1 }}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchTasks(true)} />}
           >
-            <View
-              className="rounded-xl p-4 w-full items-center border-2"
-              style={{ backgroundColor: colors.redLight, borderColor: colors.redBorder }}
-            >
-              <Text className="font-semibold text-center mb-3" style={{ color: colors.redText }}>{error}</Text>
-              <TouchableOpacity
-                onPress={() => fetchTasks()}
-                className="px-4 py-2.5 rounded-[10px]"
-                style={{ backgroundColor: colors.red }}
-              >
-                <Text style={typography.btnMdWhite}>Prøv igen</Text>
-              </TouchableOpacity>
-            </View>
+            <ErrorState message={error} onRetry={() => fetchTasks()} />
           </ScrollView>
         ) : (
           <CalendarAgenda

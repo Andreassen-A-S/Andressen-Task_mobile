@@ -9,7 +9,9 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   });
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || "Failed to login");
+    const err = new Error(error.error || "Failed to login") as Error & { status: number };
+    err.status = res.status;
+    throw err;
   }
   const response = await res.json();
   return response.data;
