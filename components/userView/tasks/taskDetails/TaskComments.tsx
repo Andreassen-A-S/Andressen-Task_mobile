@@ -21,6 +21,7 @@ import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
 import { showToast } from "@/lib/toast";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import { useAuth } from "@/hooks/useAuth";
 import { getTaskComments, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs } from "@/lib/api";
 import { formatGroupTimestamp } from "@/helpers/helpers";
@@ -96,10 +97,19 @@ export default function TaskComments() {
   const uploadAttachments = async (attachments: Array<{ uri: string; fileName: string; mimeType: string }>): Promise<string[]> => {
     const blobsWithMeta = await Promise.all(
       attachments.map(async ({ uri, fileName, mimeType }) => {
-        const blob = await fetch(uri).then((r) => r.blob());
-        const maxBytes = MAX_FILE_SIZE[mimeType] ?? 10 * 1024 * 1024;
-        if (blob.size > maxBytes) throw new Error(`${fileName} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
-        return { blob, fileName, mimeType };
+        let effectiveUri = uri;
+        let effectiveMime = mimeType;
+        let effectiveFileName = fileName;
+        if (mimeType === "image/heic") {
+          const converted = await ImageManipulator.manipulateAsync(uri, [], { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG });
+          effectiveUri = converted.uri;
+          effectiveMime = "image/jpeg";
+          effectiveFileName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
+        }
+        const blob = await fetch(effectiveUri).then((r) => r.blob());
+        const maxBytes = MAX_FILE_SIZE[effectiveMime] ?? 10 * 1024 * 1024;
+        if (blob.size > maxBytes) throw new Error(`${effectiveFileName} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+        return { blob, fileName: effectiveFileName, mimeType: effectiveMime };
       }),
     );
     const prepared = await prepareAttachments(
