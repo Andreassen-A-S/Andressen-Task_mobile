@@ -1,6 +1,7 @@
 import { API_URL } from "@/constants/api";
 import { getAuthHeaders } from "@/helpers/helpers";
 import { User } from "@/types/users";
+import { normalizeUser } from "@/lib/api/userNormalizer";
 
 export async function getUsers(): Promise<User[]> {
   const res = await fetch(`${API_URL}/users`, { headers: getAuthHeaders() });
@@ -26,12 +27,4 @@ export async function registerPushToken(pushToken: string | null): Promise<void>
     const error = await res.json().catch(() => ({}));
     throw new Error(error.error || "Failed to register push token");
   }
-}
-
-function normalizeUser(user: User): User {
-  return {
-    ...user,
-    position: user.position ?? "",
-    organization_id: user.organization_id ?? null,
-  };
 }
