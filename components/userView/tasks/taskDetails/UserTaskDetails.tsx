@@ -234,6 +234,21 @@ export default function UserTaskDetails() {
                 </View>
               )}
 
+              <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", columnGap: 14, rowGap: 6 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+                  <Text style={typography.bodyXs}>
+                    Start {task.start_date ? formatRelativeDate(task.start_date) : "ikke sat"}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Ionicons name="time-outline" size={13} color={colors.textMuted} />
+                  <Text style={typography.bodyXs}>
+                    Deadline {task.deadline ? formatRelativeDate(task.deadline) : "ikke sat"}
+                  </Text>
+                </View>
+              </View>
+
               {hasProgress && progressPct !== null && (
                 <TaskProgressCard
                   progressPct={progressPct}
