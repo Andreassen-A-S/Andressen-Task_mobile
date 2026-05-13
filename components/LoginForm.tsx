@@ -116,21 +116,32 @@ export default function LoginForm() {
                 {/* height: 20 works around a Fabric stale-view bug that clips the TextInput after navigating away and back */}
                 <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
                   <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
-                  <TextInput
-                    className="flex-1"
-                    style={[typography.labelLgGray, { lineHeight: undefined }]}
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="••••••••"
-                    placeholderTextColor={colors.textMuted}
-                    secureTextEntry={!showPassword}
-                    returnKeyType="done"
-                    onSubmitEditing={handleLogin}
-                    accessibilityLabel="Adgangskode"
-                    textContentType="password"
-                    autoComplete="current-password"
-                    allowFontScaling={false}
-                  />
+                  <View className="flex-1">
+                    {!password && (
+                      <Text
+                        style={[typography.labelLgGray, { position: "absolute", color: colors.textMuted, lineHeight: undefined }]}
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
+                        pointerEvents="none"
+                        allowFontScaling={false}
+                      >
+                        ••••••••
+                      </Text>
+                    )}
+                    <TextInput
+                      className="flex-1"
+                      style={[typography.labelLgGray, { lineHeight: undefined }]}
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                      returnKeyType="done"
+                      onSubmitEditing={handleLogin}
+                      accessibilityLabel="Adgangskode"
+                      textContentType="password"
+                      autoComplete="current-password"
+                      allowFontScaling={false}
+                    />
+                  </View>
                 </View>
                 <TouchableOpacity onPress={() => setShowPassword((v) => !v)} className="p-1">
                   <Ionicons
