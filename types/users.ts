@@ -5,7 +5,7 @@ export enum UserRole {
 }
 
 export function isAdminRole(role?: UserRole | null): boolean {
-  return role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN;
+  return role === UserRole.ADMIN;
 }
 
 export interface User {

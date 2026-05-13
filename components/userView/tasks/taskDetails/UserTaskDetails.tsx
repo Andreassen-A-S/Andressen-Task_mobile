@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
-import { isAdminRole, User } from "@/types/users";
+import { isAdminRole, User, UserRole } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser, deleteTask } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
@@ -141,7 +141,8 @@ export default function UserTaskDetails() {
     try {
       setIsUpdating(true);
       const isAssigned = task.assigned_users?.includes(user.user_id) ?? false;
-      if (isAdminRole(user.role) && !isAssigned) {
+      const canSelfAssign = user.role === UserRole.ADMIN && !!user.organization_id && !isAssigned;
+      if (canSelfAssign) {
         const updated = await updateTask(task.task_id, {
           assigned_users: [...(task.assigned_users ?? []), user.user_id],
         });

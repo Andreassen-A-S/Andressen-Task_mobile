@@ -31,7 +31,10 @@ export default function LoginForm() {
       await login(email.trim(), password);
     } catch (err) {
       const status = (err as { status?: number }).status;
-      if (status === 401 || status === 403) {
+      const message = err instanceof Error ? err.message : "";
+      if (message.includes("Super admin accounts")) {
+        setError("Super admin-konti kan kun bruges i webportalen.");
+      } else if (status === 401 || status === 403) {
         setError("Forkert e-mail eller adgangskode. Prøv igen.");
       } else {
         setError("Kunne ikke forbinde til serveren. Prøv igen senere.");
