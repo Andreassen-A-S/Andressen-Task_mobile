@@ -1,5 +1,6 @@
 import { API_URL } from "@/constants/api";
 import { LoginRequest, LoginResponse, VerifyResponse } from "@/types/auth";
+import type { User } from "@/types/users";
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   const res = await fetch(`${API_URL}/auth/login`, {
@@ -14,7 +15,18 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
     throw err;
   }
   const response = await res.json();
-  return response.data;
+  return {
+    ...response.data,
+    user: normalizeUser(response.data.user),
+  };
+}
+
+function normalizeUser(user: User): User {
+  return {
+    ...user,
+    position: user.position ?? "",
+    organization_id: user.organization_id ?? null,
+  };
 }
 
 export async function verifyToken(token: string): Promise<VerifyResponse> {

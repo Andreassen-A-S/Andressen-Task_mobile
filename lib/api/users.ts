@@ -6,14 +6,14 @@ export async function getUsers(): Promise<User[]> {
   const res = await fetch(`${API_URL}/users`, { headers: getAuthHeaders() });
   if (!res.ok) throw new Error("Failed to fetch users");
   const data = await res.json();
-  return data.data;
+  return data.data.map(normalizeUser);
 }
 
 export async function getUser(userId: string): Promise<User> {
   const res = await fetch(`${API_URL}/users/${userId}`, { headers: getAuthHeaders() });
   if (!res.ok) throw new Error("Failed to fetch user");
   const data = await res.json();
-  return data.data;
+  return normalizeUser(data.data);
 }
 
 export async function registerPushToken(pushToken: string | null): Promise<void> {
@@ -26,4 +26,12 @@ export async function registerPushToken(pushToken: string | null): Promise<void>
     const error = await res.json().catch(() => ({}));
     throw new Error(error.error || "Failed to register push token");
   }
+}
+
+function normalizeUser(user: User): User {
+  return {
+    ...user,
+    position: user.position ?? "",
+    organization_id: user.organization_id ?? null,
+  };
 }

@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
-import { User, UserRole } from "@/types/users";
+import { isAdminRole, User } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser, deleteTask } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
@@ -108,7 +108,7 @@ export default function UserTaskDetails() {
 
   const isArchived = task?.status === TaskStatus.ARCHIVED;
 
-  const menuActions = user?.role === UserRole.ADMIN
+  const menuActions = isAdminRole(user?.role)
     ? [
       ...(!isArchived ? [{ label: "Rediger", systemImage: "pencil" as const, onPress: () => router.push(`${pathname}/edit`), disabled: !task }] : []),
       ...(!!task ? [{ label: "Slet", systemImage: "trash" as const, onPress: handleDelete, role: "destructive" as const }] : []),
@@ -141,7 +141,7 @@ export default function UserTaskDetails() {
     try {
       setIsUpdating(true);
       const isAssigned = task.assigned_users?.includes(user.user_id) ?? false;
-      if (user.role === UserRole.ADMIN && !isAssigned) {
+      if (isAdminRole(user.role) && !isAssigned) {
         const updated = await updateTask(task.task_id, {
           assigned_users: [...(task.assigned_users ?? []), user.user_id],
         });
