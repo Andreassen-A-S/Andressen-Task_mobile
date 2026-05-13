@@ -36,6 +36,7 @@ export async function verifyToken(token: string): Promise<VerifyResponse> {
       role: data.role,
       name: data.name,
       position: data.position ?? "",
+      organization_id: data.organization_id ?? null,
     },
   };
 }
