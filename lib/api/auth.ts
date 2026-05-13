@@ -1,5 +1,6 @@
 import { API_URL } from "@/constants/api";
 import { LoginRequest, LoginResponse, VerifyResponse } from "@/types/auth";
+import { normalizeUser } from "@/lib/api/userNormalizer";
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   const res = await fetch(`${API_URL}/auth/login`, {
@@ -14,7 +15,10 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
     throw err;
   }
   const response = await res.json();
-  return response.data;
+  return {
+    ...response.data,
+    user: normalizeUser(response.data.user),
+  };
 }
 
 export async function verifyToken(token: string): Promise<VerifyResponse> {
@@ -30,12 +34,13 @@ export async function verifyToken(token: string): Promise<VerifyResponse> {
   }
   const { data } = await res.json();
   return {
-    user: {
+    user: normalizeUser({
       user_id: data.user_id,
       email: data.email,
       role: data.role,
       name: data.name,
-      position: data.position ?? "",
-    },
+      position: data.position,
+      organization_id: data.organization_id,
+    }),
   };
 }

@@ -5,6 +5,8 @@ import { verifyToken, login as apiLogin, registerPushToken } from "@/lib/api";
 import { setAuthToken } from "@/helpers/helpers";
 import { registerForPushNotifications } from "@/helpers/notifications";
 
+const SUPER_ADMIN_MOBILE_ERROR = "Super admin accounts can only be used in the web portal.";
+
 interface AuthContextType {
   isAuthenticated: boolean;
   userRole: UserRole | null;
@@ -30,6 +32,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAuthToken(token);
           const response = await verifyToken(token);
           if (response?.user?.user_id) {
+            if (response.user.role === UserRole.SUPER_ADMIN) {
+              throw new Error(SUPER_ADMIN_MOBILE_ERROR);
+            }
             setIsAuthenticated(true);
             setUser(response.user);
             setUserRole(response.user.role);
@@ -57,6 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!response.token || !response.user) {
       throw new Error("Invalid login response");
+    }
+
+    if (response.user.role === UserRole.SUPER_ADMIN) {
+      throw new Error(SUPER_ADMIN_MOBILE_ERROR);
     }
 
     await AsyncStorage.setItem("authToken", response.token);

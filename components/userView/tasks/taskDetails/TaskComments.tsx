@@ -100,7 +100,8 @@ export default function TaskComments() {
         let effectiveUri = uri;
         let effectiveMime = mimeType;
         let effectiveFileName = fileName;
-        if (mimeType === "image/heic") {
+        const isHeicLike = mimeType === "image/heic" || mimeType === "image/heif" || /\.(heic|heif)$/i.test(fileName);
+        if (isHeicLike) {
           const converted = await ImageManipulator.manipulateAsync(uri, [], { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG });
           effectiveUri = converted.uri;
           effectiveMime = "image/jpeg";
@@ -177,8 +178,10 @@ export default function TaskComments() {
     const oversized: string[] = [];
 
     assets.forEach((asset, i) => {
-      const mime = asset.mimeType ?? "image/jpeg";
-      const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+      const assetFileName = asset.fileName ?? "";
+      const isHeicLike = asset.mimeType === "image/heic" || asset.mimeType === "image/heif" || /\.(heic|heif)$/i.test(assetFileName);
+      const mime = asset.mimeType ?? (isHeicLike ? "image/heic" : "image/jpeg");
+      const ext = isHeicLike ? "heic" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
       const fileName = asset.fileName ?? `photo_${ts}_${i}.${ext}`;
       const maxBytes = MAX_FILE_SIZE[mime] ?? 10 * 1024 * 1024;
       if (asset.fileSize != null && asset.fileSize > maxBytes) {
