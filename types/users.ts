@@ -4,6 +4,11 @@ export enum UserRole {
   SUPER_ADMIN = "SUPER_ADMIN",
 }
 
+export enum UserStatus {
+  ACTIVE = "ACTIVE",
+  TERMINATED = "TERMINATED",
+}
+
 export function isAdminRole(role?: UserRole | null): boolean {
   return role === UserRole.ADMIN;
 }
@@ -14,6 +19,7 @@ export interface User {
   email: string;
   position: string;
   role: UserRole;
+  status: UserStatus;
   organization_id: string | null;
   created_at?: string;
   updated_at?: string;

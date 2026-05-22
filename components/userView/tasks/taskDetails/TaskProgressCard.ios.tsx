@@ -6,12 +6,14 @@ import { parseLocalizedNumber, formatNumber } from "@/helpers/helpers";
 interface Props {
   progressPct: number;
   unitLabel?: string;
+  currentQuantity: number;
+  targetQuantity: number;
   onAddProgress: (value: string) => void;
   isUpdating: boolean;
   disabled?: boolean;
 }
 
-export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress, isUpdating, disabled = false }: Props) {
+export default function TaskProgressCard({ progressPct, unitLabel, currentQuantity, targetQuantity, onAddProgress, isUpdating, disabled = false }: Props) {
   const clampedPct = Math.min(100, Math.max(0, progressPct));
 
   const handlePress = (message = "") => {
@@ -42,9 +44,16 @@ export default function TaskProgressCard({ progressPct, unitLabel, onAddProgress
     <View className="mb-4 rounded-2xl bg-white overflow-hidden shadow-sm">
       <View className="px-4 pt-4 pb-4">
         <View className="flex-row items-stretch justify-between mb-1">
-          <Text className="leading-tight" style={[typography.h2, { color: colors.green }]}>
-            {formatNumber(clampedPct)}%
-          </Text>
+          <View>
+            <Text className="leading-tight" style={[typography.h2, { color: colors.green }]}>
+              {formatNumber(clampedPct)}%
+            </Text>
+            {unitLabel && unitLabel !== "%" && (
+              <Text style={[typography.monoXs, { color: colors.textMuted }]}>
+                {formatNumber(currentQuantity)} / {formatNumber(targetQuantity)} {unitLabel}
+              </Text>
+            )}
+          </View>
           <TouchableOpacity
             onPress={() => handlePress()}
             disabled={isUpdating || disabled}
