@@ -253,6 +253,8 @@ export default function UserTaskDetails() {
                 <TaskProgressCard
                   progressPct={progressPct}
                   unitLabel={unitLabel}
+                  currentQuantity={currentQuantity}
+                  targetQuantity={task!.target_quantity!}
                   onAddProgress={handleAddProgress}
                   isUpdating={isUpdating}
                   disabled={isArchived}
