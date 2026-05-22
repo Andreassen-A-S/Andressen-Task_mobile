@@ -19,7 +19,7 @@ export interface User {
   email: string;
   position: string;
   role: UserRole;
-  status: UserStatus;
+  status?: UserStatus;
   organization_id: string | null;
   created_at?: string;
   updated_at?: string;
