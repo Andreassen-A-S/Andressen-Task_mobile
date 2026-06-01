@@ -7,8 +7,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { getTasks, getProjects, getUsers } from "@/lib/api";
 import { Task, TaskStatus, INACTIVE_STATUSES } from "@/types/task";
@@ -153,10 +152,10 @@ export default function AdminTaskPage() {
   const activeTasksList = hasFilters
     ? sortedTasks
     : sortedTasks.filter((t) =>
-        toDateKey(t.start_date) <= selectedDateKey &&
-        toDateKey(t.deadline) >= selectedDateKey &&
-        !INACTIVE_STATUSES.includes(t.status)
-      );
+      toDateKey(t.start_date) <= selectedDateKey &&
+      toDateKey(t.deadline) >= selectedDateKey &&
+      !INACTIVE_STATUSES.includes(t.status)
+    );
   const upcomingTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
     toDateKey(t.start_date) > selectedDateKey &&
     toDateKey(t.deadline) >= selectedDateKey &&

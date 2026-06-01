@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { Platform, View, Text, TouchableOpacity, FlatList, ActivityIndicator } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

@@ -25,6 +25,7 @@ module.exports = {
       backgroundColor: "#ffffff",
     },
     ios: {
+      deploymentTarget: "16.4",
       icon: "./assets/mesterPlan_final.icon",
       supportsTablet: false,
       bundleIdentifier: "app.mesterplan",
@@ -67,6 +68,7 @@ module.exports = {
     plugins: [
       "expo-router",
       "expo-font",
+      "@react-native-community/datetimepicker",
       [
         "expo-image-picker",
         {
@@ -84,6 +86,7 @@ module.exports = {
       ],
       "expo-web-browser",
       "expo-image",
+      "expo-status-bar",
     ],
     extra: {
       router: {},

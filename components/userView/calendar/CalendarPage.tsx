@@ -11,8 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 import { getUserAssignments } from "@/lib/api";
 import { Task } from "@/types/task";
 import { useAuth } from "@/hooks/useAuth";

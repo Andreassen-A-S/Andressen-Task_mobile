@@ -1,5 +1,5 @@
 import { useRef, useCallback } from "react";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "expo-router/react-navigation";
 import { Host, ZStack, Image } from "@expo/ui/swift-ui";
 import { glassEffect, frame, onTapGesture, contentShape, shapes, disabled } from "@expo/ui/swift-ui/modifiers";
 import { SFSymbol } from "sf-symbols-typescript";
