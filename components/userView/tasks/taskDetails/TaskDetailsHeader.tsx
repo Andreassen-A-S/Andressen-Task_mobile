@@ -15,6 +15,7 @@ export default function TaskDetailsHeader({ title, path, taskId, menuActions = [
     <PathHeader
       title={title}
       path={path ?? "Andreassen-A-S"}
+      bottomBorder
       rightContent={
         <GlassPillButton
           variant="lg"

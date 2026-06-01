@@ -2,7 +2,7 @@
 import "../global.css";
 import { Toaster } from "sonner-native";
 import { Slot, useRouter, useSegments } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -30,6 +30,7 @@ function RootGuard() {
   const segments = useSegments();
   const router = useRouter();
   const lastNotificationResponse = useLastNotificationResponse();
+  const handledNotificationIdRef = useRef<string | null>(null);
   useDeepLinkNavigation({ isAuthenticated, isInitializing });
 
   useEffect(() => {
@@ -44,8 +45,14 @@ function RootGuard() {
 
   useEffect(() => {
     if (!isAuthenticated || isInitializing) return;
-    const data = lastNotificationResponse?.notification.request.content.data;
+    const response = lastNotificationResponse;
+    const notifId = response?.notification.request.identifier;
+    if (!notifId || handledNotificationIdRef.current === notifId) return;
+    handledNotificationIdRef.current = notifId;
+
+    const data = response.notification.request.content.data;
     if (typeof data?.taskId === "string") {
+      router.navigate("/(tabs)/tasks");
       router.push(`/(tabs)/tasks/${data.taskId}`);
       if (data?.screen === "comments") {
         const timer = setTimeout(() => router.push(`/(tabs)/tasks/${data.taskId}/comments`), 500);

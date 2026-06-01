@@ -25,6 +25,7 @@ module.exports = {
       backgroundColor: "#ffffff",
     },
     ios: {
+      icon: "./assets/mesterPlan_final.icon",
       supportsTablet: false,
       bundleIdentifier: "app.mesterplan",
       entitlements: {
