@@ -38,16 +38,23 @@ export function useDeepLinkNavigation({ isAuthenticated, isInitializing }: UseDe
   const navigate = useCallback((url: string) => {
     const link = resolveDeepLink(url);
     if (link?.screen === "task") {
+      if (!isAuthenticatedRef.current || isInitializingRef.current) {
+        pendingDeepLinkRef.current = url;
+        return;
+      }
       cancelPendingNavigation();
       const hadOpenModal = router.canDismiss();
       if (hadOpenModal) router.dismissAll();
       navigationTimerRef.current = setTimeout(() => {
         navigationTimerRef.current = null;
+        if (!isAuthenticatedRef.current || isInitializingRef.current) return;
         router.dismissTo("/(tabs)/tasks");
         pushTimerRef.current = setTimeout(() => {
           pushTimerRef.current = null;
+          if (!isAuthenticatedRef.current || isInitializingRef.current) return;
           navigationTaskRef.current = runAfterNavigationFrame(() => {
             navigationTaskRef.current = null;
+            if (!isAuthenticatedRef.current || isInitializingRef.current) return;
             router.push({
               pathname: "/(tabs)/tasks/[taskId]",
               params: { taskId: link.taskId },
@@ -59,6 +66,10 @@ export function useDeepLinkNavigation({ isAuthenticated, isInitializing }: UseDe
   }, [cancelPendingNavigation, router]);
 
   useEffect(() => cancelPendingNavigation, [cancelPendingNavigation]);
+
+  useEffect(() => {
+    if (!isAuthenticated || isInitializing) cancelPendingNavigation();
+  }, [cancelPendingNavigation, isAuthenticated, isInitializing]);
 
   useEffect(() => {
     // Read the launch URL before auth is known; some platforms clear it after startup.
