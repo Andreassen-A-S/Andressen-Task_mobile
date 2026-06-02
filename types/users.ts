@@ -13,11 +13,16 @@ export function isAdminRole(role?: UserRole | null): boolean {
   return role === UserRole.ADMIN;
 }
 
+export interface PositionSummary {
+  position_id: string;
+  name: string;
+}
+
 export interface User {
   user_id: string;
   name: string;
   email: string;
-  position: string;
+  position: PositionSummary | null;
   role: UserRole;
   status?: UserStatus;
   organization_id: string | null;
