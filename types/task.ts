@@ -33,12 +33,24 @@ export enum TaskGoalType {
 
 export const INACTIVE_STATUSES: TaskStatus[] = [TaskStatus.DONE, TaskStatus.ARCHIVED, TaskStatus.REJECTED];
 
+export interface TaskGoal {
+  goal_id: string;
+  task_id: string;
+  target_quantity: number;
+  current_quantity: number;
+  unit: TaskUnit;
+  removed_at?: string | null;
+  created_at?: string;
+}
+
 export interface Task {
   task_id: string;
+  number?: number;
   project_id: string;
   project?: { name: string; color?: string | null };
   created_by: string;
   assigned_users?: string[];
+  assignment_users?: { user_id: string; name: string | null; email: string | null }[];
   title: string;
   description: string;
   priority: TaskPriority;
@@ -48,10 +60,7 @@ export interface Task {
   updated_at: string;
   parent_task_id?: string | null;
   start_date: string;
-  unit?: TaskUnit;
-  goal_type?: TaskGoalType | null;
-  target_quantity?: number | null;
-  current_quantity?: number | null;
+  goal: TaskGoal | null;
   recurring_template_id?: string;
   occurrence_date?: string;
   completed_at?: string | null;
@@ -66,8 +75,4 @@ export interface UpdateTaskInput {
   assigned_users?: string[];
   start_date?: string;
   project_id?: string;
-  unit?: TaskUnit;
-  goal_type?: TaskGoalType;
-  target_quantity?: number | null;
-  current_quantity?: number | null;
 }

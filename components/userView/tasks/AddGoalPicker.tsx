@@ -6,7 +6,7 @@ import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { pickerStore } from "@/lib/pickerStore";
 import { goalStore, GoalData } from "@/lib/goalStore";
-import { TaskGoalType, TaskUnit } from "@/types/task";
+import { TaskUnit } from "@/types/task";
 import { translateTaskUnit, parseLocalizedNumber, formatNumber } from "@/helpers/helpers";
 import { showToast } from "@/lib/toast";
 import { colors } from "@/constants/colors";
@@ -53,7 +53,7 @@ export default function AddGoalPicker() {
       return;
     }
     const goal: GoalData | null = quantityValue != null
-      ? { goal_type: TaskGoalType.FIXED, target_quantity: quantityValue, unit }
+      ? { target_quantity: quantityValue, unit }
       : null;
     goalStore.call(goal);
     goalStore.clear();

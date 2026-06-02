@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { User, UserRole } from "@/types/users";
-import { verifyToken, login as apiLogin, registerPushToken } from "@/lib/api";
+import { verifyToken, login as apiLogin, registerPushToken, getUser } from "@/lib/api";
 import { setAuthToken } from "@/helpers/helpers";
 import { registerForPushNotifications } from "@/helpers/notifications";
 
@@ -32,12 +32,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAuthToken(token);
           const response = await verifyToken(token);
           if (response?.user?.user_id) {
-            if (response.user.role === UserRole.SUPER_ADMIN) {
+            const freshUser = await getUser(response.user.user_id);
+            if (freshUser.role === UserRole.SUPER_ADMIN) {
               throw new Error(SUPER_ADMIN_MOBILE_ERROR);
             }
             setIsAuthenticated(true);
-            setUser(response.user);
-            setUserRole(response.user.role);
+            setUser(freshUser);
+            setUserRole(freshUser.role);
             registerForPushNotifications().catch((err) => console.warn("Push registration failed:", err));
           } else {
             throw new Error("Invalid user data");

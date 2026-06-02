@@ -92,7 +92,7 @@ export default function AddTaskForm() {
         start_date: toIsoDate(toDateKey(startDate ?? new Date())),
         created_by: user.user_id,
         assigned_users: assignedUsers,
-        ...(goal ? { goal_type: goal.goal_type, target_quantity: goal.target_quantity, unit: goal.unit } : {}),
+        ...(goal ? { goal: { target_quantity: goal.target_quantity, unit: goal.unit } } : {}),
       });
       router.dismissAll();
     } catch {

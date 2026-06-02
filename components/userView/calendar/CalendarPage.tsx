@@ -87,7 +87,7 @@ export default function CalendarPage() {
       refresh ? setIsRefreshing(true) : setIsLoading(true);
       setError(null);
       const assignments = await getUserAssignments(user.user_id);
-      setTasks(assignments.map((a) => a.task).filter(Boolean));
+      setTasks(assignments.map((a) => ({ ...a.task, goal: a.task.goal ?? null })).filter(Boolean));
     } catch {
       setError("Kunne ikke hente opgaver. Prøv igen senere.");
     } finally {
