@@ -14,9 +14,8 @@ import {
   Animated,
   Platform,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
 import { showToast } from "@/lib/toast";
 import * as ImagePicker from "expo-image-picker";
@@ -388,142 +387,142 @@ export default function TaskComments() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
         <View style={{ flex: 1 }}>
           {isLoading ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
-            <ActivityIndicator color={colors.green} size="large" />
-          </View>
-        ) : fetchError ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight, paddingHorizontal: 24 }}>
-            <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
-              <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
-              <TouchableOpacity onPress={() => fetchComments()} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
-                <Text style={typography.btnMdWhite}>Prøv igen</Text>
-              </TouchableOpacity>
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
+              <ActivityIndicator color={colors.green} size="large" />
             </View>
+          ) : fetchError ? (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight, paddingHorizontal: 24 }}>
+              <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
+                <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
+                <TouchableOpacity onPress={() => fetchComments()} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
+                  <Text style={typography.btnMdWhite}>Prøv igen</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <ScrollView
+              ref={scrollRef}
+              keyboardShouldPersistTaps="handled"
+              onLayout={() => { if (isNearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false }); }}
+              onContentSizeChange={() => {
+                if (scrollPendingRef.current) {
+                  scrollPendingRef.current = false;
+                  scrollRef.current?.scrollToEnd({ animated: true });
+                } else if (isNearBottomRef.current) {
+                  scrollRef.current?.scrollToEnd({ animated: false });
+                }
+              }}
+              onScroll={(e) => {
+                const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+                const nearBottom = contentSize.height - layoutMeasurement.height - contentOffset.y < 80;
+                isNearBottomRef.current = nearBottom;
+                if (nearBottom === showScrollDown) setShowScrollDown(!nearBottom);
+              }}
+              scrollEventThrottle={100}
+              contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={{ flex: 1, minHeight: headerHeight + 16 }} />
+
+              {listData.length === 0 ? (
+                <View style={{ alignItems: "center" }}>
+                  <Text style={[typography.bodySm, { color: colors.textMuted, textAlign: "center" }]}>
+                    Ingen kommentarer endnu.{"\n"}Skriv den første!
+                  </Text>
+                </View>
+              ) : (
+                listData.map((item) => {
+                  if (item.type === "timestamp") {
+                    return (
+                      <Text key={item.key} style={[typography.monoXs, { color: colors.textMuted, textAlign: "center", marginVertical: 4 }]}>
+                        {item.label}
+                      </Text>
+                    );
+                  }
+                  return (
+                    <View key={item.data.comment_id} style={{ marginBottom: 8 }}>
+                      {currentUser?.user_id === item.data.user_id
+                        ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} />
+                        : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />}
+                    </View>
+                  );
+                })
+              )}
+
+              <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP }} />
+            </ScrollView>
+          )}
+          {!isLoading && !fetchError && (
+            <Animated.View
+              pointerEvents={showScrollDown ? "box-none" : "none"}
+              style={{
+                position: "absolute",
+                bottom: isArchived ? 8 : INPUT_BAR_OVERLAP + 8,
+                alignSelf: "center",
+                opacity: scrollDownAnim,
+                transform: [{ translateY: scrollDownAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+              }}
+            >
+              <GlassIconButton
+                systemName="arrow.down"
+                onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+                size="lg"
+              />
+            </Animated.View>
+          )}
+        </View>
+
+        {isLoading ? null : isArchived ? (
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 12, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
+            <Ionicons name="lock-closed-outline" size={13} color={colors.textMuted} />
+            <Text style={[typography.labelSm, { color: colors.textMuted }]}>Arkiveret — kun visning</Text>
           </View>
         ) : (
-          <ScrollView
-            ref={scrollRef}
-            keyboardShouldPersistTaps="handled"
-            onLayout={() => { if (isNearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false }); }}
-            onContentSizeChange={() => {
-              if (scrollPendingRef.current) {
-                scrollPendingRef.current = false;
-                scrollRef.current?.scrollToEnd({ animated: true });
-              } else if (isNearBottomRef.current) {
-                scrollRef.current?.scrollToEnd({ animated: false });
+          <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>
+            <MaskedView
+              style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
+              pointerEvents="none"
+              maskElement={
+                <LinearGradient
+                  colors={["transparent", "black", "black"]}
+                  locations={[0, 0.7, 1]}
+                  style={{ flex: 1 }}
+                />
               }
-            }}
-            onScroll={(e) => {
-              const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-              const nearBottom = contentSize.height - layoutMeasurement.height - contentOffset.y < 80;
-              isNearBottomRef.current = nearBottom;
-              if (nearBottom === showScrollDown) setShowScrollDown(!nearBottom);
-            }}
-            scrollEventThrottle={100}
-            contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={{ flex: 1, minHeight: headerHeight + 16 }} />
-
-            {listData.length === 0 ? (
-              <View style={{ alignItems: "center" }}>
-                <Text style={[typography.bodySm, { color: colors.textMuted, textAlign: "center" }]}>
-                  Ingen kommentarer endnu.{"\n"}Skriv den første!
-                </Text>
-              </View>
-            ) : (
-              listData.map((item) => {
-                if (item.type === "timestamp") {
-                  return (
-                    <Text key={item.key} style={[typography.monoXs, { color: colors.textMuted, textAlign: "center", marginVertical: 4 }]}>
-                      {item.label}
-                    </Text>
-                  );
-                }
-                return (
-                  <View key={item.data.comment_id} style={{ marginBottom: 8 }}>
-                    {currentUser?.user_id === item.data.user_id
-                      ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} />
-                      : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />}
-                  </View>
-                );
-              })
-            )}
-
-            <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP }} />
-          </ScrollView>
-        )}
-        {!isLoading && !fetchError && (
-          <Animated.View
-            pointerEvents={showScrollDown ? "box-none" : "none"}
-            style={{
-              position: "absolute",
-              bottom: isArchived ? 8 : INPUT_BAR_OVERLAP + 8,
-              alignSelf: "center",
-              opacity: scrollDownAnim,
-              transform: [{ translateY: scrollDownAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
-            }}
-          >
-            <GlassIconButton
-              systemName="arrow.down"
-              onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
-              size="lg"
+            >
+              <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} pointerEvents="none" />
+            </MaskedView>
+            <LinearGradient
+              colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
+              style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
+              pointerEvents="none"
             />
-          </Animated.View>
+            <KeyboardInputBar
+              inputRef={inputRef}
+              value={input}
+              onChangeText={setInput}
+              onSubmit={handleSubmit}
+              canSubmit={canSend && !isSubmitting}
+              isSubmitting={isSubmitting}
+              leftActions={
+                <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} disabled={isSubmitting} />
+              }
+              attachments={pendingAttachments.length > 0 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
+                  {pendingAttachments.map((attachment) => (
+                    <PendingAttachmentCard
+                      key={attachment.localUri}
+                      uri={attachment.localUri}
+                      mimeType={attachment.mimeType}
+                      fileName={attachment.fileName}
+                      onRemove={() => setPendingAttachments((prev) => prev.filter((a) => a.localUri !== attachment.localUri))}
+                    />
+                  ))}
+                </ScrollView>
+              ) : undefined}
+            />
+          </View>
         )}
-        </View>
-
-      {isLoading ? null : isArchived ? (
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 12, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
-          <Ionicons name="lock-closed-outline" size={13} color={colors.textMuted} />
-          <Text style={[typography.labelSm, { color: colors.textMuted }]}>Arkiveret — kun visning</Text>
-        </View>
-      ) : (
-        <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>
-          <MaskedView
-            style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
-            pointerEvents="none"
-            maskElement={
-              <LinearGradient
-                colors={["transparent", "black", "black"]}
-                locations={[0, 0.7, 1]}
-                style={{ flex: 1 }}
-              />
-            }
-          >
-            <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} pointerEvents="none" />
-          </MaskedView>
-          <LinearGradient
-            colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
-            style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
-            pointerEvents="none"
-          />
-          <KeyboardInputBar
-            inputRef={inputRef}
-            value={input}
-            onChangeText={setInput}
-            onSubmit={handleSubmit}
-            canSubmit={canSend && !isSubmitting}
-            isSubmitting={isSubmitting}
-            leftActions={
-              <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} disabled={isSubmitting} />
-            }
-            attachments={pendingAttachments.length > 0 ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
-                {pendingAttachments.map((attachment) => (
-                  <PendingAttachmentCard
-                    key={attachment.localUri}
-                    uri={attachment.localUri}
-                    mimeType={attachment.mimeType}
-                    fileName={attachment.fileName}
-                    onRemove={() => setPendingAttachments((prev) => prev.filter((a) => a.localUri !== attachment.localUri))}
-                  />
-                ))}
-              </ScrollView>
-            ) : undefined}
-          />
-        </View>
-      )}
       </KeyboardAvoidingView>
       <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />
     </ModalScreen>

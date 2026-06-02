@@ -1,5 +1,5 @@
 import { useRef, useCallback } from "react";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "expo-router/react-navigation";
 import { Host, Button, Text } from "@expo/ui/swift-ui";
 import { buttonStyle, glassEffect, padding, foregroundStyle, font, fixedSize, disabled } from "@expo/ui/swift-ui/modifiers";
 import { colors } from "@/constants/colors";

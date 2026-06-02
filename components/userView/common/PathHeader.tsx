@@ -14,6 +14,7 @@ interface Props {
   path?: string;
   rightContent?: ReactNode;
   modal?: boolean;
+  bottomBorder?: boolean;
 }
 
 export function usePathHeaderHeight(modal = false): number {
@@ -22,14 +23,25 @@ export function usePathHeaderHeight(modal = false): number {
   return topSpacing + 56;
 }
 
-export default function PathHeader({ title, path, rightContent, modal = false }: Props) {
+export default function PathHeader({ title, path, rightContent, modal = false, bottomBorder = false }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const topSpacing = modal ? (Platform.OS === "ios" ? 12 : insets.top) : insets.top;
   const headerHeight = topSpacing + 56;
 
   return (
-    <View style={{ position: "absolute", left: 0, right: 0, top: 0, zIndex: 10, height: headerHeight }}>
+    <View
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: 0,
+        zIndex: 10,
+        height: headerHeight,
+        borderBottomWidth: bottomBorder ? 1 : 0,
+        borderBottomColor: colors.border,
+      }}
+    >
       {Platform.OS === "ios" ? (
         <MaskedView
           style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}

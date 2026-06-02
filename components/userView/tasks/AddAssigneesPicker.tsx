@@ -9,7 +9,7 @@ export default function AddAssigneesPicker() {
 
   useEffect(() => {
     getUsers()
-      .then((users) => setOptions(users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position ?? undefined }))))
+      .then((users) => setOptions(users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position?.name ?? undefined }))))
       .catch(() => setError("Kunne ikke hente brugere"))
       .finally(() => setIsLoading(false));
   }, []);

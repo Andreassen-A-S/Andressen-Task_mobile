@@ -1,5 +1,5 @@
 import { useRef, useCallback } from "react";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "expo-router/react-navigation";
 import { Host, Button, HStack, Image, Text } from "@expo/ui/swift-ui";
 import { buttonStyle, glassEffect, padding, fixedSize, tint as t, font, foregroundStyle } from "@expo/ui/swift-ui/modifiers";
 import type { SFSymbol } from "sf-symbols-typescript";

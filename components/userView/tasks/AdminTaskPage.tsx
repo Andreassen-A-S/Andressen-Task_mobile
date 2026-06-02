@@ -7,8 +7,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { getTasks, getProjects, getUsers } from "@/lib/api";
 import { Task, TaskStatus, INACTIVE_STATUSES } from "@/types/task";
@@ -153,10 +152,10 @@ export default function AdminTaskPage() {
   const activeTasksList = hasFilters
     ? sortedTasks
     : sortedTasks.filter((t) =>
-        toDateKey(t.start_date) <= selectedDateKey &&
-        toDateKey(t.deadline) >= selectedDateKey &&
-        !INACTIVE_STATUSES.includes(t.status)
-      );
+      toDateKey(t.start_date) <= selectedDateKey &&
+      toDateKey(t.deadline) >= selectedDateKey &&
+      !INACTIVE_STATUSES.includes(t.status)
+    );
   const upcomingTasksList = hasFilters ? [] : sortedTasks.filter((t) =>
     toDateKey(t.start_date) > selectedDateKey &&
     toDateKey(t.deadline) >= selectedDateKey &&
@@ -171,7 +170,7 @@ export default function AdminTaskPage() {
       ...(upcomingTasksList.length > 0 ? [{ title: "Kommende", variant: "default" as const, data: upcomingTasksList, count: upcomingTasksList.length }] : []),
     ];
 
-  const userOptions: MultiSelectOption[] = users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position ?? undefined }));
+  const userOptions: MultiSelectOption[] = users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position?.name ?? undefined }));
   const projectOptions: MultiSelectOption[] = Object.values(projectMap).map((p) => ({ label: p.name, value: p.project_id, color: p.color ?? undefined }));
 
   const openStatusFilter = () => {

@@ -1,4 +1,4 @@
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused } from "expo-router/react-navigation";
 import { Host, Image, HStack, Menu, Button } from "@expo/ui/swift-ui";
 import { glassEffect, padding, onTapGesture, tint, disabled as disabledModifier } from "@expo/ui/swift-ui/modifiers";
 import { colors } from "@/constants/colors";

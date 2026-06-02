@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Dimensions } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Image } from "expo-image";
 import ImageView from "react-native-image-viewing";
 import { getTaskAttachments } from "@/lib/api";

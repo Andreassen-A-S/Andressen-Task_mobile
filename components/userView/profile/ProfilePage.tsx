@@ -59,7 +59,7 @@ export default function ProfilePage() {
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: colors.charcoal }} edges={["left", "right"]}>
-      <UserHeader variant="profile" user={currentUser} position={userDetails?.position} />
+      <UserHeader variant="profile" user={currentUser} position={userDetails?.position?.name ?? undefined} />
       <ScrollView className="flex-1" style={{ backgroundColor: colors.eggWhite }} showsVerticalScrollIndicator={false}>
 
         {/* Stats Cards */}
