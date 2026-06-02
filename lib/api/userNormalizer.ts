@@ -9,8 +9,11 @@ export function normalizeUser(user: ApiUser): User {
     email: user.email,
     role: user.role,
     status: user.status,
+    position_id: user.position_id ?? null,
     position: user.position ?? null,
+    profile_picture_url: user.profile_picture_url ?? null,
     organization_id: user.organization_id ?? null,
+    organization: user.organization ?? null,
     created_at: user.created_at,
     updated_at: user.updated_at,
   };

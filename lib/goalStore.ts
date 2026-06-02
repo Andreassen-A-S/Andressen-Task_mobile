@@ -1,8 +1,7 @@
-import { TaskGoalType, TaskUnit } from "@/types/task";
+import { TaskUnit } from "@/types/task";
 
 export type GoalData = {
-  goal_type: TaskGoalType;
-  target_quantity: number | null;
+  target_quantity: number;
   unit: TaskUnit;
 };
 

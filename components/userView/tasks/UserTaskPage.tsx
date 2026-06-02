@@ -40,7 +40,7 @@ export default function UserTaskPage() {
         getProjects(),
       ]);
       if (assignmentsResult.status === "rejected") throw assignmentsResult.reason;
-      setTasks(sortTasks(assignmentsResult.value.map((a) => a.task), "priority_asc"));
+      setTasks(sortTasks(assignmentsResult.value.map((a) => ({ ...a.task, goal: a.task.goal ?? null })), "priority_asc"));
       if (projectsResult.status === "fulfilled") {
         setProjectMap(Object.fromEntries(projectsResult.value.map((p) => [p.project_id, p])));
       }

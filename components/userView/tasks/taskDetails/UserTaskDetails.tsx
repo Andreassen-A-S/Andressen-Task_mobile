@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
-import { Task, TaskGoalType, TaskStatus, TaskUnit } from "@/types/task";
+import { Task, TaskStatus, TaskUnit } from "@/types/task";
 import { isAdminRole, User, UserRole } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser, deleteTask } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -204,7 +204,7 @@ export default function UserTaskDetails() {
       }
       await addTaskProgress(task.task_id, {
         quantity_done: Number(value),
-        unit: task.unit || undefined,
+        unit: task.goal?.unit || undefined,
       });
       await fetchTask();
     } catch {
@@ -214,11 +214,11 @@ export default function UserTaskDetails() {
     }
   };
 
-  const unitLabel = task ? translateTaskUnit(task.unit) : "";
-  const currentQuantity = task?.current_quantity ?? 0;
-  const hasProgress = task?.goal_type === TaskGoalType.FIXED && task?.target_quantity != null;
-  const progressPct = task?.target_quantity
-    ? Math.min(100, Math.round((currentQuantity / task.target_quantity) * 100))
+  const unitLabel = task ? translateTaskUnit(task.goal?.unit) : "";
+  const currentQuantity = task?.goal?.current_quantity ?? 0;
+  const hasProgress = !!task?.goal;
+  const progressPct = task?.goal?.target_quantity
+    ? Math.min(100, Math.round((currentQuantity / task.goal.target_quantity) * 100))
     : null;
 
   return (
@@ -308,7 +308,7 @@ export default function UserTaskDetails() {
                   progressPct={progressPct}
                   unitLabel={unitLabel}
                   currentQuantity={currentQuantity}
-                  targetQuantity={task!.target_quantity!}
+                  targetQuantity={task.goal!.target_quantity}
                   onAddProgress={handleAddProgress}
                   isUpdating={isUpdating}
                   disabled={isArchived}

@@ -39,8 +39,11 @@ export async function verifyToken(token: string): Promise<VerifyResponse> {
       email: data.email,
       role: data.role,
       name: data.name,
+      position_id: data.position_id,
       position: data.position,
+      profile_picture_url: data.profile_picture_url,
       organization_id: data.organization_id,
+      organization: data.organization,
     }),
   };
 }

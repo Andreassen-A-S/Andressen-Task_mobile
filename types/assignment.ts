@@ -1,4 +1,9 @@
-import { Task } from "./task";
+import { Task, TaskGoal } from "./task";
+import { OrganizationSummary, PositionSummary } from "./users";
+
+export type AssignmentTask = Omit<Task, "goal"> & {
+  goal?: TaskGoal | null;
+};
 
 export interface TaskAssignment {
   assignment_id: string;
@@ -10,9 +15,13 @@ export interface TaskAssignment {
     user_id: string;
     name: string;
     email: string;
-    position: string;
+    position_id: string | null;
+    position: PositionSummary | null;
+    profile_picture_url: string | null;
+    organization_id: string;
+    organization?: OrganizationSummary | null;
   };
-  task: Task;
+  task: AssignmentTask;
 }
 
 export interface TaskAssignmentResponse {
