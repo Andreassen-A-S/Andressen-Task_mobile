@@ -14,7 +14,7 @@ import { isAdminRole, User, UserRole } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser, deleteTask } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
-import { useRouter, Stack, useLocalSearchParams, usePathname, useFocusEffect } from "expo-router";
+import { useRouter, Stack, useLocalSearchParams, usePathname, useFocusEffect, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import TaskDetailsHeader from "./TaskDetailsHeader";
 import { typography } from "@/constants/typography";
@@ -24,12 +24,19 @@ import Badge from "../../common/label/badge";
 import RecurringBadge from "../../common/label/recurringBadge";
 import SlideToComplete from "../../common/SlideToComplete";
 import TaskProgressCard from "./TaskProgressCard";
+import { CancelableNavigationTask, runAfterNavigationFrame } from "@/lib/navigationTiming";
 
 export default function UserTaskDetails() {
-  const { taskId } = useLocalSearchParams<{ taskId: string }>();
+  const { taskId, openComments: shouldOpenComments, openCommentsRequestId, commentId } = useLocalSearchParams<{
+    taskId: string;
+    openComments?: string;
+    openCommentsRequestId?: string;
+    commentId?: string;
+  }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
+  const navigation = useNavigation();
   const { user } = useAuth();
 
   const [task, setTask] = useState<Task | null>(null);
@@ -38,6 +45,7 @@ export default function UserTaskDetails() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasLoadedRef = useRef(false);
+  const consumedOpenCommentsRef = useRef<string | null>(null);
 
   const fetchTask = useCallback(async (silent = false) => {
     try {
@@ -67,6 +75,52 @@ export default function UserTaskDetails() {
       hasLoadedRef.current = true;
     }, [fetchTask])
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!taskId || shouldOpenComments !== "1") return;
+      const requestKey = openCommentsRequestId ?? `${taskId}:${commentId ?? ""}`;
+      if (consumedOpenCommentsRef.current === requestKey) return;
+      consumedOpenCommentsRef.current = requestKey;
+
+      let didOpen = false;
+      let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+      let transitionTimer: ReturnType<typeof setTimeout> | null = null;
+      let navigationTask: CancelableNavigationTask | null = null;
+
+      const openCommentsSheet = () => {
+        if (didOpen) return;
+        didOpen = true;
+        navigationTask = runAfterNavigationFrame(() => {
+          const commentQuery = commentId ? `?commentId=${encodeURIComponent(commentId)}` : "";
+          router.push(`${pathname}/comments${commentQuery}`);
+        });
+      };
+
+      const unsubscribe = (navigation as unknown as {
+        addListener: (
+          eventName: "transitionEnd",
+          listener: (event: { data?: { closing?: boolean } }) => void
+        ) => () => void;
+      }).addListener("transitionEnd", (event) => {
+        if (event.data?.closing) return;
+        transitionTimer = setTimeout(openCommentsSheet, 80);
+      });
+
+      fallbackTimer = setTimeout(openCommentsSheet, 800);
+
+      return () => {
+        unsubscribe();
+        if (fallbackTimer) clearTimeout(fallbackTimer);
+        if (transitionTimer) clearTimeout(transitionTimer);
+        navigationTask?.cancel();
+      };
+    }, [commentId, navigation, openCommentsRequestId, pathname, router, shouldOpenComments, taskId])
+  );
+
+  const handleOpenComments = () => {
+    router.navigate(`${pathname}/comments`);
+  };
 
   const handleDelete = () => {
     if (!task) return;
@@ -302,9 +356,9 @@ export default function UserTaskDetails() {
 
       {task && !isLoading && !error && (
         <View style={{ position: "absolute", right: 20, bottom: 40, alignItems: "flex-end", gap: 10 }}>
-          <GlassIconButton systemName="camera" onPress={() => router.push(`${pathname}/photos`)} size="lg" />
-          <GlassIconButton systemName="bubble.right" onPress={() => router.push(`${pathname}/comments`)} size="lg" />
-          <GlassIconButton systemName="folder" onPress={() => router.push(`${pathname}/files`)} size="lg" />
+          <GlassIconButton systemName="camera" onPress={() => router.navigate(`${pathname}/photos`)} size="lg" />
+          <GlassIconButton systemName="bubble.right" onPress={handleOpenComments} size="lg" />
+          <GlassIconButton systemName="folder" onPress={() => router.navigate(`${pathname}/files`)} size="lg" />
         </View>
       )}
     </View>

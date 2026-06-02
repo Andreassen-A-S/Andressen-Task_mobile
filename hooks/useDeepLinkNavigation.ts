@@ -1,7 +1,8 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useRef } from "react";
-import { InteractionManager, Linking } from "react-native";
+import { Linking } from "react-native";
 import { resolveDeepLink } from "@/lib/deepLinks";
+import { runAfterNavigationFrame } from "@/lib/navigationTiming";
 
 interface UseDeepLinkNavigationOptions {
   isAuthenticated: boolean;
@@ -21,7 +22,19 @@ export function useDeepLinkNavigation({ isAuthenticated, isInitializing }: UseDe
   const navigate = useCallback((url: string) => {
     const link = resolveDeepLink(url);
     if (link?.screen === "task") {
-      router.push(`/(tabs)/tasks/${link.taskId}`);
+      const hadOpenModal = router.canDismiss();
+      if (hadOpenModal) router.dismissAll();
+      setTimeout(() => {
+        router.dismissTo("/(tabs)/tasks");
+        setTimeout(() => {
+          runAfterNavigationFrame(() => {
+            router.push({
+              pathname: "/(tabs)/tasks/[taskId]",
+              params: { taskId: link.taskId },
+            });
+          });
+        }, 220);
+      }, hadOpenModal ? 450 : 0);
     }
   }, [router]);
 
@@ -33,7 +46,7 @@ export function useDeepLinkNavigation({ isAuthenticated, isInitializing }: UseDe
         .then((url) => {
           if (!url) return;
           if (isAuthenticatedRef.current && !isInitializingRef.current) {
-            InteractionManager.runAfterInteractions(() => navigate(url));
+            runAfterNavigationFrame(() => navigate(url));
           } else {
             pendingDeepLinkRef.current = url;
           }
@@ -46,7 +59,7 @@ export function useDeepLinkNavigation({ isAuthenticated, isInitializing }: UseDe
     if (isAuthenticated && !isInitializing && pendingDeepLinkRef.current) {
       const url = pendingDeepLinkRef.current;
       pendingDeepLinkRef.current = null;
-      InteractionManager.runAfterInteractions(() => navigate(url));
+      runAfterNavigationFrame(() => navigate(url));
     }
 
     const sub = Linking.addEventListener("url", ({ url }) => {

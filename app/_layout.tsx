@@ -24,6 +24,7 @@ import {
 import { colors } from "@/constants/colors";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import { CancelableNavigationTask, runAfterNavigationFrame } from "@/lib/navigationTiming";
 
 function RootGuard() {
   const { isAuthenticated, isInitializing } = useAuth();
@@ -52,16 +53,37 @@ function RootGuard() {
 
     const data = response.notification.request.content.data;
     if (typeof data?.taskId === "string") {
-      router.navigate("/(tabs)/tasks");
-      router.push(`/(tabs)/tasks/${data.taskId}`);
-      if (data?.screen === "comments") {
-        const timer = setTimeout(() => router.push(`/(tabs)/tasks/${data.taskId}/comments`), 500);
-        return () => clearTimeout(timer);
-      }
+      const taskId = data.taskId;
+      const hadOpenModal = router.canDismiss();
+      if (hadOpenModal) router.dismissAll();
+      const openComments = data?.screen === "comments";
+      const commentId = typeof data?.commentId === "string" ? data.commentId : undefined;
+      let navigationTask: CancelableNavigationTask | null = null;
+      let pushTimer: ReturnType<typeof setTimeout> | null = null;
+      const navigationTimer = setTimeout(() => {
+        router.dismissTo("/(tabs)/tasks");
+        pushTimer = setTimeout(() => {
+          navigationTask = runAfterNavigationFrame(() => {
+            router.push({
+              pathname: "/(tabs)/tasks/[taskId]",
+              params: {
+                taskId,
+                ...(openComments ? { openComments: "1", openCommentsRequestId: notifId } : {}),
+                ...(commentId ? { commentId } : {}),
+              },
+            });
+          });
+        }, 220);
+      }, hadOpenModal ? 450 : 0);
+      return () => {
+        clearTimeout(navigationTimer);
+        if (pushTimer) clearTimeout(pushTimer);
+        navigationTask?.cancel();
+      };
     } else if (data?.screen === "tasks") {
       router.push("/(tabs)/tasks");
     }
-  }, [lastNotificationResponse, isAuthenticated, isInitializing]);
+  }, [lastNotificationResponse, isAuthenticated, isInitializing, router]);
 
   if (isInitializing) {
     return (
