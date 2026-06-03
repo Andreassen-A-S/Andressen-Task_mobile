@@ -3,9 +3,39 @@ import { getAuthHeaders, setAuthToken } from "@/helpers/helpers";
 import * as SecureStore from "expo-secure-store";
 
 let _onUnauthorized: (() => void) | null = null;
+let _refreshPromise: Promise<boolean> | null = null;
 
 export function registerUnauthorizedHandler(handler: () => void) {
   _onUnauthorized = handler;
+}
+
+async function refreshOnce(): Promise<boolean> {
+  if (_refreshPromise) return _refreshPromise;
+  _refreshPromise = (async () => {
+    try {
+      const storedRefresh = await SecureStore.getItemAsync("refresh_token");
+      if (!storedRefresh) return false;
+
+      const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: storedRefresh }),
+      });
+
+      if (!refreshRes.ok) {
+        await SecureStore.deleteItemAsync("refresh_token");
+        return false;
+      }
+
+      const { data } = await refreshRes.json();
+      await SecureStore.setItemAsync("refresh_token", data.refresh_token);
+      setAuthToken(data.token);
+      return true;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+  return _refreshPromise;
 }
 
 export async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<Response> {
@@ -17,29 +47,12 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit): Promise<
   if (res.status !== 401) return res;
 
   try {
-    const storedRefresh = await SecureStore.getItemAsync("refresh_token");
-    if (!storedRefresh) {
+    const refreshed = await refreshOnce();
+    if (!refreshed) {
       _onUnauthorized?.();
       return res;
     }
 
-    const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: storedRefresh }),
-    });
-
-    if (!refreshRes.ok) {
-      await SecureStore.deleteItemAsync("refresh_token");
-      _onUnauthorized?.();
-      return res;
-    }
-
-    const { data } = await refreshRes.json();
-    await SecureStore.setItemAsync("refresh_token", data.refresh_token);
-    setAuthToken(data.token);
-
-    // Retry original request with new token
     return fetch(input, {
       ...init,
       headers: { ...getAuthHeaders(), ...(init?.headers as Record<string, string>) },
