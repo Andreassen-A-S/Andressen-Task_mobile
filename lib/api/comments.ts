@@ -1,12 +1,10 @@
 import { API_URL } from "@/constants/api";
-import { getAuthHeaders } from "@/helpers/helpers";
+import { apiFetch } from "./apiClient";
 import { CreateCommentRequest, TaskComment } from "@/types/comment";
 import { applyAttachmentUrlCache } from "./attachmentUrlCache";
 
 export async function getTaskComments(taskId: string): Promise<TaskComment[]> {
-  const response = await fetch(`${API_URL}/comments/task/${taskId}`, {
-    headers: getAuthHeaders(),
-  });
+  const response = await apiFetch(`${API_URL}/comments/task/${taskId}`);
   if (!response.ok) throw new Error("Failed to fetch comments");
   const result = await response.json();
   return (result.data as TaskComment[]).map((c) => ({
@@ -16,9 +14,8 @@ export async function getTaskComments(taskId: string): Promise<TaskComment[]> {
 }
 
 export async function createComment(taskId: string, data: CreateCommentRequest): Promise<TaskComment> {
-  const response = await fetch(`${API_URL}/comments/task/${taskId}`, {
+  const response = await apiFetch(`${API_URL}/comments/task/${taskId}`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
   if (!response.ok) throw new Error("Failed to create comment");
@@ -28,9 +25,6 @@ export async function createComment(taskId: string, data: CreateCommentRequest):
 }
 
 export async function deleteComment(commentId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/comments/${commentId}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
+  const response = await apiFetch(`${API_URL}/comments/${commentId}`, { method: "DELETE" });
   if (!response.ok) throw new Error("Failed to delete comment");
 }

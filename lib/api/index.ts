@@ -6,3 +6,4 @@ export * from "./comments";
 export * from "./stats";
 export * from "./projects";
 export * from "./attachments";
+export * from "./apiClient";

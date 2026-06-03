@@ -1,5 +1,5 @@
 import { API_URL } from "@/constants/api";
-import { getAuthHeaders } from "@/helpers/helpers";
+import { apiFetch } from "./apiClient";
 import { TaskAttachment } from "@/types/comment";
 import { applyAttachmentUrlCache, bustAttachmentUrl } from "./attachmentUrlCache";
 
@@ -12,9 +12,8 @@ export async function prepareAttachments(
   task_id: string,
   files: { file_name: string; mime_type: string; file_size: number }[],
 ): Promise<PreparedAttachment[]> {
-  const res = await fetch(`${API_URL}/attachments/prepare`, {
+  const res = await apiFetch(`${API_URL}/attachments/prepare`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify({ task_id, files }),
   });
   if (!res.ok) {
@@ -30,6 +29,7 @@ export async function uploadToGcs(
   blob: Blob,
   mime_type: string,
 ): Promise<void> {
+  // Direct GCS upload — intentionally uses raw fetch, not apiFetch (not our API)
   const uploadRes = await fetch(upload_url, {
     method: "PUT",
     body: blob,
@@ -39,19 +39,14 @@ export async function uploadToGcs(
 }
 
 export async function getTaskAttachments(taskId: string): Promise<TaskAttachment[]> {
-  const res = await fetch(`${API_URL}/attachments/task/${taskId}`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await apiFetch(`${API_URL}/attachments/task/${taskId}`);
   if (!res.ok) throw new Error(`Failed to fetch attachments (${res.status})`);
   const data = await res.json();
   return applyAttachmentUrlCache(data.data);
 }
 
 export async function deleteAttachment(attachmentId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/attachments/${attachmentId}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
+  const res = await apiFetch(`${API_URL}/attachments/${attachmentId}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete attachment");
   bustAttachmentUrl(attachmentId);
 }
