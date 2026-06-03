@@ -1,8 +1,10 @@
 import { createContext, useState, useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+import * as Device from "expo-device";
 import { User, UserRole } from "@/types/users";
-import { verifyToken, login as apiLogin, registerPushToken, getUser } from "@/lib/api";
+import { login as apiLogin, refreshToken as apiRefreshToken, registerPushToken } from "@/lib/api";
 import { setAuthToken } from "@/helpers/helpers";
+import { registerUnauthorizedHandler } from "@/lib/api/apiClient";
 import { registerForPushNotifications } from "@/helpers/notifications";
 
 const SUPER_ADMIN_MOBILE_ERROR = "Super admin accounts can only be used in the web portal.";
@@ -24,32 +26,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
+  const clearAuth = async () => {
+    await SecureStore.deleteItemAsync("refresh_token");
+    setAuthToken(null);
+    setIsAuthenticated(false);
+    setUser(null);
+    setUserRole(null);
+  };
+
   useEffect(() => {
+    // Register 401 handler — fired by apiFetch when a refresh attempt also fails
+    registerUnauthorizedHandler(() => {
+      clearAuth().catch(() => {});
+    });
+
     const initializeAuth = async () => {
       try {
-        const token = await AsyncStorage.getItem("authToken");
-        if (token) {
-          setAuthToken(token);
-          const response = await verifyToken(token);
-          if (response?.user?.user_id) {
-            const freshUser = await getUser(response.user.user_id);
-            if (freshUser.role === UserRole.SUPER_ADMIN) {
-              throw new Error(SUPER_ADMIN_MOBILE_ERROR);
-            }
-            setIsAuthenticated(true);
-            setUser(freshUser);
-            setUserRole(freshUser.role);
-            registerForPushNotifications().catch((err) => console.warn("Push registration failed:", err));
-          } else {
-            throw new Error("Invalid user data");
-          }
+        const stored = await SecureStore.getItemAsync("refresh_token");
+        if (!stored) return;
+
+        const response = await apiRefreshToken(stored);
+
+        if (response.user.role === UserRole.SUPER_ADMIN) {
+          throw new Error(SUPER_ADMIN_MOBILE_ERROR);
         }
+
+        await SecureStore.setItemAsync("refresh_token", response.refresh_token);
+        setAuthToken(response.token);
+        setIsAuthenticated(true);
+        setUser(response.user);
+        setUserRole(response.user.role);
+        registerForPushNotifications().catch((err) => console.warn("Push registration failed:", err));
       } catch {
-        await AsyncStorage.multiRemove(["authToken"]);
-        setAuthToken(null);
-        setIsAuthenticated(false);
-        setUser(null);
-        setUserRole(null);
+        await clearAuth();
       } finally {
         setIsInitializing(false);
       }
@@ -59,7 +68,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await apiLogin({ email, password });
+    const device_name = Device.deviceName ?? Device.modelName ?? undefined;
+    const response = await apiLogin({ email, password, device_name });
 
     if (!response.token || !response.user) {
       throw new Error("Invalid login response");
@@ -69,9 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(SUPER_ADMIN_MOBILE_ERROR);
     }
 
-    await AsyncStorage.setItem("authToken", response.token);
+    await SecureStore.setItemAsync("refresh_token", response.refresh_token);
     setAuthToken(response.token);
-
     setIsAuthenticated(true);
     setUser(response.user);
     setUserRole(response.user.role);
@@ -79,12 +88,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await registerPushToken(null).catch(() => { });
-    await AsyncStorage.multiRemove(["authToken"]);
-    setAuthToken(null);
-    setIsAuthenticated(false);
-    setUser(null);
-    setUserRole(null);
+    const stored = await SecureStore.getItemAsync("refresh_token");
+    await registerPushToken(null).catch(() => {});
+    if (stored) {
+      // Best-effort server-side revocation; don't block logout on failure
+      await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: stored }),
+      }).catch(() => {});
+    }
+    await clearAuth();
   };
 
   return (

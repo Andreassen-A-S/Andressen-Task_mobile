@@ -1,5 +1,5 @@
 import { API_URL } from "@/constants/api";
-import { LoginRequest, LoginResponse, VerifyResponse } from "@/types/auth";
+import { LoginRequest, LoginResponse } from "@/types/auth";
 import { normalizeUser } from "@/lib/api/userNormalizer";
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -21,29 +21,16 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   };
 }
 
-export async function verifyToken(token: string): Promise<VerifyResponse> {
-  const res = await fetch(`${API_URL}/auth/verify`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
+export async function refreshToken(raw: string): Promise<LoginResponse> {
+  const res = await fetch(`${API_URL}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: raw }),
   });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || "Failed to verify token");
-  }
-  const { data } = await res.json();
+  if (!res.ok) throw new Error("Refresh failed");
+  const response = await res.json();
   return {
-    user: normalizeUser({
-      user_id: data.user_id,
-      email: data.email,
-      role: data.role,
-      name: data.name,
-      position_id: data.position_id,
-      position: data.position,
-      profile_picture_url: data.profile_picture_url,
-      organization_id: data.organization_id,
-      organization: data.organization,
-    }),
+    ...response.data,
+    user: normalizeUser(response.data.user),
   };
 }
