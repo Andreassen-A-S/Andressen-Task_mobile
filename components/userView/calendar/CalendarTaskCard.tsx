@@ -51,7 +51,7 @@ export default function CalendarTaskCard({ task, onClick }: Props) {
             {task.title}
           </Text>
           <View className="flex-row items-center gap-1.5 pt-0.5 shrink-0">
-            {isRecurring && <RecurringBadge size="sm" />}
+            {isRecurring && <RecurringBadge size="sm" iconOnly />}
             <Badge variant="priority" value={task.priority} />
           </View>
         </View>

@@ -6,6 +6,7 @@ import { login as apiLogin, refreshToken as apiRefreshToken, registerPushToken }
 import { setAuthToken } from "@/helpers/helpers";
 import { registerUnauthorizedHandler } from "@/lib/api/apiClient";
 import { registerForPushNotifications } from "@/helpers/notifications";
+import { API_URL } from "@/constants/api";
 
 const SUPER_ADMIN_MOBILE_ERROR = "Super admin accounts can only be used in the web portal.";
 
@@ -92,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await registerPushToken(null).catch(() => {});
     if (stored) {
       // Best-effort server-side revocation; don't block logout on failure
-      await fetch(`${process.env.EXPO_PUBLIC_API_URL}/auth/logout`, {
+      await fetch(`${API_URL}/auth/logout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: stored }),

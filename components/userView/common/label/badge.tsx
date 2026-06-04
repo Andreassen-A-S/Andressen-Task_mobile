@@ -12,9 +12,9 @@ interface BadgeProps {
 }
 
 const containerClass = {
-  sm: "rounded-lg px-2 py-0.5",
-  md: "rounded-lg px-2.5 py-1",
-  lg: "rounded-lg px-3 py-1.5",
+  sm: "rounded-lg px-2 h-5 items-center justify-center",
+  md: "rounded-lg px-2.5 h-6 items-center justify-center",
+  lg: "rounded-lg px-3 h-7 items-center justify-center",
 };
 
 export default function Badge({ variant, value, size = "md" }: BadgeProps) {

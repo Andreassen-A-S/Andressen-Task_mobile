@@ -170,7 +170,7 @@ export default function AdminTaskPage() {
       ...(upcomingTasksList.length > 0 ? [{ title: "Kommende", variant: "default" as const, data: upcomingTasksList, count: upcomingTasksList.length }] : []),
     ];
 
-  const userOptions: MultiSelectOption[] = users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position?.name ?? undefined }));
+  const userOptions: MultiSelectOption[] = users.map((u) => ({ label: u.name, value: u.user_id, subtitle: u.position?.name ?? undefined, imageUrl: u.profile_picture_url }));
   const projectOptions: MultiSelectOption[] = Object.values(projectMap).map((p) => ({ label: p.name, value: p.project_id, color: p.color ?? undefined }));
 
   const openStatusFilter = () => {

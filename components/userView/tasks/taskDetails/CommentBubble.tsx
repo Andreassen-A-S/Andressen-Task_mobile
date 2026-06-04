@@ -59,8 +59,8 @@ export default function CommentBubble({ comment, isOwn, author, sending, failed,
     <View style={{ alignSelf: align, gap: 4 }}>
       {!isOwn && (
         <View className="flex-row items-center gap-2">
-          <SingleAvatar name={author?.name || "?"} size="xs" />
-          <Text style={typography.labelLg}>{author?.name || author?.email || "Ukendt bruger"}</Text>
+          <SingleAvatar name={author?.name || "?"} imageUrl={author?.profile_picture_url} size="xs" />
+          <Text style={typography.labelMd}>{author?.name || author?.email || "Ukendt bruger"}</Text>
         </View>
       )}
 

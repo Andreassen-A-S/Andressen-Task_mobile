@@ -207,7 +207,7 @@ export default function EditTaskModal() {
               <View style={{ gap: 10 }}>
                 {assignedUserObjects.map((u) => (
                   <View key={u.user_id} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                    <SingleAvatar name={u.name} size="lg" />
+                    <SingleAvatar name={u.name} imageUrl={u.profile_picture_url} size="lg" />
                     <Text style={typography.bodySm}>{u.name}</Text>
                   </View>
                 ))}

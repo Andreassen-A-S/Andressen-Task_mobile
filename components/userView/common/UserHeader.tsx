@@ -8,7 +8,7 @@ import { colors } from "@/constants/colors";
 
 type UserHeaderProps = {
     variant: "user" | "profile" | "admin";
-    user?: { name?: string; email?: string } | null;
+    user?: { name?: string; email?: string; profile_picture_url?: string | null } | null;
     heading?: string;
     sub?: string;
     position?: string;
@@ -53,7 +53,7 @@ export default function UserHeader({ variant, user, heading, sub, position, onAd
                     Andreassen A/S · Task Management
                 </Text>
                 <View className="flex-row items-center gap-3">
-                    <SingleAvatar name={user?.name || "Ukendt bruger"} size="lg" />
+                    <SingleAvatar name={user?.name || "Ukendt bruger"} imageUrl={user?.profile_picture_url} size="lg" />
                     <View className="flex-1">
                         <Text style={typography.h3White} numberOfLines={1}>
                             {user?.name || "Ukendt bruger"}
@@ -116,7 +116,7 @@ export default function UserHeader({ variant, user, heading, sub, position, onAd
                 <Text style={typography.h3White}>{heading || "Mine opgaver"}</Text>
                 <Text style={typography.caption}>{sub || `Velkommen, ${user?.name || user?.email}`}</Text>
             </View>
-            <SingleAvatar size="lg" name={user?.name || "Ukendt bruger"} />
+            <SingleAvatar size="lg" name={user?.name || "Ukendt bruger"} imageUrl={user?.profile_picture_url} />
         </View>
     );
 }

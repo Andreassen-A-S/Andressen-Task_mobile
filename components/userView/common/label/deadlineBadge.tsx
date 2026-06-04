@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Clock } from "lucide-react-native";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { formatRelativeDate, toDateKey } from "@/helpers/helpers";
@@ -15,15 +15,16 @@ const containerClass = {
   lg: "flex-row items-center gap-1.5",
 };
 
-const iconSize = { sm: 12, md: 13, lg: 13 };
+const iconSize = { sm: 10, md: 12, lg: 14 };
 
 export default function DeadlineBadge({ deadline, size = "md" }: DeadlineBadgeProps) {
-  const isOverdue = toDateKey(deadline) < toDateKey(new Date());
-  const color = isOverdue ? colors.red : colors.textMuted;
+  const today = toDateKey(new Date());
+  const d = toDateKey(deadline);
+  const color = d < today ? colors.red : d === today ? colors.yellow : colors.textMuted;
 
   return (
     <View className={containerClass[size]}>
-      <Ionicons name="time" size={iconSize[size]} color={color} />
+      <Clock size={iconSize[size]} color={color} />
       <Text style={[typography.badge, { color }]} numberOfLines={1}>
         {formatRelativeDate(deadline)}
       </Text>
