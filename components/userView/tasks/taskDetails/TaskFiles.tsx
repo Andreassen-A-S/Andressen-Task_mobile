@@ -5,16 +5,15 @@ import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
 import { getTaskAttachments } from "@/lib/api";
 import { TaskAttachment } from "@/types/comment";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
-import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
+import SearchBarOverlay from "@/components/userView/common/SearchBarOverlay";
 import { getFileIcon } from "@/helpers/attachmentHelpers";
 
-const SEARCH_KEYBOARD_GAP = 8;
+const SEARCHBAR_HEIGHT = Platform.OS === "ios" ? 56 : 64;
 
 export default function TaskFiles() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
@@ -75,7 +74,7 @@ export default function TaskFiles() {
             <FlatList
               data={filtered}
               keyExtractor={(item) => item.attachment_id}
-              contentContainerStyle={{ paddingTop: headerHeight + 16, paddingHorizontal: 16, gap: 8, paddingBottom: 16 }}
+              contentContainerStyle={{ paddingTop: headerHeight + 16, paddingHorizontal: 16, gap: 8, paddingBottom: SEARCHBAR_HEIGHT + insets.bottom + 16 }}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -109,15 +108,9 @@ export default function TaskFiles() {
           )}
         </View>
         {!isLoading && !fetchError && files.length > 0 && (
-          <NativeSearchBar placeholder="Søg i filer..." onChangeText={setSearch} />
-        )}
-        {!isLoading && !fetchError && files.length > 0 && (
-          <KeyboardSafeAreaSpacer bottomInset={0} keyboardGap={SEARCH_KEYBOARD_GAP} />
+          <SearchBarOverlay placeholder="Søg i filer..." onChangeText={setSearch} bottomInset={insets.bottom} />
         )}
       </KeyboardAvoidingView>
-      {!isLoading && !fetchError && files.length > 0 && (
-        <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />
-      )}
     </ModalScreen>
   );
 }
