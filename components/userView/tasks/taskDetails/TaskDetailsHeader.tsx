@@ -2,6 +2,7 @@ import { Platform, Share } from "react-native";
 import PathHeader from "@/components/userView/common/PathHeader";
 import GlassPillButton from "@/components/userView/common/buttons/GlassPillButton";
 import { MenuAction } from "@/types/pill";
+import { FE_URL } from "@/constants/urls";
 
 interface Props {
   title?: string;
@@ -23,7 +24,7 @@ export default function TaskDetailsHeader({ title, path, taskId, menuActions = [
               ? [{
                 systemName: "square.and.arrow.up" as const,
                 onPress: async () => {
-                  const url = `${process.env.EXPO_PUBLIC_FE_URL}/tasks?taskId=${taskId}`;
+                  const url = `${FE_URL}/tasks?taskId=${encodeURIComponent(taskId)}`;
                   try {
                     await Share.share(
                       Platform.OS === "ios"
