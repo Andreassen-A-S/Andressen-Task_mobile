@@ -5,14 +5,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
-import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
-import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
+import SearchBarOverlay from "@/components/userView/common/SearchBarOverlay";
 import { pickerStore } from "@/lib/pickerStore";
 import { ListModalOption } from "@/types/picker";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 
-const SEARCH_KEYBOARD_GAP = 8;
+const SEARCHBAR_HEIGHT = Platform.OS === "ios" ? 56 : 64;
 
 export default function ListPicker() {
   const router = useRouter();
@@ -54,7 +53,7 @@ export default function ListPicker() {
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.value}
-          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: isSearchable ? 16 : insets.bottom + 16 }}
+          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: isSearchable ? SEARCHBAR_HEIGHT + insets.bottom + 16 : insets.bottom + 16 }}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={() => <View style={{ height: 1, backgroundColor: colors.border }} />}
           ListFooterComponent={() => <View style={{ height: 1, backgroundColor: colors.border }} />}
@@ -82,10 +81,8 @@ export default function ListPicker() {
             );
           }}
         />
-        {isSearchable && <NativeSearchBar placeholder="Søg" onChangeText={setSearch} />}
-        {isSearchable && <KeyboardSafeAreaSpacer bottomInset={0} keyboardGap={SEARCH_KEYBOARD_GAP} />}
+        {isSearchable && <SearchBarOverlay onChangeText={setSearch} bottomInset={insets.bottom} />}
       </KeyboardAvoidingView>
-      {isSearchable && <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />}
     </ModalScreen>
   );
 }

@@ -5,15 +5,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
-import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
-import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
+import SearchBarOverlay from "@/components/userView/common/SearchBarOverlay";
 import { getProjects } from "@/lib/api";
 import { Project } from "@/types/project";
 import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ProjectAvatar from "@/components/userView/common/label/ProjectAvatar";
 
-const SEARCH_KEYBOARD_GAP = 8;
+const SEARCHBAR_HEIGHT = Platform.OS === "ios" ? 56 : 64;
 
 export default function AddProjectPicker() {
   const router = useRouter();
@@ -51,7 +50,7 @@ export default function AddProjectPicker() {
             <FlatList
               data={filtered}
               keyExtractor={(item) => item.project_id}
-              contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: 16, flexGrow: 1 }}
+              contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: SEARCHBAR_HEIGHT + insets.bottom + 16, flexGrow: 1 }}
               showsVerticalScrollIndicator={false}
               ListHeaderComponent={() => (
                 <View style={{ height: 1, backgroundColor: colors.border }} />
@@ -98,11 +97,9 @@ export default function AddProjectPicker() {
               }
             />
           )}
+          <SearchBarOverlay onChangeText={setSearch} bottomInset={insets.bottom} />
         </View>
-        <NativeSearchBar placeholder="Søg" onChangeText={setSearch} />
-        <KeyboardSafeAreaSpacer bottomInset={0} keyboardGap={SEARCH_KEYBOARD_GAP} />
       </KeyboardAvoidingView>
-      <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />
     </ModalScreen>
   );
 }

@@ -6,21 +6,21 @@ import { useRouter } from "expo-router";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
-import NativeSearchBar from "@/components/userView/common/NativeSearchBar";
-import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
+import SearchBarOverlay from "@/components/userView/common/SearchBarOverlay";
 import SingleAvatar from "@/components/userView/common/label/singleAvatar";
 import ProjectAvatar from "@/components/userView/common/label/ProjectAvatar";
 import { multiSelectStore } from "@/lib/multiSelectStore";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
 
-const SEARCH_KEYBOARD_GAP = 8;
+const SEARCHBAR_HEIGHT = Platform.OS === "ios" ? 56 : 64;
 
 export interface MultiSelectOption {
   label: string;
   value: string;
   subtitle?: string;
   color?: string;
+  imageUrl?: string | null;
 }
 
 type ListItem =
@@ -120,7 +120,7 @@ export default function MultiPicker({ title, options, isLoading, error, searchab
         <View style={{ marginRight: 16 }}>
           {option.color
             ? <ProjectAvatar name={option.label} color={option.color} size="sm" />
-            : <SingleAvatar name={option.label} size="lg" />}
+            : <SingleAvatar name={option.label} imageUrl={option.imageUrl} size="lg" />}
         </View>
         <View style={{ flex: 1 }}>
           <Text style={typography.h6} numberOfLines={1}>{option.label}</Text>
@@ -163,7 +163,7 @@ export default function MultiPicker({ title, options, isLoading, error, searchab
               keyExtractor={keyExtractor}
               renderItem={renderItem}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: searchable ? 16 : insets.bottom + 16 }}
+              contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: searchable ? SEARCHBAR_HEIGHT + insets.bottom + 16 : insets.bottom + 16 }}
               ItemSeparatorComponent={({ leadingItem }) => {
                 if (leadingItem.type !== "option" || leadingItem.isLast) return null;
                 return (
@@ -174,11 +174,9 @@ export default function MultiPicker({ title, options, isLoading, error, searchab
               }}
             />
           )}
+          {searchable && <SearchBarOverlay onChangeText={setSearch} bottomInset={insets.bottom} />}
         </View>
-        {searchable && <NativeSearchBar placeholder="Søg" onChangeText={setSearch} />}
-        {searchable && <KeyboardSafeAreaSpacer bottomInset={0} keyboardGap={SEARCH_KEYBOARD_GAP} />}
       </KeyboardAvoidingView>
-      {searchable && <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />}
     </ModalScreen>
   );
 }

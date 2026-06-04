@@ -276,7 +276,7 @@ export default function UserTaskDetails() {
 
               {creator?.name && (
                 <View className="flex-row items-center gap-3">
-                  <SingleAvatar name={creator.name} size="lg" />
+                  <SingleAvatar name={creator.name} imageUrl={creator.profile_picture_url} size="lg" />
                   <View>
                     <Text style={[typography.labelMd, { marginBottom: 2 }]}>
                       Oprettet af {creator.name}

@@ -1,5 +1,4 @@
 import { View, TextInput } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "@/constants/colors";
 import { typography } from "@/constants/typography";
@@ -13,12 +12,8 @@ export default function NativeSearchBar({ placeholder = "Søg...", onChangeText 
   const searchBarHeight = 8 + 56;
 
   return (
-    <View style={{ height: searchBarHeight }}>
-      <LinearGradient
-        colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
-        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-      />
-      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+    <View style={{ height: searchBarHeight, justifyContent: "flex-end", paddingBottom: 8 }}>
+      <View style={{ paddingHorizontal: 16 }}>
         <View style={{
           flexDirection: "row",
           alignItems: "center",

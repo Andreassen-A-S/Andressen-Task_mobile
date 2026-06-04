@@ -1,36 +1,59 @@
+import { Image } from "expo-image";
 import { typography } from "@/constants/typography";
 import { getInitials, getAvatarColor } from "@/helpers/helpers";
 import { View, Text } from "react-native";
 
 interface SingleAvatarProps {
     name: string;
+    imageUrl?: string | null;
     size?: "xs" | "sm" | "md" | "lg";
     className?: string;
 }
 
+const sizeClasses = {
+    xs: "w-6 h-6",
+    sm: "w-8 h-8",
+    md: "w-[26px] h-[26px]",
+    lg: "w-[34px] h-[34px]",
+};
+
+const sizePx = {
+    xs: 24,
+    sm: 32,
+    md: 26,
+    lg: 34,
+};
+
+const fontSize = {
+    xs: typography.initialsSm,
+    sm: typography.initialsSm,
+    md: typography.initialsMd,
+    lg: typography.initialsLg,
+};
+
 export default function SingleAvatar({
     name,
+    imageUrl,
     size = "md",
     className = ""
 }: SingleAvatarProps) {
-    const sizeClasses = {
-        xs: "w-6 h-6",
-        sm: "w-8 h-8",
-        md: "w-[26px] h-[26px]",
-        lg: "w-[34px] h-[34px]",
-    };
-    const fontSize = {
-        xs: typography.initialsSm,
-        sm: typography.initialsSm,
-        md: typography.initialsMd,
-        lg: typography.initialsLg,
-    };
+    const px = sizePx[size];
+
+    if (imageUrl) {
+        return (
+            <Image
+                source={{ uri: imageUrl }}
+                style={{ width: px, height: px, borderRadius: 999 }}
+                contentFit="cover"
+            />
+        );
+    }
 
     return (
         <View
             className={`
                 ${sizeClasses[size]}
-                rounded-lg
+                rounded-full
                 flex items-center justify-center
                 ${className}
             `}
