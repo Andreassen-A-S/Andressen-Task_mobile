@@ -40,7 +40,7 @@ const MonthGridPage = React.memo(function MonthGridPage({ date, selectedDate, to
 
   return (
     <View className="px-3">
-      <View className="flex-row flex-wrap gap-0.5" style={{ alignContent: "flex-start" }}>
+      <View className="flex-row flex-wrap gap-0.5 content-start">
         {days.map((day, idx) => {
           const taskCount = getTaskCountForDate(day.date);
           const isSelected = day.date.toDateString() === selectedDate.toDateString();

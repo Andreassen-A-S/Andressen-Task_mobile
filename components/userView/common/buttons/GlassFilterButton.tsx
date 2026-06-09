@@ -25,10 +25,10 @@ export default function GlassFilterButton({ icon: Icon, label, variant, count, o
       <Pressable
         onPress={onPress}
         android_ripple={{ color: colors.border, borderless: false }}
-        style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 7 }}
+        className="flex-row items-center gap-1.5 px-[10] py-[7]"
       >
         {isMulti ? (
-          <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#007AFF", alignItems: "center", justifyContent: "center" }}>
+          <View className="w-5 h-5 rounded-full bg-[#007AFF] items-center justify-center">
             <Text className="btn-sm text-white">{count}</Text>
           </View>
         ) : active && Icon ? (

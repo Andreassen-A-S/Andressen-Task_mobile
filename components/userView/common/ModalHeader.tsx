@@ -29,7 +29,7 @@ export default function ModalHeader({ title, sub, rightContent, onClose, style, 
     <Animated.View style={[{ position: "absolute", left: 0, right: 0, top: 0, zIndex: 10, height: headerHeight }, style]} pointerEvents={pointerEvents}>
       {Platform.OS === "ios" && (
         <MaskedView
-          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+          className="absolute inset-0"
           maskElement={
             <LinearGradient
               colors={["black", "black", "transparent"]}
@@ -48,11 +48,11 @@ export default function ModalHeader({ title, sub, rightContent, onClose, style, 
       />
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, height: 56, marginTop: topSpacing }}>
         <GlassIconButton icon={X} onPress={onClose ?? (() => router.back())} size="lg" />
-        <View style={{ position: "absolute", left: 0, right: 0, alignItems: "center" }} pointerEvents="none">
+        <View className="absolute left-0 right-0 items-center" pointerEvents="none">
           <Text className="h4" numberOfLines={1}>{title ?? ""}</Text>
           {sub ? <Text className="body-xs">{sub}</Text> : null}
         </View>
-        {rightContent ?? <View style={{ width: 48 }} />}
+        {rightContent ?? <View className="w-12" />}
       </View>
     </Animated.View>
   );

@@ -383,17 +383,17 @@ export default function TaskComments() {
 
   return (
     <ModalScreen title="Kommentarer">
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
-        <View style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" className="flex-1" keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
+        <View className="flex-1">
           {isLoading ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
               <ActivityIndicator color={colors.green} size="large" />
             </View>
           ) : fetchError ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight, paddingHorizontal: 24 }}>
-              <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
-                <Text className="body-sm text-danger-text" style={{ textAlign: "center", marginBottom: 12 }}>{fetchError}</Text>
-                <TouchableOpacity onPress={() => fetchComments()} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
+              <View className="rounded-xl p-4 w-full items-center border border-danger-border bg-danger-surface">
+                <Text className="body-sm text-danger-text text-center mb-3">{fetchError}</Text>
+                <TouchableOpacity onPress={() => fetchComments()} className="px-4 py-2 rounded-lg bg-danger">
                   <Text className="btn-md text-white">Prøv igen</Text>
                 </TouchableOpacity>
               </View>
@@ -424,8 +424,8 @@ export default function TaskComments() {
               <View style={{ flex: 1, minHeight: headerHeight + 16 }} />
 
               {listData.length === 0 ? (
-                <View style={{ alignItems: "center" }}>
-                  <Text className="body-sm text-muted" style={{ textAlign: "center" }}>
+                <View className="items-center">
+                  <Text className="body-sm text-muted text-center">
                     Ingen kommentarer endnu.{"\n"}Skriv den første!
                   </Text>
                 </View>
@@ -433,13 +433,13 @@ export default function TaskComments() {
                 listData.map((item) => {
                   if (item.type === "timestamp") {
                     return (
-                      <Text key={item.key} className="mono-xs text-muted" style={{ textAlign: "center", marginVertical: 4 }}>
+                      <Text key={item.key} className="mono-xs text-muted text-center my-1">
                         {item.label}
                       </Text>
                     );
                   }
                   return (
-                    <View key={item.data.comment_id} style={{ marginBottom: 8 }}>
+                    <View key={item.data.comment_id} className="mb-2">
                       {currentUser?.user_id === item.data.user_id
                         ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} />
                         : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />}
@@ -472,7 +472,7 @@ export default function TaskComments() {
         </View>
 
         {isLoading ? null : isArchived ? (
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 12, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
+          <View className="flex-row items-center justify-center gap-1.5 py-3 px-4 bg-surface-subtle border-t border-border">
             <Lock size={13} color={colors.textMuted} strokeWidth={2.2} />
             <Text className="label-sm text-muted">Arkiveret — kun visning</Text>
           </View>

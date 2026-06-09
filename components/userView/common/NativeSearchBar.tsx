@@ -12,18 +12,9 @@ export default function NativeSearchBar({ placeholder = "Søg...", onChangeText,
   const searchBarHeight = 8 + 56;
 
   return (
-    <View style={{ height: searchBarHeight, justifyContent: "flex-end", paddingBottom: 8 }}>
-      <View style={{ paddingHorizontal: 16 }}>
-        <View style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: colors.white,
-          borderRadius: 999,
-          paddingHorizontal: 16,
-          paddingVertical: 6,
-          borderColor: colors.border,
-          borderWidth: 1,
-        }}>
+    <View style={{ height: searchBarHeight }} className="justify-end pb-2">
+      <View className="px-4">
+        <View className="flex-row items-center bg-surface rounded-full px-4 py-1.5 border border-border">
           <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} strokeWidth={2.2} />
           <TextInput
             onChangeText={onChangeText}

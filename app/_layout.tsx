@@ -116,7 +116,7 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.charcoal }}>
+    <GestureHandlerRootView className="flex-1 bg-charcoal">
       <KeyboardProvider>
         <StatusBar style="light" />
         <AuthProvider>

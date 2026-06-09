@@ -77,7 +77,7 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
             </TouchableOpacity>
           </View>
 
-          <View className="h-3 rounded-full overflow-hidden mt-3" style={{ backgroundColor: colors.eggWhite }}>
+          <View className="h-3 rounded-full overflow-hidden mt-3 bg-background">
             <View
               className="h-full rounded-full"
               style={{ width: `${clampedPct}%`, backgroundColor: colors.green }}
@@ -102,14 +102,8 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
               onSubmitEditing={handleConfirm}
               placeholder="0"
               placeholderTextColor={colors.textMuted}
-              className="body-md"
-              style={{
-                borderWidth: 1,
-                borderColor: inputError ? colors.redBorder : colors.border,
-                borderRadius: 10,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-              }}
+              className="body-md border rounded-[10] px-3 py-2.5"
+              style={{ borderColor: inputError ? colors.redBorder : colors.border }}
             />
             {inputError && (
               <Text className="body-xs text-danger-text">Indtast et gyldigt tal større end 0</Text>

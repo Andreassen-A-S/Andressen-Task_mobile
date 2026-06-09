@@ -59,7 +59,8 @@ export default function SlideToComplete({ onComplete, isCompleted = false, isUpd
 
   return (
     <View
-      style={{ height: TRACK_HEIGHT, borderRadius: TRACK_HEIGHT / 2, backgroundColor: colors.eggWhite, overflow: "hidden", maxWidth: 300, alignSelf: "center", width: "100%" }}
+      style={{ height: TRACK_HEIGHT, borderRadius: TRACK_HEIGHT / 2 }}
+      className="bg-background overflow-hidden max-w-[300] self-center w-full"
       onLayout={(e) => { trackWidth.value = e.nativeEvent.layout.width; }}
     >
       <Animated.View

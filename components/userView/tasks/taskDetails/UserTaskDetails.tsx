@@ -221,7 +221,7 @@ export default function UserTaskDetails() {
     : null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.eggWhite }}>
+    <View className="flex-1 bg-background">
       <Stack.Screen options={{ headerShown: false }} />
       <TaskDetailsHeader
         title={task?.title}

@@ -125,8 +125,7 @@ export default function AddTaskForm() {
         underlineColorAndroid="transparent"
         placeholder="Titel"
         placeholderTextColor={colors.textMuted}
-        className="h3"
-        style={{ marginBottom: 22, padding: 0 }}
+        className="h3 mb-[22] p-0"
         multiline
       />
       <TextInput
@@ -145,14 +144,7 @@ export default function AddTaskForm() {
         spellCheck={true}
       />
       {error ? (
-        <View style={{
-          marginTop: 12,
-          padding: 12,
-          borderRadius: 10,
-          backgroundColor: colors.redLight,
-          borderWidth: 1,
-          borderColor: colors.redBorder,
-        }}>
+        <View className="mt-3 p-3 rounded-[10] border border-danger-border bg-danger-surface">
           <Text className="body-sm text-danger-text">{error}</Text>
         </View>
       ) : null}
@@ -183,7 +175,7 @@ export default function AddTaskForm() {
       {Platform.OS === "ios" ? (
         <>
           <KeyboardAwareScrollView
-            style={{ flex: 1 }}
+            className="flex-1"
             contentContainerStyle={{ paddingTop: headerHeight + 16, paddingHorizontal: 16, paddingBottom: iosToolbarHeight + 16 }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="always"
@@ -206,9 +198,9 @@ export default function AddTaskForm() {
         </>
       ) : (
         <>
-          <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={0}>
+          <KeyboardAvoidingView behavior="padding" className="flex-1" keyboardVerticalOffset={0}>
             <ScrollView
-              style={{ flex: 1 }}
+              className="flex-1"
               contentContainerStyle={{ paddingTop: headerHeight + 16, paddingHorizontal: 16, paddingBottom: 16 }}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="always"

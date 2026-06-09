@@ -20,14 +20,7 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
   const { size, paddingSize } = VARIANTS[variant];
 
   return (
-    <View style={{
-      flexDirection: "row",
-      borderRadius: 999,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: "hidden",
-    }}>
+    <View className="flex-row rounded-full bg-surface border border-border overflow-hidden">
       {items.map((item, index) => {
         const Icon = item.icon ?? Ellipsis;
         const enabledActions = item.menuActions?.filter((a) => !a.disabled) ?? [];

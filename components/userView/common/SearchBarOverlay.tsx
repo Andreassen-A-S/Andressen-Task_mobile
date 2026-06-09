@@ -15,7 +15,7 @@ interface Props {
 
 export default function SearchBarOverlay({ placeholder = "Søg", onChangeText, onFocusChange, bottomInset }: Props) {
   return (
-    <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+    <View className="absolute bottom-0 left-0 right-0">
       <LinearGradient
         colors={[`${colors.eggWhite}00`, colors.eggWhite]}
         style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}

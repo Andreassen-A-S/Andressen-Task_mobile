@@ -42,7 +42,7 @@ export default function GlassIconButton({ icon: Icon, onPress, size = "sm", vari
         onPress={onPress}
         disabled={variant === "inactive"}
         android_ripple={{ color: colors.border, borderless: false }}
-        style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        className="flex-1 items-center justify-center"
       >
         <Icon size={iconSize} color={iconColor} strokeWidth={2.2} />
       </Pressable>

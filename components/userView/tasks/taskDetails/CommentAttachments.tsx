@@ -30,7 +30,7 @@ function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-s
             <Image
               source={{ uri: images[0].url, cacheKey: images[0].attachment_id }}
               cachePolicy="memory-disk"
-              style={{ width: "100%", height: "100%" }}
+              className="w-full h-full"
               contentFit="cover"
               transition={200}
             />
@@ -63,7 +63,7 @@ function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-s
               <View style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10, overflow: "hidden", borderWidth: 0.5, borderColor: colors.border, backgroundColor: colors.muted }}>
                 <Image
                   source={{ uri: images[imgIndex].url, cacheKey: images[imgIndex].attachment_id }}
-                  style={{ width: "100%", height: "100%" }}
+                  className="w-full h-full"
                   contentFit="cover"
                   transition={200}
                 />

@@ -56,8 +56,7 @@ export default function LoginForm() {
           <View className="items-center mb-10">
             <Image
               source={require("@/assets/logo.png")}
-              className="mb-2"
-              style={{ height: 80, width: 150 }}
+              className="mb-2 h-20 w-[150]"
               resizeMode="contain"
             />
             <Text className="h2">Andreassen TMS</Text>
@@ -69,11 +68,10 @@ export default function LoginForm() {
             <View className="gap-1.5">
               <Text className="label-lg">E-mail</Text>
               <View
-                className="flex-row items-center bg-white border-border border rounded-[10px] px-3"
-                style={{ height: 48 }}
+                className="flex-row items-center bg-white border-border border rounded-[10px] px-3 h-12"
               >
                 {/* height: 20 works around a Fabric stale-view bug that clips the TextInput after navigating away and back */}
-                <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
+                <View className="flex-1 flex-row items-center h-5">
                   <Mail size={18} color={colors.textMuted} style={{ marginRight: 8 }} strokeWidth={2.2} />
                   <View className="flex-1">
                     {!email && (
@@ -110,11 +108,10 @@ export default function LoginForm() {
             <View className="gap-1.5">
               <Text className="label-lg">Adgangskode</Text>
               <View
-                className="flex-row items-center bg-white border-border border rounded-[10px] px-3"
-                style={{ height: 48 }}
+                className="flex-row items-center bg-white border-border border rounded-[10px] px-3 h-12"
               >
                 {/* height: 20 works around a Fabric stale-view bug that clips the TextInput after navigating away and back */}
-                <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
+                <View className="flex-1 flex-row items-center h-5">
                   <Lock size={18} color={colors.textMuted} style={{ marginRight: 8 }} strokeWidth={2.2} />
                   <View className="flex-1">
                     {!password && (
@@ -170,7 +167,7 @@ export default function LoginForm() {
               {isLoading ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="btn-lg" style={{ color: "white" }}>Log ind</Text>
+                <Text className="btn-lg text-white">Log ind</Text>
               )}
             </TouchableOpacity>
           </View>

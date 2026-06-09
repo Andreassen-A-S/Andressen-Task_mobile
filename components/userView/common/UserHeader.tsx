@@ -70,13 +70,13 @@ export default function UserHeader({ variant, user, heading, sub, position, onAd
     if (variant === "admin") {
         return (
             <View style={{ paddingTop: top }} className="flex-row items-center bg-charcoal border-b border-border px-4 pb-3 gap-3">
-                <View style={{ flex: 1, height: 40, justifyContent: "center" }}>
+                <View className="flex-1 h-10 justify-center">
                     {/* Default state: title + plus — fades out together */}
                     <Animated.View
                         style={{ opacity: titleOpacity, position: "absolute", left: 0, right: 0, flexDirection: "row", alignItems: "center" }}
                         pointerEvents={searchActive ? "none" : "auto"}
                     >
-                        <View style={{ flex: 1 }}>
+                        <View className="flex-1">
                             <Text className="h3-white">{heading || "Alle opgaver"}</Text>
                             <Text className="caption">{sub || "Admin oversigt"}</Text>
                         </View>
@@ -93,8 +93,7 @@ export default function UserHeader({ variant, user, heading, sub, position, onAd
                             onChangeText={(text) => { setQuery(text); onSearchChange?.(text); }}
                             placeholder="Søg opgaver..."
                             placeholderTextColor={colors.textMuted}
-                            className="h3-white"
-                            style={{ padding: 0 }}
+                            className="h3-white p-0"
                             autoCapitalize="none"
                             autoCorrect={false}
                             returnKeyType="search"

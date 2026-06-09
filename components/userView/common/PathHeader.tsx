@@ -44,7 +44,7 @@ export default function PathHeader({ title, path, rightContent, modal = false, b
     >
       {Platform.OS === "ios" ? (
         <MaskedView
-          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+          className="absolute inset-0"
           maskElement={
             <LinearGradient
               colors={["black", "black", "transparent"]}
@@ -64,9 +64,9 @@ export default function PathHeader({ title, path, rightContent, modal = false, b
       )}
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, height: 56, marginTop: topSpacing }} >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, flex: 1 }}>
+        <View className="flex-row items-center gap-3 flex-1">
           <GlassIconButton icon={ChevronLeft} onPress={() => router.back()} size="lg" />
-          <View style={{ flex: 1 }}>
+          <View className="flex-1">
             <Text className="h6" numberOfLines={1}>{title ?? ""}</Text>
             {path ? <Text className="body-xs" numberOfLines={1}>{path}</Text> : null}
           </View>

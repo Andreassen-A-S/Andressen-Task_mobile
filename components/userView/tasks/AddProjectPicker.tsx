@@ -42,7 +42,7 @@ export default function AddProjectPicker() {
       headerStyle={headerStyle}
       headerPointerEvents={headerPointerEvents}
     >
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
+      <KeyboardAvoidingView behavior="padding" className="flex-1" keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
         <View className="flex-1">
           <Animated.View style={spacerStyle} />
           {isLoading ? (

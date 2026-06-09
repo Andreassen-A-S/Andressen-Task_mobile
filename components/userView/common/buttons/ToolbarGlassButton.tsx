@@ -22,7 +22,7 @@ export default function ToolbarGlassButton({ icon: Icon, label, tint, onPress }:
       <Pressable
         onPress={onPress}
         android_ripple={{ color: colors.border, borderless: false }}
-        style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 8 }}
+        className="flex-row items-center gap-1 px-3 py-2"
       >
         <Icon size={13} color={active ? colors.white : colors.textSecondary} strokeWidth={2.2} />
         <Text className="btn-sm" style={{ color: active ? colors.white : colors.textSecondary }}>{label}</Text>
