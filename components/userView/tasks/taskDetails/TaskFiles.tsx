@@ -80,7 +80,7 @@ export default function TaskFiles() {
             <FlatList
               data={filtered}
               keyExtractor={(item) => item.attachment_id}
-              contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 16, gap: 8, paddingBottom: SEARCHBAR_HEIGHT + insets.bottom + 16 }}
+              contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 16, gap: 8, paddingBottom: SEARCHBAR_HEIGHT + 20 + 16 }}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (
                 (() => {
@@ -108,7 +108,7 @@ export default function TaskFiles() {
             />
           )}
           {!isLoading && !fetchError && files.length > 0 && (
-            <SearchBarOverlay placeholder="Søg i filer..." onChangeText={setSearch} onFocusChange={handleFocusChange} bottomInset={insets.bottom} />
+            <SearchBarOverlay placeholder="Søg i filer..." onChangeText={setSearch} onFocusChange={handleFocusChange} bottomInset={20} />
           )}
         </View>
       </KeyboardAvoidingView>

@@ -57,7 +57,7 @@ export default function AddProjectPicker() {
             <FlatList
               data={filtered}
               keyExtractor={(item) => item.project_id}
-              contentContainerStyle={{ paddingBottom: SEARCHBAR_HEIGHT + insets.bottom + 16, flexGrow: 1 }}
+              contentContainerStyle={{ paddingBottom: SEARCHBAR_HEIGHT + 20 + 16, flexGrow: 1 }}
               showsVerticalScrollIndicator={false}
               ListHeaderComponent={() => (
                 <View className="h-px bg-border" />
@@ -99,7 +99,7 @@ export default function AddProjectPicker() {
               }
             />
           )}
-          <SearchBarOverlay onChangeText={setSearch} onFocusChange={handleFocusChange} bottomInset={insets.bottom} />
+          <SearchBarOverlay onChangeText={setSearch} onFocusChange={handleFocusChange} bottomInset={20} />
         </View>
       </KeyboardAvoidingView>
     </ModalScreen>

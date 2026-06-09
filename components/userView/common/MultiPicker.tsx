@@ -86,7 +86,7 @@ export default function MultiPicker({ title, options, isLoading, error, searchab
           ) : (
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: searchable ? SEARCHBAR_HEIGHT + insets.bottom + 16 : insets.bottom + 16 }}
+              contentContainerStyle={{ paddingBottom: searchable ? SEARCHBAR_HEIGHT + 20 + 16 : insets.bottom + 16 }}
             >
               <View className="px-4 pb-2 bg-background">
                 <Text className="body-md font-semibold !text-secondary">Valgte</Text>

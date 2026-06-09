@@ -61,7 +61,7 @@ export default function ListPicker() {
           <FlatList
             data={filtered}
             keyExtractor={(item) => item.value}
-            contentContainerStyle={{ paddingBottom: isSearchable ? SEARCHBAR_HEIGHT + insets.bottom + 16 : insets.bottom + 16 }}
+            contentContainerStyle={{ paddingBottom: isSearchable ? SEARCHBAR_HEIGHT + 20 + 16 : insets.bottom + 16 }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
               <View className="px-4 py-3.5 bg-white">
