@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { Task, TaskStatus, TaskUnit } from "@/types/task";
-import { formatLocalDate, formatNumber, getPriorityAccentColors, translateTaskUnit } from "@/helpers/helpers";
+import { formatLocalDate, formatNumber, getPriorityBarColor, translateTaskUnit } from "@/helpers/helpers";
 import Badge from "../common/label/badge";
 import RecurringBadge from "../common/label/recurringBadge";
 import { colors } from "@/constants/colors";
@@ -36,7 +36,7 @@ export default function CalendarTaskCard({ task, onClick }: Props) {
         opacity: isCompleted ? 0.6 : 1,
       }}
     >
-      <View className={`w-1 ${getPriorityAccentColors(task.priority)}`} />
+      <View className={`w-1 ${getPriorityBarColor(task.priority)}`} />
       <View className="flex-1 px-3 py-2">
         <View className="flex-row items-start justify-between gap-2 mb-1">
           <Text

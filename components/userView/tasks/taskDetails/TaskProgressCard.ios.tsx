@@ -44,7 +44,7 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
       <View className="px-4 pt-4 pb-4">
         <View className="flex-row items-stretch justify-between mb-1">
           <View>
-            <Text className="h2 text-accent leading-tight">
+            <Text className="h2 !text-accent leading-tight">
               {formatNumber(clampedPct)}%
             </Text>
             {unitLabel && unitLabel !== "%" && (

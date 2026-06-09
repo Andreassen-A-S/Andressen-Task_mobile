@@ -42,6 +42,8 @@ export default function AddGoalPicker() {
   const [unit, setUnit] = useState<TaskUnit>(initial?.unit ?? TaskUnit.NONE);
   const isPercentageUnit = unit === TaskUnit.NONE;
 
+  useEffect(() => () => goalStore.clear(), []);
+
   useEffect(() => {
     if (!isPercentageUnit) return;
     setQuantityRaw(formatNumber(PERCENT_TARGET));
