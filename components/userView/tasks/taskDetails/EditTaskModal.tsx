@@ -19,7 +19,6 @@ import { multiSelectStore } from "@/lib/multiSelectStore";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import Badge from "@/components/userView/common/label/badge";
 import SingleAvatar from "@/components/userView/common/label/singleAvatar";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { formatRelativeDate, toIsoDate, toDateKey } from "@/helpers/helpers";
 import { ListModalOption } from "@/types/picker";
@@ -47,15 +46,15 @@ interface EditRowProps {
 
 function EditRow({ label, onEdit, isSaving, children }: EditRowProps) {
   return (
-    <View style={{ backgroundColor: colors.eggWhite }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 }}>
-        <Text style={[typography.overline, { color: colors.textMuted }]}>{label}</Text>
+    <View className="bg-background">
+      <View className="flex-row justify-between items-center px-4 pt-3 pb-2.5">
+        <Text className="overline text-muted">{label}</Text>
         <TouchableOpacity onPress={onEdit} disabled={isSaving} hitSlop={8}>
-          <Text style={[typography.bodySm, { color: colors.blue }]}>Rediger</Text>
+          <Text className="body-sm text-link">Rediger</Text>
         </TouchableOpacity>
       </View>
-      <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 16 }} />
-      <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, backgroundColor: colors.eggWhite, alignItems: "flex-start" }}>
+      <View className="h-px bg-border mx-4" />
+      <View className="px-4 pt-3 pb-4 bg-background items-start">
         {children}
       </View>
     </View>
@@ -185,7 +184,7 @@ export default function EditTaskModal() {
   return (
     <ModalScreen title="Rediger opgave" sub={task?.title}>
       {isLoading ? (
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <View className="flex-1 items-center justify-center">
           <ActivityIndicator color={colors.green} size="large" />
         </View>
       ) : task ? (
@@ -197,23 +196,23 @@ export default function EditTaskModal() {
           showsVerticalScrollIndicator={false}
         >
           {isSaving && (
-            <View style={{ paddingHorizontal: 16, paddingVertical: 6, alignItems: "flex-end" }}>
+            <View className="px-4 py-1.5 items-end">
               <ActivityIndicator color={colors.textMuted} size="small" />
             </View>
           )}
 
           <EditRow label="Tildelte" onEdit={openAssigneesPicker} isSaving={isSaving}>
             {assignedUserObjects.length > 0 ? (
-              <View style={{ gap: 10 }}>
+              <View className="gap-2.5">
                 {assignedUserObjects.map((u) => (
-                  <View key={u.user_id} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <View key={u.user_id} className="flex-row items-center gap-2.5">
                     <SingleAvatar name={u.name} imageUrl={u.profile_picture_url} size="lg" />
-                    <Text style={typography.bodySm}>{u.name}</Text>
+                    <Text className="body-sm">{u.name}</Text>
                   </View>
                 ))}
               </View>
             ) : (
-              <Text style={[typography.bodySm, { color: colors.textMuted }]}>Ingen tildelte</Text>
+              <Text className="body-sm text-muted">Ingen tildelte</Text>
             )}
           </EditRow>
 
@@ -226,25 +225,25 @@ export default function EditTaskModal() {
           </EditRow>
 
           <EditRow label="Startdato" onEdit={openStartDatePicker} isSaving={isSaving}>
-            <Text style={typography.bodySm}>
+            <Text className="body-sm">
               {task.start_date ? formatRelativeDate(task.start_date) : "Ingen dato"}
             </Text>
           </EditRow>
 
           <EditRow label="Deadline" onEdit={openDeadlinePicker} isSaving={isSaving}>
-            <Text style={typography.bodySm}>
+            <Text className="body-sm">
               {task.deadline ? formatRelativeDate(task.deadline) : "Ingen deadline"}
             </Text>
           </EditRow>
 
           <EditRow label="Projekt" onEdit={openProjectPicker} isSaving={isSaving}>
             {task.project ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View className="flex-row items-center gap-2.5">
                 <ProjectAvatar name={task.project.name} color={task.project.color} size="sm" />
-                <Text style={typography.bodySm}>{task.project.name}</Text>
+                <Text className="body-sm">{task.project.name}</Text>
               </View>
             ) : (
-              <Text style={[typography.bodySm, { color: colors.textMuted }]}>Intet projekt</Text>
+              <Text className="body-sm text-muted">Intet projekt</Text>
             )}
           </EditRow>
 

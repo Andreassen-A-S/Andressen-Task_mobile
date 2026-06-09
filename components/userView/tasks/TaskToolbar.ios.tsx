@@ -1,10 +1,11 @@
 import { useRef } from "react";
+import { type LucideIcon } from "lucide-react-native";
 import { Host, ScrollView, HStack } from "@expo/ui/swift-ui";
 import { padding } from "@expo/ui/swift-ui/modifiers";
 import ToolbarGlassButton from "@/components/userView/common/buttons/ToolbarGlassButton";
 
 export interface TaskToolbarItem {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   tint?: string;
   onPress: () => void;

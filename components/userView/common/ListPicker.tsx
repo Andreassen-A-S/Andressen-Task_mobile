@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { Platform, View, Text, FlatList, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Check } from "lucide-react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
+import Animated from "react-native-reanimated";
+import ModalScreen, { useCompactingModalHeader, useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import SearchBarOverlay from "@/components/userView/common/SearchBarOverlay";
 import { pickerStore } from "@/lib/pickerStore";
 import { ListModalOption } from "@/types/picker";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
 
 const SEARCHBAR_HEIGHT = Platform.OS === "ios" ? 56 : 64;
 
@@ -27,6 +27,7 @@ export default function ListPicker() {
 
   const [search, setSearch] = useState("");
   const headerHeight = useModalHeaderHeight(!!sub) + 20;
+  const { headerStyle, headerPointerEvents, spacerStyle, handleFocusChange } = useCompactingModalHeader(headerHeight);
 
   useEffect(() => () => pickerStore.clear(), []);
 
@@ -48,40 +49,46 @@ export default function ListPicker() {
   };
 
   return (
-    <ModalScreen title={title} sub={sub}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.value}
-          contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: isSearchable ? SEARCHBAR_HEIGHT + insets.bottom + 16 : insets.bottom + 16 }}
-          showsVerticalScrollIndicator={false}
-          ListHeaderComponent={() => <View style={{ height: 1, backgroundColor: colors.border }} />}
-          ListFooterComponent={() => <View style={{ height: 1, backgroundColor: colors.border }} />}
-          ListEmptyComponent={() => (
-            <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: colors.white }}>
-              <Text style={[typography.bodySm, { color: colors.textMuted }]}>Ingen resultater</Text>
-            </View>
-          )}
-          ItemSeparatorComponent={() => (
-            <View style={{ backgroundColor: colors.white }}>
-              <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 16 }} />
-            </View>
-          )}
-          renderItem={({ item }) => {
-            const isSelected = item.value === selected;
-            return (
-              <TouchableOpacity
-                onPress={() => handleSelect(isClearable && isSelected ? "" : item.value)}
-                style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: colors.white }}
-              >
-                {item.icon ? <View style={{ marginRight: 12 }}>{item.icon}</View> : null}
-                {item.label ? <Text style={[typography.h5, { flex: 1 }]} numberOfLines={1}>{item.label}</Text> : <View style={{ flex: 1 }} />}
-                {isSelected && <Ionicons name="checkmark" size={18} color={colors.green} />}
-              </TouchableOpacity>
-            );
-          }}
-        />
-        {isSearchable && <SearchBarOverlay onChangeText={setSearch} bottomInset={insets.bottom} />}
+    <ModalScreen
+      title={title}
+      sub={sub}
+      headerStyle={headerStyle}
+      headerPointerEvents={headerPointerEvents}
+    >
+      <KeyboardAvoidingView behavior="padding" className="flex-1" keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
+        <View className="flex-1">
+          <Animated.View style={spacerStyle} />
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.value}
+            contentContainerStyle={{ paddingBottom: isSearchable ? SEARCHBAR_HEIGHT + 20 + 16 : insets.bottom + 16 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={() => (
+              <View className="px-4 py-3.5 bg-white">
+                <Text className="body-sm text-muted">Ingen resultater</Text>
+              </View>
+            )}
+            ItemSeparatorComponent={() => (
+              <View className="bg-white">
+                <View className="h-px bg-border ml-4" />
+              </View>
+            )}
+            renderItem={({ item }) => {
+              const isSelected = item.value === selected;
+              return (
+                <TouchableOpacity
+                  onPress={() => handleSelect(isClearable && isSelected ? "" : item.value)}
+                  className="flex-row items-center px-4 py-3.5 bg-white"
+                >
+                  {item.icon ? <View className="mr-3">{item.icon}</View> : null}
+                  {item.label ? <Text className="body-md flex-1" numberOfLines={1}>{item.label}</Text> : <View className="flex-1" />}
+                  {isSelected && <Check size={22} color={colors.green} strokeWidth={2.4} />}
+                </TouchableOpacity>
+              );
+            }}
+          />
+          {isSearchable && <SearchBarOverlay onChangeText={setSearch} onFocusChange={handleFocusChange} bottomInset={20} />}
+        </View>
       </KeyboardAvoidingView>
     </ModalScreen>
   );

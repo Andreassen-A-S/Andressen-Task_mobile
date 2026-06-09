@@ -1,6 +1,5 @@
 import { View, Pressable, Text } from "react-native";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
 
 type Variant = "default" | "active" | "inactive";
 
@@ -33,9 +32,9 @@ export default function GlassTextButton({ label, onPress, variant = "default" }:
         onPress={onPress}
         disabled={variant === "inactive"}
         android_ripple={{ color: colors.border, borderless: false }}
-        style={{ height: 48, paddingHorizontal: 14, alignItems: "center", justifyContent: "center" }}
+        className="h-12 px-3.5 items-center justify-center"
       >
-        <Text style={[typography.btnLg, styles.text]}>{label}</Text>
+        <Text className="btn-lg" style={styles.text}>{label}</Text>
       </Pressable>
     </View>
   );

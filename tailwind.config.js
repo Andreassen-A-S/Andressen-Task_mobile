@@ -1,9 +1,36 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
+  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}", "./helpers/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        background: "var(--background)",
+        surface: "var(--surface)",
+        "surface-subtle": "var(--surface-subtle)",
+        "surface-hover": "var(--surface-hover)",
+        "surface-page": "var(--surface-page)",
+        border: "var(--border)",
+        muted: "var(--text-muted)",
+        secondary: "var(--text-secondary)",
+        accent: "var(--accent)",
+        "accent-hover": "var(--accent-hover)",
+        "accent-mid": "var(--accent-mid)",
+        "accent-surface": "var(--accent-surface)",
+        link: "var(--link)",
+        "link-hover": "var(--link-hover)",
+        "info-surface": "var(--info-surface)",
+        danger: "var(--danger)",
+        "danger-surface": "var(--danger-surface)",
+        "danger-border": "var(--danger-border)",
+        "danger-text": "var(--danger-text)",
+        warning: "var(--warning)",
+        "warning-surface": "var(--warning-surface)",
+        "warning-border": "var(--warning-border)",
+        charcoal: "#1B1D22",
+      },
+    },
   },
   plugins: [],
+  darkMode: "media",
 };

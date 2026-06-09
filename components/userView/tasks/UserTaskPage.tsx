@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { CheckCircle2 } from "lucide-react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserAssignments, getProjects } from "@/lib/api";
@@ -17,7 +17,6 @@ import { sortTasks } from "@/helpers/sort";
 import UserTaskCard from "./UserTaskCard";
 import SectionHeader from "./SectionHeader";
 import UserHeader from "../common/UserHeader";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ErrorState from "../common/ErrorState";
 
@@ -76,8 +75,8 @@ export default function UserTaskPage() {
 
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
-        <View className="flex-1 bg-[#F6F5F1]">
+      <SafeAreaView className="flex-1 bg-charcoal" edges={["top", "left", "right"]}>
+        <View className="flex-1 bg-background">
           <ErrorState message={error} onRetry={() => fetchTasks()} />
         </View>
       </SafeAreaView>
@@ -85,8 +84,8 @@ export default function UserTaskPage() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["left", "right"]}>
-      <View className="flex-1 bg-[#F6F5F1]">
+    <SafeAreaView className="flex-1 bg-charcoal" edges={["left", "right"]}>
+      <View className="flex-1 bg-background">
         <UserHeader variant="user" user={user} heading="Mine opgaver" sub={`Velkommen, ${user?.name}`} />
         <SectionList
           sections={sections}
@@ -115,13 +114,12 @@ export default function UserTaskPage() {
               </View>
             ) : (
               <View className="px-6 pt-6">
-                <View className="rounded-2xl border-2 p-6 items-center"
-                  style={{ backgroundColor: colors.white, borderColor: colors.border }}>
-                  <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
-                  <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
+                <View className="rounded-2xl border-2 border-border bg-white p-6 items-center">
+                  <CheckCircle2 size={48} color={colors.textMuted} strokeWidth={1.8} />
+                  <Text className="h5 mt-4 text-center">
                     Ingen aktive eller overskredne opgaver
                   </Text>
-                  <Text className="mt-2 text-center" style={typography.bodyXs}>
+                  <Text className="body-xs mt-2 text-center">
                     Nye opgaver vil blive vist her
                   </Text>
                 </View>

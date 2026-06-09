@@ -1,6 +1,5 @@
 import { ReactNode, RefObject, useRef } from "react";
 import { View, TextInput, LayoutChangeEvent } from "react-native";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import KeyboardInputBarAction from "./KeyboardInputBarAction";
 
@@ -34,8 +33,8 @@ export default function KeyboardInputBar({
 
   return (
     <>
-      <View style={{ paddingTop: 12, paddingHorizontal: 12, paddingBottom: 4 }} onLayout={onLayout}>
-        <View style={{ backgroundColor: colors.white, borderRadius: 24, borderWidth: 1, borderColor: colors.muted, paddingHorizontal: 8, paddingTop: attachments ? 8 : 14, paddingBottom: 8, overflow: "hidden" }}>
+      <View className="pt-3 px-3 pb-1" onLayout={onLayout}>
+        <View className={`bg-surface rounded-3xl border border-surface-subtle px-2 ${attachments ? "pt-2" : "pt-[14]"} pb-2 overflow-hidden`}>
 
           {/* Attachments slot */}
           {attachments}
@@ -50,13 +49,13 @@ export default function KeyboardInputBar({
             multiline
             autoCorrect
             autoCapitalize="sentences"
-            style={[typography.bodyMd, { maxHeight: 120, paddingVertical: 0, paddingHorizontal: 10 }]}
+            className="body-md max-h-[120] py-0 px-2.5"
           />
 
           {/* Action row */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12 }}>
+          <View className="flex-row items-center mt-3">
             {leftActions}
-            <View style={{ flex: 1 }} />
+            <View className="flex-1" />
             <KeyboardInputBarAction
               icon="arrow-up"
               onPress={onSubmit}

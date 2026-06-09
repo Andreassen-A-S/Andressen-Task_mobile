@@ -1,27 +1,18 @@
-import { View, Text, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Pressable, Alert } from "react-native";
+import { ChevronDown, type LucideIcon } from "lucide-react-native";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
-
-const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
-  flag: "flag",
-  folder: "folder-outline",
-  person: "person",
-  "person.badge.plus": "person-add-outline",
-};
 
 interface Props {
-  icon?: string;
+  icon?: LucideIcon;
   label: string;
   variant: "regular" | "active";
   count?: number;
   onPress: () => void;
 }
 
-export default function GlassFilterButton({ icon, label, variant, count, onPress }: Props) {
+export default function GlassFilterButton({ icon: Icon, label, variant, count, onPress }: Props) {
   const isMulti = variant === "active" && count !== undefined && count > 1;
   const active = variant === "active";
-  const ionicon = icon ? ((ICON_MAP[icon] ?? icon) as keyof typeof Ionicons.glyphMap) : undefined;
 
   return (
     <View style={{
@@ -34,17 +25,17 @@ export default function GlassFilterButton({ icon, label, variant, count, onPress
       <Pressable
         onPress={onPress}
         android_ripple={{ color: colors.border, borderless: false }}
-        style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 7 }}
+        className="flex-row items-center gap-1.5 px-[10] py-[7]"
       >
         {isMulti ? (
-          <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#007AFF", alignItems: "center", justifyContent: "center" }}>
-            <Text style={[typography.btnSm, { color: colors.white, fontSize: 11 }]}>{count}</Text>
+          <View className="w-5 h-5 rounded-full bg-[#007AFF] items-center justify-center">
+            <Text className="btn-sm text-white">{count}</Text>
           </View>
-        ) : active && ionicon ? (
-          <Ionicons name={ionicon} size={13} color={colors.white} />
+        ) : active && Icon ? (
+          <Icon size={13} color={colors.white} strokeWidth={2.2} />
         ) : null}
-        <Text style={[typography.btnSm, { color: isMulti ? "#007AFF" : active ? colors.white : colors.textSecondary }]}>{label}</Text>
-        <Ionicons name="chevron-down" size={9} color={isMulti ? "#007AFF" : active ? colors.white : colors.textSecondary} />
+        <Text className="btn-sm" style={{ color: isMulti ? "#007AFF" : active ? colors.white : colors.textSecondary }}>{label}</Text>
+        <ChevronDown size={9} color={isMulti ? "#007AFF" : active ? colors.white : colors.textSecondary} strokeWidth={3} />
       </Pressable>
     </View>
   );

@@ -1,14 +1,13 @@
 import { View, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { SFSymbol } from "sf-symbols-typescript";
+import { type LucideIcon } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 
 type Size = "sm" | "lg";
 type Variant = "default" | "active" | "inactive";
 
 const SIZES: Record<Size, { size: number; hitSize: number }> = {
-  sm: { size: 16, hitSize: 44 },
-  lg: { size: 18, hitSize: 48 },
+  sm: { size: 20, hitSize: 44 },
+  lg: { size: 28, hitSize: 48 },
 };
 
 const VARIANT_STYLES: Record<Variant, { bg: string; border: string; iconColor: string }> = {
@@ -17,31 +16,17 @@ const VARIANT_STYLES: Record<Variant, { bg: string; border: string; iconColor: s
   inactive:{ bg: colors.textMuted, border: colors.textMuted, iconColor: colors.white },
 };
 
-const SF_TO_IONICON: Partial<Record<SFSymbol, keyof typeof Ionicons.glyphMap>> = {
-  "xmark": "close",
-  "chevron.left": "chevron-back",
-  "camera": "camera",
-  "bubble.right": "chatbubble",
-  "folder": "folder",
-  "square.and.arrow.up": "share-social",
-  "ellipsis": "ellipsis-horizontal",
-  "magnifyingglass": "search",
-  "plus": "add",
-  "checkmark": "checkmark",
-  "arrow.down": "arrow-down",
-};
-
 interface Props {
-  systemName: SFSymbol;
+  icon: LucideIcon;
   onPress: () => void;
   size?: Size;
   variant?: Variant;
+  onDark?: boolean;
 }
 
-export default function GlassIconButton({ systemName, onPress, size = "sm", variant = "default" }: Props) {
+export default function GlassIconButton({ icon: Icon, onPress, size = "sm", variant = "default" }: Props) {
   const { size: iconSize, hitSize } = SIZES[size];
   const { bg, border, iconColor } = VARIANT_STYLES[variant];
-  const iconName = SF_TO_IONICON[systemName] ?? "ellipsis-horizontal";
 
   return (
     <View style={{
@@ -57,9 +42,9 @@ export default function GlassIconButton({ systemName, onPress, size = "sm", vari
         onPress={onPress}
         disabled={variant === "inactive"}
         android_ripple={{ color: colors.border, borderless: false }}
-        style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        className="flex-1 items-center justify-center"
       >
-        <Ionicons name={iconName} size={iconSize} color={iconColor} />
+        <Icon size={iconSize} color={iconColor} strokeWidth={2.2} />
       </Pressable>
     </View>
   );

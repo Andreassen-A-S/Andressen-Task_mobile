@@ -1,28 +1,16 @@
 import { View, Text, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { ChevronDown, type LucideIcon } from "lucide-react-native";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
-
-const ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
-  flag: "flag",
-  calendar: "calendar",
-  clock: "time",
-  target: "locate",
-  person: "person",
-  folder: "folder-outline",
-  "person.badge.plus": "person-add-outline",
-};
 
 interface Props {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   tint?: string;
   onPress: () => void;
 }
 
-export default function ToolbarGlassButton({ icon, label, tint, onPress }: Props) {
+export default function ToolbarGlassButton({ icon: Icon, label, tint, onPress }: Props) {
   const active = !!tint;
-  const ionicon = (ICON_MAP[icon] ?? icon) as keyof typeof Ionicons.glyphMap;
   return (
     <View style={{
       borderRadius: 999,
@@ -34,11 +22,11 @@ export default function ToolbarGlassButton({ icon, label, tint, onPress }: Props
       <Pressable
         onPress={onPress}
         android_ripple={{ color: colors.border, borderless: false }}
-        style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 8 }}
+        className="flex-row items-center gap-1 px-3 py-2"
       >
-        <Ionicons name={ionicon} size={13} color={active ? colors.white : colors.textSecondary} />
-        <Text style={[typography.btnSm, { color: active ? colors.white : colors.textSecondary }]}>{label}</Text>
-        {active && <Ionicons name="chevron-down" size={9} color={colors.white} />}
+        <Icon size={13} color={active ? colors.white : colors.textSecondary} strokeWidth={2.2} />
+        <Text className="btn-sm" style={{ color: active ? colors.white : colors.textSecondary }}>{label}</Text>
+        {active && <ChevronDown size={9} color={colors.white} strokeWidth={3} />}
       </Pressable>
     </View>
   );

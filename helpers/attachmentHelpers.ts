@@ -1,9 +1,12 @@
-export function getFileIcon(mimeType?: string | null): string {
-  if (!mimeType) return "document-outline";
-  if (mimeType === "application/pdf") return "document-text-outline";
-  if (mimeType.includes("word") || mimeType.includes("document")) return "document-outline";
-  if (mimeType.includes("sheet") || mimeType.includes("excel")) return "grid-outline";
-  return "document-outline";
+import { File, FileImage, FileSpreadsheet, FileText, type LucideIcon } from "lucide-react-native";
+
+export function getFileIconComponent(mimeType?: string | null): LucideIcon {
+  if (!mimeType) return File;
+  if (mimeType.startsWith("image/")) return FileImage;
+  if (mimeType === "application/pdf") return FileText;
+  if (mimeType.includes("word") || mimeType.includes("document")) return FileText;
+  if (mimeType.includes("sheet") || mimeType.includes("excel")) return FileSpreadsheet;
+  return File;
 }
 
 // Mirror of BE storageService ALLOWED_MIME_TYPES maxBytes

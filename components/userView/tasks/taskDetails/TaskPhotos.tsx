@@ -5,7 +5,6 @@ import { Image } from "expo-image";
 import ImageView from "react-native-image-viewing";
 import { getTaskAttachments } from "@/lib/api";
 import { TaskAttachment } from "@/types/comment";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 
@@ -45,23 +44,23 @@ export default function TaskPhotos() {
 
   return (
     <ModalScreen title="Billeder">
-      <View style={{ flex: 1 }}>
+      <View className="flex-1">
         {isLoading ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
+          <View className="flex-1 items-center justify-center" style={{ paddingTop: headerHeight }}>
             <ActivityIndicator color={colors.green} size="large" />
           </View>
         ) : fetchError ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight, paddingHorizontal: 24 }}>
-            <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
-              <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
-              <TouchableOpacity onPress={() => fetchImages()} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
-                <Text style={typography.btnMdWhite}>Prøv igen</Text>
+          <View className="flex-1 items-center justify-center px-6" style={{ paddingTop: headerHeight }}>
+            <View className="rounded-xl p-4 w-full items-center border bg-danger-surface border-danger-border">
+              <Text className="body-sm text-danger-text text-center mb-3">{fetchError}</Text>
+              <TouchableOpacity onPress={() => fetchImages()} className="px-4 py-2 rounded-lg bg-danger">
+                <Text className="btn-md text-white">Prøv igen</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : images.length === 0 ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
-            <Text style={[typography.bodySm, { color: colors.textMuted }]}>
+          <View className="flex-1 items-center justify-center" style={{ paddingTop: headerHeight }}>
+            <Text className="body-sm text-muted">
               Ingen billeder endnu.{"\n"}Send billeder i kommentarerne.
             </Text>
           </View>

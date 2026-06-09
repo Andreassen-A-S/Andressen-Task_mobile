@@ -18,7 +18,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatLocalDate, toDateKey } from "@/helpers/helpers";
 import CalendarMonthNavigator from "./CalendarMonthNavigator";
 import UserHeader from "../common/UserHeader";
-import { colors } from "@/constants/colors";
 import ErrorState from "../common/ErrorState";
 import CalendarMonthPager from "./CalendarMonthPager";
 import CalendarAgenda, { MonthAgendaSection } from "./CalendarAgenda";
@@ -186,11 +185,11 @@ export default function CalendarPage() {
   }, [monthSections, selectedDateKey]);
 
   return (
-    <SafeAreaView className="flex-1" edges={["left", "right"]} style={{ backgroundColor: colors.charcoal }}>
-      <View className="flex-1" style={{ backgroundColor: colors.eggWhite }}>
+    <SafeAreaView className="flex-1 bg-charcoal" edges={["left", "right"]}>
+      <View className="flex-1 bg-background">
         <UserHeader variant="user" heading="Kalender" sub="Overblik over kommende opgaver" user={user} />
 
-        <View className="pb-3 border-b" style={{ backgroundColor: colors.white, borderBottomColor: colors.border }}>
+        <View className="pb-3 border-b border-border bg-surface">
           <CalendarMonthNavigator
             monthName={monthName}
             onPrev={() => scrollToMonthIndex(visibleMonthIndex - 1)}

@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { CheckCircle2, MapPinned, SquareChevronUp, UserRound } from "lucide-react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { getTasks, getProjects, getUsers } from "@/lib/api";
@@ -24,9 +24,9 @@ import UserTaskCard from "./UserTaskCard";
 import SectionHeader from "./SectionHeader";
 import UserHeader from "../common/UserHeader";
 import FilterToolbar from "../common/FilterToolbar";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ErrorState from "../common/ErrorState";
+import Badge from "../common/label/badge";
 
 const SORT_GROUPS: GroupedSelectGroup[] = [
   {
@@ -67,12 +67,20 @@ const SORT_LABELS: Record<TaskSortKey, string> = {
 };
 
 const STATUS_OPTIONS: ListModalOption[] = [
-  { label: "Mangler", value: TaskStatus.PENDING },
-  { label: "I gang", value: TaskStatus.IN_PROGRESS },
-  { label: "Udført", value: TaskStatus.DONE },
-  { label: "Annulleret", value: TaskStatus.REJECTED },
-  { label: "Arkiveret", value: TaskStatus.ARCHIVED },
+  { value: TaskStatus.PENDING, icon: <Badge variant="status" value={TaskStatus.PENDING} size="lg" /> },
+  { value: TaskStatus.IN_PROGRESS, icon: <Badge variant="status" value={TaskStatus.IN_PROGRESS} size="lg" /> },
+  { value: TaskStatus.DONE, icon: <Badge variant="status" value={TaskStatus.DONE} size="lg" /> },
+  { value: TaskStatus.REJECTED, icon: <Badge variant="status" value={TaskStatus.REJECTED} size="lg" /> },
+  { value: TaskStatus.ARCHIVED, icon: <Badge variant="status" value={TaskStatus.ARCHIVED} size="lg" /> },
 ];
+
+const STATUS_LABELS: Record<TaskStatus, string> = {
+  [TaskStatus.PENDING]: "Mangler",
+  [TaskStatus.IN_PROGRESS]: "I gang",
+  [TaskStatus.DONE]: "Udført",
+  [TaskStatus.REJECTED]: "Annulleret",
+  [TaskStatus.ARCHIVED]: "Arkiveret",
+};
 
 const TOOLBAR_HEIGHT = 52;
 
@@ -174,8 +182,8 @@ export default function AdminTaskPage() {
   const projectOptions: MultiSelectOption[] = Object.values(projectMap).map((p) => ({ label: p.name, value: p.project_id, color: p.color ?? undefined }));
 
   const openStatusFilter = () => {
-    pickerStore.set((v) => setFilterStatus(v ? v as TaskStatus : null));
-    router.push({ pathname: "/(tabs)/tasks/list-picker", params: { title: "Status", optionsJson: JSON.stringify(STATUS_OPTIONS), selected: filterStatus ?? "", clearable: "true" } });
+    pickerStore.set((v) => setFilterStatus(v ? v as TaskStatus : null), STATUS_OPTIONS);
+    router.push({ pathname: "/(tabs)/tasks/list-picker", params: { title: "Status", selected: filterStatus ?? "", clearable: "true" } });
   };
 
   const openProjectFilter = () => {
@@ -194,12 +202,13 @@ export default function AdminTaskPage() {
   };
 
   const openCreatedByFilter = () => {
-    pickerStore.set((v) => setFilterCreatedById(v || null));
-    router.push({ pathname: "/(tabs)/tasks/list-picker", params: { title: "Oprettet af", optionsJson: JSON.stringify(userOptions), selected: filterCreatedById ?? "", searchable: "true", clearable: "true" } });
+    const slimOptions = users.map((u) => ({ label: u.name, value: u.user_id }));
+    pickerStore.set((v) => setFilterCreatedById(v || null), slimOptions);
+    router.push({ pathname: "/(tabs)/tasks/list-picker", params: { title: "Oprettet af", selected: filterCreatedById ?? "", searchable: "true", clearable: "true" } });
   };
 
   const statusLabel = filterStatus
-    ? (STATUS_OPTIONS.find((o) => o.value === filterStatus)?.label ?? "Status")
+    ? STATUS_LABELS[filterStatus]
     : "Status";
   const projectLabel = filterProjectIds.length === 1
     ? (projectMap[filterProjectIds[0]]?.name ?? "Projekt")
@@ -211,8 +220,8 @@ export default function AdminTaskPage() {
 
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["top", "left", "right"]}>
-        <View className="flex-1 bg-[#F6F5F1]">
+      <SafeAreaView className="flex-1 bg-charcoal" edges={["top", "left", "right"]}>
+        <View className="flex-1 bg-background">
           <ErrorState message={error} onRetry={() => fetchData()} />
         </View>
       </SafeAreaView>
@@ -220,8 +229,8 @@ export default function AdminTaskPage() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1B1D22]" edges={["left", "right"]}>
-      <View className="flex-1 bg-[#F6F5F1]">
+    <SafeAreaView className="flex-1 bg-charcoal" edges={["left", "right"]}>
+      <View className="flex-1 bg-background">
         <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <UserHeader
             variant="admin"
@@ -240,10 +249,10 @@ export default function AdminTaskPage() {
               activeCount={activeFilterCount || undefined}
               onClearAll={() => { setFilterStatus(null); setFilterProjectIds([]); setFilterAssigneeIds([]); setFilterCreatedById(null); setSortKey("deadline_asc"); setSearchQuery(""); setSearchResetKey(k => k + 1); }}
               items={[
-                { icon: "flag", label: statusLabel, variant: filterStatus ? "active" : "regular", onPress: openStatusFilter },
-                { icon: "folder", label: projectLabel, variant: filterProjectIds.length ? "active" : "regular", count: filterProjectIds.length || undefined, onPress: openProjectFilter },
-                { icon: "person", label: assigneeLabel, variant: filterAssigneeIds.length ? "active" : "regular", count: filterAssigneeIds.length || undefined, onPress: openAssigneeFilter },
-                { icon: "person.badge.plus", label: createdByLabel, variant: filterCreatedById ? "active" : "regular", onPress: openCreatedByFilter },
+                { icon: SquareChevronUp, label: statusLabel, variant: filterStatus ? "active" : "regular", onPress: openStatusFilter },
+                { icon: MapPinned, label: projectLabel, variant: filterProjectIds.length ? "active" : "regular", count: filterProjectIds.length || undefined, onPress: openProjectFilter },
+                { icon: UserRound, label: assigneeLabel, variant: filterAssigneeIds.length ? "active" : "regular", count: filterAssigneeIds.length || undefined, onPress: openAssigneeFilter },
+                { icon: UserRound, label: createdByLabel, variant: filterCreatedById ? "active" : "regular", onPress: openCreatedByFilter },
               ]}
               sortItem={{ label: `Sorter: ${SORT_LABELS[sortKey]}`, variant: sortKey !== "deadline_asc" ? "active" : "regular", onPress: openSortPicker }}
             />
@@ -276,13 +285,12 @@ export default function AdminTaskPage() {
               </View>
             ) : (
               <View className="px-6 pt-6">
-                <View className="rounded-2xl border-2 p-6 items-center"
-                  style={{ backgroundColor: colors.white, borderColor: colors.border }}>
-                  <Ionicons name="checkmark-circle-outline" size={48} color={colors.textMuted} />
-                  <Text className="mt-4 text-center" style={[typography.h5, { marginTop: 16 }]}>
+                <View className="rounded-2xl border-2 border-border bg-white p-6 items-center">
+                  <CheckCircle2 size={48} color={colors.textMuted} strokeWidth={1.8} />
+                  <Text className="h5 mt-4 text-center">
                     {hasFilters ? "Ingen opgaver matcher filteret" : "Ingen overskredne, aktive eller kommende opgaver"}
                   </Text>
-                  <Text className="mt-2 text-center" style={typography.bodyXs}>
+                  <Text className="body-xs mt-2 text-center">
                     {hasFilters ? "Prøv at ændre eller fjerne et filter" : "Nye opgaver vil blive vist her"}
                   </Text>
                 </View>

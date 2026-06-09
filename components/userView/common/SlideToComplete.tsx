@@ -9,9 +9,8 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { Ionicons } from "@expo/vector-icons";
+import { ChevronRight, RotateCw } from "lucide-react-native";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
 
 const TRACK_HEIGHT = 60;
 const HANDLE_SIZE = 60;
@@ -29,6 +28,7 @@ export default function SlideToComplete({ onComplete, isCompleted = false, isUpd
   const maxSlide = useDerivedValue(() => Math.max(1, trackWidth.value - HANDLE_SIZE));
 
   const trackBg = isCompleted ? colors.textMuted : colors.green;
+  const HandleIcon = isCompleted ? RotateCw : ChevronRight;
 
   const pan = useMemo(() => Gesture.Pan()
     .activeOffsetX(8)
@@ -59,7 +59,8 @@ export default function SlideToComplete({ onComplete, isCompleted = false, isUpd
 
   return (
     <View
-      style={{ height: TRACK_HEIGHT, borderRadius: TRACK_HEIGHT / 2, backgroundColor: colors.eggWhite, overflow: "hidden", maxWidth: 300, alignSelf: "center", width: "100%" }}
+      style={{ height: TRACK_HEIGHT, borderRadius: TRACK_HEIGHT / 2 }}
+      className="bg-background overflow-hidden max-w-[300] self-center w-full"
       onLayout={(e) => { trackWidth.value = e.nativeEvent.layout.width; }}
     >
       <Animated.View
@@ -68,11 +69,14 @@ export default function SlideToComplete({ onComplete, isCompleted = false, isUpd
       />
 
       <Animated.Text
-        style={[typography.btnLg, labelStyle, {
+        style={[labelStyle, {
           position: "absolute",
           alignSelf: "center",
           top: (TRACK_HEIGHT - 20) / 2,
           color: colors.white,
+          fontFamily: "Outfit_600SemiBold",
+          fontSize: 15,
+          lineHeight: 20,
         }]}
       >
         {isCompleted ? "Genåben" : "Færdiggør"}
@@ -94,10 +98,10 @@ export default function SlideToComplete({ onComplete, isCompleted = false, isUpd
             justifyContent: "center",
           }]}
         >
-          <Ionicons
-            name={isCompleted ? "refresh" : "chevron-forward"}
+          <HandleIcon
             size={26}
             color={trackBg}
+            strokeWidth={2.4}
           />
         </Animated.View>
       </GestureDetector>

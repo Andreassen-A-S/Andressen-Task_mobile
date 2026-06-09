@@ -1,18 +1,20 @@
 import { useRef, useCallback } from "react";
+import { View, Text } from "react-native";
 import { useIsFocused } from "expo-router/react-navigation";
-import { Host, Button, HStack, Image, Text } from "@expo/ui/swift-ui";
-import { buttonStyle, glassEffect, padding, fixedSize, tint as t, font, foregroundStyle, frame, background, clipShape } from "@expo/ui/swift-ui/modifiers";
-import type { SFSymbol } from "sf-symbols-typescript";
+import { Host, ZStack, RNHostView } from "@expo/ui/swift-ui";
+import { glassEffect, fixedSize, contentShape, shapes, onTapGesture } from "@expo/ui/swift-ui/modifiers";
+import { ChevronDown, type LucideIcon } from "lucide-react-native";
+import { colors } from "@/constants/colors";
 
 interface Props {
-  icon?: string;
+  icon?: LucideIcon;
   label: string;
   variant: "regular" | "active";
   count?: number;
   onPress: () => void;
 }
 
-export default function GlassFilterButton({ icon, label, variant, count, onPress }: Props) {
+export default function GlassFilterButton({ icon: Icon, label, variant, count, onPress }: Props) {
   const isFocused = useIsFocused();
   const onPressRef = useRef(onPress);
   onPressRef.current = onPress;
@@ -22,39 +24,34 @@ export default function GlassFilterButton({ icon, label, variant, count, onPress
   const isMulti = isActive && count !== undefined && count > 1;
 
   return (
-    <Host matchContents>
-      <Button
-        onPress={handlePress}
+    <Host key={`${label}-${count ?? 0}`} matchContents>
+      <ZStack
         modifiers={[
-          buttonStyle("plain"),
           fixedSize({ horizontal: true }),
-          padding({ horizontal: 10, vertical: 7 }),
-          isMulti
-            ? glassEffect({ glass: { variant: "regular", interactive: isFocused, tint: "#007AFF20" }, shape: "capsule" })
-            : glassEffect({ glass: { variant: "regular", interactive: isFocused, tint: isActive ? "#007AFF20" : undefined }, shape: "capsule" }),
-          ...(isActive ? [t("#007AFF")] : []),
+          glassEffect({ glass: { variant: "regular", interactive: isFocused, tint: isActive ? "#007AFF20" : undefined }, shape: "capsule" }),
+          contentShape(shapes.capsule()),
+          onTapGesture(handlePress),
         ]}
       >
-        <HStack spacing={6} alignment="center">
-          {isMulti ? (
-            <Text modifiers={[
-              font({ weight: "bold", size: 11 }),
-              foregroundStyle("white"),
-              frame({ width: 15, height: 15 }),
-              background("#007AFF"),
-              clipShape("circle"),
-            ]}>
-              {String(count)}
+        <RNHostView matchContents>
+          <View
+            pointerEvents="none"
+            style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingLeft: 10, paddingRight: 8, paddingVertical: 7 }}
+          >
+            {isMulti ? (
+              <View style={{ width: 15, height: 15, borderRadius: 7.5, backgroundColor: "#007AFF", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ color: "white", fontSize: 11, fontWeight: "bold", lineHeight: 15 }}>{count}</Text>
+              </View>
+            ) : isActive && Icon ? (
+              <Icon size={13} color="#007AFF" strokeWidth={2.2} />
+            ) : null}
+            <Text className="font-semibold" style={{ fontSize: 12, fontWeight: "500", color: isActive ? "#007AFF" : colors.textPrimary }}>
+              {label}
             </Text>
-          ) : isActive && icon ? (
-            <Image systemName={icon as SFSymbol} size={12} color="#007AFF" />
-          ) : null}
-          <Text modifiers={[font({ weight: "medium", size: 12 }), foregroundStyle(isActive ? "#007AFF" : "secondary")]}>
-            {label}
-          </Text>
-          <Image systemName={"chevron.down" as SFSymbol} size={9} color={isActive ? "#007AFF" : "gray"} />
-        </HStack>
-      </Button>
+            <ChevronDown style={{ marginRight: -1 }} size={16} color={isActive ? "#007AFF" : "#8E8E93"} strokeWidth={2.4} />
+          </View>
+        </RNHostView>
+      </ZStack>
     </Host>
   );
 }

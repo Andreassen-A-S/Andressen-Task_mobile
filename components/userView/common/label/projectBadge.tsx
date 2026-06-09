@@ -1,6 +1,5 @@
 import { View, Text } from "react-native";
-import { MapPin } from "lucide-react-native";
-import { typography } from "@/constants/typography";
+import { MapPinned } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 
 interface ProjectBadgeProps {
@@ -19,8 +18,8 @@ const iconSize = { sm: 10, md: 12, lg: 14 };
 export default function ProjectBadge({ name, size = "md" }: ProjectBadgeProps) {
   return (
     <View className={containerClass[size]}>
-      <MapPin size={iconSize[size]} color={colors.textMuted} />
-      <Text style={[typography.badge, { color: colors.textMuted }]} numberOfLines={1}>
+      <MapPinned size={iconSize[size]} color={colors.textMuted} />
+      <Text className="badge-md text-muted" numberOfLines={1}>
         {name}
       </Text>
     </View>

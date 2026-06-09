@@ -2,11 +2,10 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { Task, TaskStatus, TaskUnit } from "@/types/task";
 import {
   formatNumber,
-  getPriorityAccentColor,
+  getPriorityBarColor,
   translateTaskUnit,
 } from "@/helpers/helpers";
-import { Ionicons } from "@expo/vector-icons";
-import { typography } from "@/constants/typography";
+import { Check } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import RecurringBadge from "../common/label/recurringBadge";
 import Badge from "../common/label/badge";
@@ -37,29 +36,25 @@ export default function UserTaskCard({ task, projectName, onClick }: Props) {
   return (
     <TouchableOpacity
       onPress={onClick}
-      className="flex-row border rounded-xl overflow-hidden"
+      className="flex-row border border-border rounded-xl overflow-hidden"
       style={{
-        borderColor: colors.border,
         backgroundColor: isCompleted ? colors.surfaceHover : colors.white,
         opacity: isCompleted ? 0.6 : 1,
       }}
     >
       {/* Priority bar */}
-      <View className="w-1" style={{ backgroundColor: getPriorityAccentColor(task.priority) }} />
+      <View className={`w-1 ${getPriorityBarColor(task.priority)}`} />
 
       {/* Content */}
       <View className="flex-1 px-4 py-4">
         {/* Title + badges */}
         <View className="flex-row items-start justify-between gap-2 mb-2">
           <Text
-            style={[
-              typography.h5,
-              {
-                flex: 1,
-                textDecorationLine: isCompleted ? "line-through" : "none",
-                color: isCompleted ? typography.bodySm.color : typography.h5.color,
-              },
-            ]}
+            className="h5 flex-1"
+            style={{
+              textDecorationLine: isCompleted ? "line-through" : "none",
+              color: isCompleted ? colors.textSecondary : undefined,
+            }}
           >
             {task.title}
           </Text>
@@ -71,7 +66,7 @@ export default function UserTaskCard({ task, projectName, onClick }: Props) {
 
         {/* Description */}
         {task.description ? (
-          <Text className="mb-3" style={typography.bodyXs} numberOfLines={2}>
+          <Text className="body-xs mb-3" numberOfLines={2}>
             {task.description}
           </Text>
         ) : null}
@@ -79,13 +74,13 @@ export default function UserTaskCard({ task, projectName, onClick }: Props) {
         {/* Progress bar */}
         {hasProgress && progressPct !== null && (
           <View className="flex-row items-center gap-2 mb-2">
-            <View className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: colors.border }}>
+            <View className="flex-1 h-2 rounded-full overflow-hidden bg-border">
               <View
-                className="h-full rounded-full"
-                style={{ width: `${progressPct}%`, backgroundColor: colors.green }}
+                className="h-full rounded-full bg-accent"
+                style={{ width: `${progressPct}%` }}
               />
             </View>
-            <Text style={[typography.monoXsAccent, { color: colors.green }]}>{progressLabel}</Text>
+            <Text className="mono-xs text-accent">{progressLabel}</Text>
           </View>
         )}
 
@@ -95,9 +90,9 @@ export default function UserTaskCard({ task, projectName, onClick }: Props) {
 
             {/* Done */}
             {isCompleted && (
-              <View className="flex-row items-center gap-1 px-2 py-0.5 rounded-md" style={{ backgroundColor: colors.greenLight }}>
-                <Ionicons name="checkmark" size={10} color={colors.greenMid} />
-                <Text style={[typography.badge, { textTransform: "uppercase", letterSpacing: 1, color: colors.greenMid }]}>
+              <View className="flex-row items-center gap-1 px-2 py-0.5 rounded-md bg-accent-surface">
+                <Check size={10} color={colors.greenMid} strokeWidth={2.4} />
+                <Text className="badge-md text-accent-mid uppercase tracking-[1px]">
                   FÆRDIG
                 </Text>
               </View>

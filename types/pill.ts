@@ -1,4 +1,5 @@
 import { SFSymbol } from "sf-symbols-typescript";
+import { type LucideIcon } from "lucide-react-native";
 
 export interface MenuAction {
   label: string;
@@ -9,7 +10,7 @@ export interface MenuAction {
 }
 
 export interface PillItem {
-  systemName: SFSymbol;
+  icon: LucideIcon;
   onPress?: () => void;
   menuActions?: MenuAction[];
 }

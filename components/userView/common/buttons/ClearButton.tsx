@@ -1,25 +1,19 @@
 import { Pressable, Text } from "react-native";
-import { typography } from "@/constants/typography";
-import { colors } from "@/constants/colors";
 
 interface Props {
   label: string;
   onPress: () => void;
+  className?: string;
+  disabled?: boolean;
 }
 
-export default function ClearButton({ label, onPress }: Props) {
+export default function ClearButton({ label, onPress, className, disabled }: Props) {
   return (
     <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        marginTop: 24,
-        paddingHorizontal: 32,
-        paddingVertical: 14,
-        alignSelf: "center",
-        opacity: pressed ? 0.5 : 1,
-      })}
+      className={`flex px-5 py-4 rounded-2xl ${className ?? ""}`}
+      onPress={disabled ? undefined : onPress}
     >
-      <Text style={[typography.bodyMd, { color: colors.red }]}>{label}</Text>
+      <Text className={`ease-in body-md ${disabled ? "!text-muted" : "!text-danger"}`}>{label}</Text>
     </Pressable>
   );
 }

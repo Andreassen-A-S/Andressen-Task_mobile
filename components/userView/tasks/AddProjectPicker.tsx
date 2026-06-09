@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { Platform, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { ChevronRight } from "lucide-react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
+import Animated from "react-native-reanimated";
+import ModalScreen, { useCompactingModalHeader, useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import SearchBarOverlay from "@/components/userView/common/SearchBarOverlay";
 import { getProjects } from "@/lib/api";
 import { Project } from "@/types/project";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ProjectAvatar from "@/components/userView/common/label/ProjectAvatar";
 
@@ -18,6 +18,7 @@ export default function AddProjectPicker() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const headerHeight = useModalHeaderHeight(true);
+  const { headerStyle, headerPointerEvents, spacerStyle, handleFocusChange } = useCompactingModalHeader(headerHeight);
   const [projects, setProjects] = useState<Project[]>([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -35,31 +36,37 @@ export default function AddProjectPicker() {
     : projects;
 
   return (
-    <ModalScreen title="Tilføj en ny opgave" sub="Vælg et projekt">
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
-        <View style={{ flex: 1 }}>
+    <ModalScreen
+      title="Tilføj en ny opgave"
+      sub="Vælg et projekt"
+      headerStyle={headerStyle}
+      headerPointerEvents={headerPointerEvents}
+    >
+      <KeyboardAvoidingView behavior="padding" className="flex-1" keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
+        <View className="flex-1">
+          <Animated.View style={spacerStyle} />
           {isLoading ? (
-            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <View className="flex-1 items-center justify-center">
               <ActivityIndicator color={colors.green} />
             </View>
           ) : error ? (
-            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
-              <Text style={[typography.bodySm, { textAlign: "center" }]}>{error}</Text>
+            <View className="flex-1 items-center justify-center px-6">
+              <Text className="body-sm text-center">{error}</Text>
             </View>
           ) : (
             <FlatList
               data={filtered}
               keyExtractor={(item) => item.project_id}
-              contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: SEARCHBAR_HEIGHT + insets.bottom + 16, flexGrow: 1 }}
+              contentContainerStyle={{ paddingBottom: SEARCHBAR_HEIGHT + 20 + 16, flexGrow: 1 }}
               showsVerticalScrollIndicator={false}
               ListHeaderComponent={() => (
-                <View style={{ height: 1, backgroundColor: colors.border }} />
+                <View className="h-px bg-border" />
               )}
               ListFooterComponent={() => (
-                <View style={{ height: 1, backgroundColor: colors.border }} />
+                <View className="h-px bg-border" />
               )}
               ItemSeparatorComponent={() => (
-                <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 72 }} />
+                <View className="h-px bg-border ml-[72px]" />
               )}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -69,35 +76,30 @@ export default function AddProjectPicker() {
                       params: { projectId: item.project_id, projectName: item.name },
                     })
                   }
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                  }}
+                  className="flex-row items-center px-4 py-3"
                 >
-                  <View style={{ marginRight: 12 }}>
+                  <View className="mr-3">
                     <ProjectAvatar name={item.name} color={item.color} size="md" />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View className="flex-1">
                     {item.description ? (
-                      <Text style={[typography.bodyXs, { marginBottom: 1 }]} numberOfLines={1}>
+                      <Text className="body-xs mb-px" numberOfLines={1}>
                         {item.description}
                       </Text>
                     ) : null}
-                    <Text style={typography.h6} numberOfLines={1}>{item.name}</Text>
+                    <Text className="h6" numberOfLines={1}>{item.name}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                  <ChevronRight size={16} color={colors.textMuted} strokeWidth={2.2} />
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 48 }}>
-                  <Text style={typography.bodySm}>Ingen projekter fundet</Text>
+                <View className="flex-1 items-center justify-center py-12">
+                  <Text className="body-sm">Ingen projekter fundet</Text>
                 </View>
               }
             />
           )}
-          <SearchBarOverlay onChangeText={setSearch} bottomInset={insets.bottom} />
+          <SearchBarOverlay onChangeText={setSearch} onFocusChange={handleFocusChange} bottomInset={20} />
         </View>
       </KeyboardAvoidingView>
     </ModalScreen>

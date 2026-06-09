@@ -3,7 +3,6 @@ import { formatNumber } from "@/helpers/helpers";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
 import CommentBubble from "./CommentBubble";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
 interface Props {
@@ -25,7 +24,7 @@ export default function UserTaskComment({
 }: Props) {
   return (
     <View>
-      <Text className="mb-4" style={typography.overline}>
+      <Text className="overline mb-4">
         Kommentarer ({formatNumber(comments.length)})
       </Text>
 
@@ -36,7 +35,7 @@ export default function UserTaskComment({
           <Text className="text-red-600 text-sm">{error}</Text>
         </View>
       ) : comments.length === 0 ? (
-        <Text className="py-2 mb-4" style={typography.caption}>Ingen kommentarer endnu</Text>
+        <Text className="caption py-2 mb-4">Ingen kommentarer endnu</Text>
       ) : (
         <View className="gap-4 mb-4">
           {comments.map((c) => {

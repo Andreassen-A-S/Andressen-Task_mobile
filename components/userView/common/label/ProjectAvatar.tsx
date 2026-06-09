@@ -1,5 +1,4 @@
 import { View, Text, ViewStyle } from "react-native";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
 interface Props {
@@ -10,7 +9,7 @@ interface Props {
 }
 
 const dimensions = { sm: 32, md: 44, lg: 44 };
-const fontStyle = { sm: typography.initialsSm, md: typography.h6, lg: typography.h6 };
+const initialsClass = { sm: "initials-sm", md: "initials-lg", lg: "initials-lg" };
 
 export default function ProjectAvatar({ name, color, size = "md" }: Props) {
   const dim = dimensions[size];
@@ -23,7 +22,7 @@ export default function ProjectAvatar({ name, color, size = "md" }: Props) {
       alignItems: "center",
       justifyContent: "center",
     }}>
-      <Text style={[fontStyle[size], { color: colors.white }]}>
+      <Text className={initialsClass[size]}>
         {name.charAt(0).toUpperCase()}
       </Text>
     </View>

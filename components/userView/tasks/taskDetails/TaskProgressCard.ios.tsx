@@ -1,5 +1,4 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { parseLocalizedNumber, formatNumber } from "@/helpers/helpers";
 
@@ -45,11 +44,11 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
       <View className="px-4 pt-4 pb-4">
         <View className="flex-row items-stretch justify-between mb-1">
           <View>
-            <Text className="leading-tight" style={[typography.h2, { color: colors.green }]}>
+            <Text className="h2 !text-accent leading-tight">
               {formatNumber(clampedPct)}%
             </Text>
             {unitLabel && unitLabel !== "%" && (
-              <Text style={[typography.monoXs, { color: colors.textMuted }]}>
+              <Text className="mono-xs text-muted">
                 {formatNumber(currentQuantity)} / {formatNumber(targetQuantity)} {unitLabel}
               </Text>
             )}
@@ -63,7 +62,7 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
             {isUpdating ? (
               <ActivityIndicator color={colors.green} size="small" />
             ) : (
-              <Text style={[typography.btnMd, { color: colors.green }]}>
+              <Text className="btn-md text-accent">
                 + Tilføj {unitLabel || "%"}
               </Text>
             )}

@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { Task, TaskStatus, TaskUnit } from "@/types/task";
-import { formatLocalDate, formatNumber, getPriorityAccentColor, translateTaskUnit } from "@/helpers/helpers";
-import { typography } from "@/constants/typography";
+import { formatLocalDate, formatNumber, getPriorityBarColor, translateTaskUnit } from "@/helpers/helpers";
 import Badge from "../common/label/badge";
 import RecurringBadge from "../common/label/recurringBadge";
 import { colors } from "@/constants/colors";
@@ -31,22 +30,18 @@ export default function CalendarTaskCard({ task, onClick }: Props) {
   return (
     <TouchableOpacity
       onPress={onClick}
-      className="flex-row border rounded-lg overflow-hidden"
+      className="flex-row border border-border rounded-lg overflow-hidden"
       style={{
         backgroundColor: isCompleted ? colors.surfaceHover : colors.white,
-        borderColor: colors.border,
         opacity: isCompleted ? 0.6 : 1,
       }}
     >
-      <View className="w-1" style={{ backgroundColor: getPriorityAccentColor(task.priority) }} />
+      <View className={`w-1 ${getPriorityBarColor(task.priority)}`} />
       <View className="flex-1 px-3 py-2">
         <View className="flex-row items-start justify-between gap-2 mb-1">
           <Text
-            className="flex-1"
-            style={[
-              typography.h6,
-              isCompleted && { textDecorationLine: "line-through", color: typography.bodySm.color },
-            ]}
+            className="flex-1 h6"
+            style={isCompleted ? { textDecorationLine: "line-through", color: colors.textSecondary } : undefined}
           >
             {task.title}
           </Text>
@@ -55,10 +50,10 @@ export default function CalendarTaskCard({ task, onClick }: Props) {
             <Badge variant="priority" value={task.priority} />
           </View>
         </View>
-        <Text style={typography.monoXs}>
+        <Text className="mono-xs">
           Deadline: {formatLocalDate(task.deadline)}
           {hasFixedProgress && (
-            <Text style={typography.monoXsAccent}>{"  "}{progressLabel}</Text>
+            <Text className="mono-xs text-accent">{"  "}{progressLabel}</Text>
           )}
         </Text>
         {isCompleted && (

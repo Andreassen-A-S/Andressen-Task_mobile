@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import { ArrowDown, Lock } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import MaskedView from "@react-native-masked-view/masked-view";
@@ -28,7 +28,6 @@ import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { TaskComment } from "@/types/comment";
 import { TaskStatus } from "@/types/task";
 import { User } from "@/types/users";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -384,18 +383,18 @@ export default function TaskComments() {
 
   return (
     <ModalScreen title="Kommentarer">
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
-        <View style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" className="flex-1" keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
+        <View className="flex-1">
           {isLoading ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
               <ActivityIndicator color={colors.green} size="large" />
             </View>
           ) : fetchError ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight, paddingHorizontal: 24 }}>
-              <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
-                <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
-                <TouchableOpacity onPress={() => fetchComments()} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
-                  <Text style={typography.btnMdWhite}>Prøv igen</Text>
+              <View className="rounded-xl p-4 w-full items-center border border-danger-border bg-danger-surface">
+                <Text className="body-sm text-danger-text text-center mb-3">{fetchError}</Text>
+                <TouchableOpacity onPress={() => fetchComments()} className="px-4 py-2 rounded-lg bg-danger">
+                  <Text className="btn-md text-white">Prøv igen</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -425,8 +424,8 @@ export default function TaskComments() {
               <View style={{ flex: 1, minHeight: headerHeight + 16 }} />
 
               {listData.length === 0 ? (
-                <View style={{ alignItems: "center" }}>
-                  <Text style={[typography.bodySm, { color: colors.textMuted, textAlign: "center" }]}>
+                <View className="items-center">
+                  <Text className="body-sm text-muted text-center">
                     Ingen kommentarer endnu.{"\n"}Skriv den første!
                   </Text>
                 </View>
@@ -434,13 +433,13 @@ export default function TaskComments() {
                 listData.map((item) => {
                   if (item.type === "timestamp") {
                     return (
-                      <Text key={item.key} style={[typography.monoXs, { color: colors.textMuted, textAlign: "center", marginVertical: 4 }]}>
+                      <Text key={item.key} className="mono-xs text-muted text-center my-1">
                         {item.label}
                       </Text>
                     );
                   }
                   return (
-                    <View key={item.data.comment_id} style={{ marginBottom: 8 }}>
+                    <View key={item.data.comment_id} className="mb-2">
                       {currentUser?.user_id === item.data.user_id
                         ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} />
                         : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />}
@@ -464,7 +463,7 @@ export default function TaskComments() {
               }}
             >
               <GlassIconButton
-                systemName="arrow.down"
+                icon={ArrowDown}
                 onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
                 size="lg"
               />
@@ -473,9 +472,9 @@ export default function TaskComments() {
         </View>
 
         {isLoading ? null : isArchived ? (
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 12, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
-            <Ionicons name="lock-closed-outline" size={13} color={colors.textMuted} />
-            <Text style={[typography.labelSm, { color: colors.textMuted }]}>Arkiveret — kun visning</Text>
+          <View className="flex-row items-center justify-center gap-1.5 py-3 px-4 bg-surface-subtle border-t border-border">
+            <Lock size={13} color={colors.textMuted} strokeWidth={2.2} />
+            <Text className="label-sm text-muted">Arkiveret — kun visning</Text>
           </View>
         ) : (
           <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>

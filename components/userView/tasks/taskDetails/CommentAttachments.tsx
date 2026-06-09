@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
+import { ExternalLink } from "lucide-react-native";
 import * as WebBrowser from "expo-web-browser";
 import ImageView from "react-native-image-viewing";
 import { TaskAttachment } from "@/types/comment";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
-import { getFileIcon } from "@/helpers/attachmentHelpers";
+import { getFileIconComponent } from "@/helpers/attachmentHelpers";
 import { formatNumber } from "@/helpers/helpers";
 
 interface Props {
@@ -31,7 +30,7 @@ function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-s
             <Image
               source={{ uri: images[0].url, cacheKey: images[0].attachment_id }}
               cachePolicy="memory-disk"
-              style={{ width: "100%", height: "100%" }}
+              className="w-full h-full"
               contentFit="cover"
               transition={200}
             />
@@ -47,7 +46,7 @@ function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-s
 
   return (
     <>
-      <Text style={[typography.bodyXs, { color: colors.textMuted, marginBottom: 6, alignSelf: align }]}>
+      <Text className="body-xs text-muted mb-1.5" style={{ alignSelf: align }}>
         {formatNumber(images.length)} billeder
       </Text>
       <View style={{ width: containerSize, height: containerSize, alignSelf: align }}>
@@ -64,7 +63,7 @@ function ImageGrid({ images, align }: { images: TaskAttachment[]; align: "flex-s
               <View style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10, overflow: "hidden", borderWidth: 0.5, borderColor: colors.border, backgroundColor: colors.muted }}>
                 <Image
                   source={{ uri: images[imgIndex].url, cacheKey: images[imgIndex].attachment_id }}
-                  style={{ width: "100%", height: "100%" }}
+                  className="w-full h-full"
                   contentFit="cover"
                   transition={200}
                 />
@@ -85,20 +84,22 @@ export default function CommentAttachments({ attachments, align = "flex-start" }
   if (attachments.length === 0) return null;
 
   return (
-    <View style={{ gap: 6 }}>
+    <View className="gap-1.5">
       {images.length > 0 && <ImageGrid images={images} align={align} />}
       {files.map((file) => {
         const isLocal = file.url.startsWith("file://") || file.url.startsWith("content://") || file.url.startsWith("ph://");
+        const FileIcon = getFileIconComponent(file.mime_type);
         return (
           <TouchableOpacity
             key={file.attachment_id}
             onPress={isLocal ? undefined : () => WebBrowser.openBrowserAsync(file.url)}
             activeOpacity={isLocal ? 1 : 0.7}
-            style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: colors.white, borderRadius: 10, borderWidth: 1, borderColor: colors.muted, paddingVertical: 8, paddingHorizontal: 12, width: 220, alignSelf: align }}
+            className="flex-row items-center gap-2 bg-white rounded-[10px] border border-muted py-2 px-3 w-[220px]"
+            style={{ alignSelf: align }}
           >
-            <Ionicons name={getFileIcon(file.mime_type) as any} size={20} color={colors.textPrimary} />
-            <Text style={[typography.bodySm, { flex: 1 }]} numberOfLines={1}>{file.file_name ?? "Fil"}</Text>
-            {!isLocal && <Ionicons name="open-outline" size={14} color={colors.textMuted} />}
+            <FileIcon size={20} color={colors.textPrimary} strokeWidth={2.1} />
+            <Text className="body-sm flex-1" numberOfLines={1}>{file.file_name ?? "Fil"}</Text>
+            {!isLocal && <ExternalLink size={14} color={colors.textMuted} strokeWidth={2.1} />}
           </TouchableOpacity>
         );
       })}

@@ -1,23 +1,22 @@
 import { useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Camera, File, ImageUp, X, type LucideIcon } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
 type Option = {
   key: "camera" | "gallery" | "files";
-  icon: string;
+  icon: LucideIcon;
   label: string;
 };
 
 const OPTIONS: Option[] = [
-  { key: "camera", icon: "camera-outline", label: "Kamera" },
-  { key: "gallery", icon: "image-outline", label: "Galleri" },
-  { key: "files", icon: "document-outline", label: "Filer" },
+  { key: "camera", icon: Camera, label: "Kamera" },
+  { key: "gallery", icon: ImageUp, label: "Galleri" },
+  { key: "files", icon: File, label: "Filer" },
 ];
 
 export default function AttachmentPicker() {
@@ -41,28 +40,32 @@ export default function AttachmentPicker() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.eggWhite, paddingBottom: insets.bottom }}>
+    <View className="flex-1 bg-background" style={{ paddingBottom: insets.bottom }}>
       {/* Header */}
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 20 }}>
-        <GlassIconButton systemName="xmark" onPress={() => { attachmentPickerStore.clear(); router.back(); }} size="sm" />
-        <Text style={[typography.h4, { flex: 1, textAlign: "center", marginRight: 44 }]}>
+      <View className="flex-row items-center px-4 pt-4 pb-5">
+        <GlassIconButton icon={X} onPress={() => { attachmentPickerStore.clear(); router.back(); }} size="lg" />
+        <Text className="h4 flex-1 text-center mr-11">
           Tilføj vedhæftning
         </Text>
       </View>
 
       {/* Options grid */}
-      <View style={{ flexDirection: "row", gap: 12, paddingHorizontal: 16 }}>
-        {OPTIONS.map((opt) => (
-          <TouchableOpacity
-            key={opt.key}
-            onPress={() => select(opt.key)}
-            activeOpacity={0.7}
-            style={{ flex: 1, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.muted, paddingVertical: 20, alignItems: "center", gap: 10 }}
-          >
-            <Ionicons name={opt.icon as any} size={28} color={colors.textPrimary} />
-            <Text style={typography.bodyMd}>{opt.label}</Text>
-          </TouchableOpacity>
-        ))}
+      <View className="flex-row gap-3 px-4">
+        {OPTIONS.map((opt) => {
+          const Icon = opt.icon;
+
+          return (
+            <TouchableOpacity
+              key={opt.key}
+              onPress={() => select(opt.key)}
+              activeOpacity={0.7}
+              className="flex-1 bg-white rounded-2xl border border-muted py-5 items-center gap-2.5"
+            >
+              <Icon size={28} color={colors.textPrimary} strokeWidth={2.2} />
+              <Text className="body-md">{opt.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );

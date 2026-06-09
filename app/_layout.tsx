@@ -87,7 +87,7 @@ function RootGuard() {
 
   if (isInitializing) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.eggWhite }}>
+      <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator size="large" color={colors.green} />
       </View>
     );
@@ -109,14 +109,14 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.eggWhite }}>
+      <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator size="large" color={colors.green} />
       </View>
     );
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.charcoal }}>
+    <GestureHandlerRootView className="flex-1 bg-charcoal">
       <KeyboardProvider>
         <StatusBar style="light" />
         <AuthProvider>

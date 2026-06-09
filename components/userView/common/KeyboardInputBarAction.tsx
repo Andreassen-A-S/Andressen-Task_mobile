@@ -1,6 +1,11 @@
 import { TouchableOpacity, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { ArrowUp, Plus, type LucideIcon } from "lucide-react-native";
 import { colors } from "@/constants/colors";
+
+const ICONS: Record<string, LucideIcon> = {
+  "add": Plus,
+  "arrow-up": ArrowUp,
+};
 
 interface Props {
   icon: string;
@@ -21,15 +26,18 @@ export default function KeyboardInputBarAction({
   iconSize = 18,
   loading = false,
 }: Props) {
+  const Icon = ICONS[icon] ?? Plus;
+
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
-      style={{ width: 36, height: 36, borderRadius: 24, backgroundColor, opacity: disabled ? 0.4 : 1, alignItems: "center", justifyContent: "center" }}
+      className="w-9 h-9 rounded-full items-center justify-center"
+      style={{ backgroundColor, opacity: disabled ? 0.4 : 1 }}
     >
       {loading
         ? <ActivityIndicator color={colors.white} size="small" />
-        : <Ionicons name={icon as any} size={iconSize} color={iconColor} />
+        : <Icon size={iconSize} color={iconColor} strokeWidth={2.3} />
       }
     </TouchableOpacity>
   );

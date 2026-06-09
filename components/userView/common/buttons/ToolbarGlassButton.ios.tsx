@@ -1,42 +1,45 @@
 import { useRef, useCallback } from "react";
+import { View, Text } from "react-native";
 import { useIsFocused } from "expo-router/react-navigation";
-import { Host, Button, HStack, Image, Text } from "@expo/ui/swift-ui";
-import { buttonStyle, glassEffect, padding, fixedSize, tint as t, font, foregroundStyle } from "@expo/ui/swift-ui/modifiers";
-import type { SFSymbol } from "sf-symbols-typescript";
+import { Host, ZStack, RNHostView } from "@expo/ui/swift-ui";
+import { glassEffect, fixedSize, contentShape, shapes, onTapGesture } from "@expo/ui/swift-ui/modifiers";
+import { ChevronDown, type LucideIcon } from "lucide-react-native";
+import { colors } from "@/constants/colors";
 
 interface Props {
-  icon: string;
+  icon: LucideIcon;
   label: string;
   tint?: string;
   onPress: () => void;
 }
 
-export default function ToolbarGlassButton({ icon, label, tint, onPress }: Props) {
+export default function ToolbarGlassButton({ icon: Icon, label, tint, onPress }: Props) {
   const isFocused = useIsFocused();
   const onPressRef = useRef(onPress);
   onPressRef.current = onPress;
   const handlePress = useCallback(() => onPressRef.current(), []);
 
   return (
-    <Host matchContents>
-      <Button
-        onPress={handlePress}
+    <Host key={label} matchContents>
+      <ZStack
         modifiers={[
-          buttonStyle("plain"),
           fixedSize({ horizontal: true }),
-          padding({ horizontal: 10, vertical: 7 }),
           glassEffect({ glass: { variant: "regular", interactive: isFocused, tint }, shape: "capsule" }),
-          ...(tint ? [t(tint)] : []),
+          contentShape(shapes.capsule()),
+          onTapGesture(handlePress),
         ]}
       >
-        <HStack spacing={4} alignment="center">
-          <Image systemName={icon as SFSymbol} size={12} color={tint ? "white" : "gray"} />
-          <Text modifiers={[font({ weight: "medium", size: 12 }), foregroundStyle(tint ? "white" : "secondary")]}>
-            {label}
-          </Text>
-          {tint && <Image systemName={"chevron.down" as SFSymbol} size={9} color="white" />}
-        </HStack>
-      </Button>
+        <RNHostView matchContents>
+          <View
+            pointerEvents="none"
+            style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingLeft: 10, paddingRight: 8, paddingVertical: 7 }}
+          >
+            <Icon style={{ marginLeft: -2 }} size={16} color={tint ? "white" : colors.textMuted} strokeWidth={2.4} />
+            <Text className="font-semibold" style={{ fontSize: 12, color: tint ? "white" : colors.textPrimary }}>{label}</Text>
+            {tint && <ChevronDown style={{ marginRight: -1 }} size={16} color="white" strokeWidth={2.4} />}
+          </View>
+        </RNHostView>
+      </ZStack>
     </Host>
   );
 }

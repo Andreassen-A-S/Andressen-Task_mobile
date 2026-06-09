@@ -1,7 +1,9 @@
 import { useRef, useCallback } from "react";
+import { View } from "react-native";
 import { useIsFocused } from "expo-router/react-navigation";
-import { Host, Button, HStack, Image, Text } from "@expo/ui/swift-ui";
+import { Host, Button, HStack, RNHostView, Text } from "@expo/ui/swift-ui";
 import { buttonStyle, glassEffect, padding, fixedSize, font, foregroundStyle, frame, background, clipShape } from "@expo/ui/swift-ui/modifiers";
+import { ListFilter } from "lucide-react-native";
 
 interface Props {
   count: number;
@@ -26,7 +28,11 @@ export default function ClearFiltersButton({ count, onPress }: Props) {
         ]}
       >
         <HStack spacing={6} alignment="center">
-          <Image systemName="line.3.horizontal.decrease" size={12} color="secondary" />
+          <RNHostView matchContents>
+            <View pointerEvents="none" style={{ width: 12, height: 12, alignItems: "center", justifyContent: "center" }}>
+              <ListFilter size={12} color="gray" strokeWidth={2.2} />
+            </View>
+          </RNHostView>
           <Text modifiers={[
             font({ weight: "bold", size: 11 }),
             foregroundStyle("white"),

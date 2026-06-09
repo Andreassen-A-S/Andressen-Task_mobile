@@ -1,5 +1,4 @@
 import parseDecimalNumber from "parse-decimal-number";
-import { ViewStyle, TextStyle } from "react-native";
 import { TaskPriority, TaskStatus } from "@/types/task";
 import { TaskAssignment } from "@/types/assignment";
 
@@ -88,17 +87,29 @@ export function formatCommentDate(dateString: string): string {
 export function formatGroupTimestamp(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
-  const timeStr = date.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+  const timeStr = date.toLocaleTimeString("da-DK", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
 
   if (date.toDateString() === now.toDateString()) return timeStr;
-  if (date.toDateString() === yesterday.toDateString()) return `I går ${timeStr}`;
-  if (diffDays < 7) return date.toLocaleDateString("da-DK", { weekday: "long" }) + ` ${timeStr}`;
-  return date.toLocaleDateString("da-DK", { day: "numeric", month: "short", year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined }) + ` ${timeStr}`;
+  if (date.toDateString() === yesterday.toDateString())
+    return `I går ${timeStr}`;
+  if (diffDays < 7)
+    return (
+      date.toLocaleDateString("da-DK", { weekday: "long" }) + ` ${timeStr}`
+    );
+  return (
+    date.toLocaleDateString("da-DK", {
+      day: "numeric",
+      month: "short",
+      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+    }) + ` ${timeStr}`
+  );
 }
-
 
 // Convert YYYY-MM-DD to a full ISO 8601 UTC string for API submission
 export function toIsoDate(dateString: string): string {
@@ -108,11 +119,11 @@ export function toIsoDate(dateString: string): string {
 export function translatePriority(priority: string): string {
   switch (priority) {
     case "LOW":
-      return "LAV";
+      return "Lav";
     case "MEDIUM":
-      return "MELLEM";
+      return "Mellem";
     case "HIGH":
-      return "HØJ";
+      return "Høj";
     default:
       return priority;
   }
@@ -121,81 +132,77 @@ export function translatePriority(priority: string): string {
 export function translateStatus(status: string): string {
   switch (status) {
     case "PENDING":
-      return "MANGLER";
+      return "Mangler";
     case "DONE":
-      return "UDFØRT";
+      return "Udført";
     case "REJECTED":
-      return "ANNULLERET";
+      return "Annulleret";
     case "IN_PROGRESS":
-      return "I GANG";
+      return "I gang";
     case "ARCHIVED":
-      return "ARKIVERET";
+      return "Arkiveret";
     default:
       return status;
   }
 }
 
-export const getPriorityColors = (
-  priority: TaskPriority,
-): { container: ViewStyle; text: TextStyle } => {
-  const colors = {
-    [TaskPriority.HIGH]: {
-      container: { backgroundColor: "#FEE2E2", borderColor: "#FECACA" },
-      text: { color: "#DC2626" },
-    },
-    [TaskPriority.MEDIUM]: {
-      container: { backgroundColor: "#FFEDD5", borderColor: "#FED7AA" },
-      text: { color: "#EA580C" },
-    },
-    [TaskPriority.LOW]: {
-      container: { backgroundColor: "#FEF9C3", borderColor: "#FDE68A" },
-      text: { color: "#CA8A04" },
-    },
+export const getPriorityColors = (priority: TaskPriority): string => {
+  const map = {
+    [TaskPriority.HIGH]:
+      "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-900",
+    [TaskPriority.MEDIUM]:
+      "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/50 dark:text-orange-400 dark:border-orange-900",
+    [TaskPriority.LOW]:
+      "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-400 dark:border-yellow-900",
   };
-  return colors[priority];
+  return map[priority];
 };
 
-export const getStatusColors = (
-  status: TaskStatus,
-): { container: ViewStyle; text: TextStyle } => {
-  const colors: Record<TaskStatus, { container: ViewStyle; text: TextStyle }> =
-    {
-      [TaskStatus.DONE]: {
-        container: { backgroundColor: "#DCFCE7", borderColor: "#BBF7D0" },
-        text: { color: "#16A34A" },
-      },
-      [TaskStatus.PENDING]: {
-        container: { backgroundColor: "#FEF9C3", borderColor: "#FDE68A" },
-        text: { color: "#CA8A04" },
-      },
-      [TaskStatus.REJECTED]: {
-        container: { backgroundColor: "#FEE2E2", borderColor: "#FECACA" },
-        text: { color: "#DC2626" },
-      },
-      [TaskStatus.IN_PROGRESS]: {
-        container: { backgroundColor: "#DBEAFE", borderColor: "#BFDBFE" },
-        text: { color: "#2563EB" },
-      },
-      [TaskStatus.ARCHIVED]: {
-        container: { backgroundColor: "#F3F4F6", borderColor: "#E5E7EB" },
-        text: { color: "#4B5563" },
-      },
-    };
-  return (
-    colors[status] ?? {
-      container: { backgroundColor: "#F3F4F6", borderColor: "#E5E7EB" },
-      text: { color: "#4B5563" },
-    }
-  );
+export const getStatusColors = (status: TaskStatus): string => {
+  const map: Record<TaskStatus, string> = {
+    [TaskStatus.DONE]:
+      "bg-green-100 text-green-700 border-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-900",
+    [TaskStatus.PENDING]:
+      "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950/50 dark:text-yellow-400 dark:border-yellow-900",
+    [TaskStatus.REJECTED]:
+      "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-900",
+    [TaskStatus.IN_PROGRESS]:
+      "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900",
+    [TaskStatus.ARCHIVED]:
+      "bg-surface-hover text-muted border-border dark:bg-surface-subtle dark:text-muted dark:border-border",
+  };
+  return map[status] ?? "bg-surface-hover text-muted border-border";
 };
 
-export const getPriorityAccentColor = (priority: TaskPriority): string => {
-  const colors = {
-    [TaskPriority.HIGH]: "#dc2626",
-    [TaskPriority.MEDIUM]: "#f97316",
-    [TaskPriority.LOW]: "#eab308",
+export const getPriorityBarColor = (priority: TaskPriority): string => {
+  const map = {
+    [TaskPriority.HIGH]:   "bg-red-500",
+    [TaskPriority.MEDIUM]: "bg-orange-500",
+    [TaskPriority.LOW]:    "bg-yellow-500",
   };
-  return colors[priority];
+  return map[priority];
+};
+
+export const getPriorityAccentColors = (priority: TaskPriority): string => {
+  const map = {
+    [TaskPriority.HIGH]: "border-red-500 bg-red-100 dark:bg-red-900/40",
+    [TaskPriority.MEDIUM]:
+      "border-orange-500 bg-orange-100 dark:bg-orange-900/40",
+    [TaskPriority.LOW]: "border-yellow-500 bg-yellow-100 dark:bg-yellow-900/40",
+  };
+  return map[priority];
+};
+
+export const getStatusAccentColors = (status: TaskStatus): string => {
+  const map: Record<TaskStatus, string> = {
+    [TaskStatus.DONE]: "border-green-500 bg-green-100 dark:bg-green-900/40",
+    [TaskStatus.PENDING]:
+      "border-yellow-500 bg-yellow-100 dark:bg-yellow-900/40",
+    [TaskStatus.REJECTED]: "border-red-500 bg-red-100 dark:bg-red-900/40",
+    [TaskStatus.IN_PROGRESS]: "border-blue-500 bg-blue-100 dark:bg-blue-900/40",
+    [TaskStatus.ARCHIVED]: "border-border bg-surface-hover",
+  };
+  return map[status] ?? "border-border bg-surface-hover";
 };
 
 export function parseDateParam(s: string): Date {

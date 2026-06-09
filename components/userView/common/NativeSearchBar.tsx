@@ -1,35 +1,28 @@
 import { View, TextInput } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Search } from "lucide-react-native";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
 
 interface Props {
   placeholder?: string;
   onChangeText: (text: string) => void;
+  onFocusChange?: (focused: boolean) => void;
 }
 
-export default function NativeSearchBar({ placeholder = "Søg...", onChangeText }: Props) {
+export default function NativeSearchBar({ placeholder = "Søg...", onChangeText, onFocusChange }: Props) {
   const searchBarHeight = 8 + 56;
 
   return (
-    <View style={{ height: searchBarHeight, justifyContent: "flex-end", paddingBottom: 8 }}>
-      <View style={{ paddingHorizontal: 16 }}>
-        <View style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: colors.white,
-          borderRadius: 999,
-          paddingHorizontal: 16,
-          paddingVertical: 6,
-          borderColor: colors.border,
-          borderWidth: 1,
-        }}>
-          <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
+    <View style={{ height: searchBarHeight }} className="justify-end pb-2">
+      <View className="px-4">
+        <View className="flex-row items-center bg-surface rounded-full px-4 py-1.5 border border-border">
+          <Search size={16} color={colors.textMuted} style={{ marginRight: 8 }} strokeWidth={2.2} />
           <TextInput
             onChangeText={onChangeText}
+            onFocus={() => onFocusChange?.(true)}
+            onBlur={() => onFocusChange?.(false)}
             placeholder={placeholder}
             placeholderTextColor={colors.textMuted}
-            style={[typography.bodyMd, { flex: 1, color: colors.textPrimary }]}
+            className="body-md flex-1"
           />
         </View>
       </View>
