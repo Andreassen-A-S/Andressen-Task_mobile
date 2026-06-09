@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Platform, View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Platform, View, Text, SectionList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check, CirclePlus, XCircle } from "lucide-react-native";
 import { useRouter } from "expo-router";
@@ -64,6 +64,11 @@ export default function MultiPicker({ title, options, isLoading, error, searchab
     !selected.includes(o.value) && (!search.trim() || o.label.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const sections = [
+    { key: "selected", data: selectedOptions },
+    { key: "unselected", data: unselectedOptions },
+  ];
+
   return (
     <ModalScreen
       title={title}
@@ -84,67 +89,66 @@ export default function MultiPicker({ title, options, isLoading, error, searchab
               <Text className="body-sm text-center">{error}</Text>
             </View>
           ) : (
-            <ScrollView
+            <SectionList
+              sections={sections}
+              keyExtractor={(item) => item.value}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: searchable ? SEARCHBAR_HEIGHT + 20 + 16 : insets.bottom + 16 }}
-            >
-              <View className="px-4 pb-2 bg-background">
-                <Text className="body-md font-semibold !text-secondary">Valgte</Text>
-              </View>
-              {selectedOptions.length === 0 ? (
-                <View>
-                  <View className="px-4 py-3.5 bg-white">
-                    <Text className="body-md !text-secondary">Ingen valgt</Text>
+              renderSectionHeader={({ section }) =>
+                section.key === "selected" ? (
+                  <View className="px-4 pb-2 bg-background">
+                    <Text className="body-md font-semibold !text-secondary">Valgte</Text>
                   </View>
-                </View>
-              ) : selectedOptions.map((o, i) => (
-                <View key={o.value}>
-                  <TouchableOpacity onPress={() => remove(o.value)} className="flex-row items-center px-4 py-3 bg-white">
+                ) : (
+                  <View className="h-4 bg-background" />
+                )
+              }
+              renderItem={({ item, section }) =>
+                section.key === "selected" ? (
+                  <TouchableOpacity onPress={() => remove(item.value)} className="flex-row items-center px-4 py-3 bg-white">
                     <View className="mr-4">
-                      {o.color
-                        ? <ProjectAvatar name={o.label} color={o.color} size="sm" />
-                        : <SingleAvatar name={o.label} imageUrl={o.imageUrl} size="lg" />}
+                      {item.color
+                        ? <ProjectAvatar name={item.label} color={item.color} size="sm" />
+                        : <SingleAvatar name={item.label} imageUrl={item.imageUrl} size="lg" />}
                     </View>
                     <View className="flex-1">
-                      <Text className="h6" numberOfLines={1}>{o.label}</Text>
-                      {o.subtitle ? <Text className="body-xs" numberOfLines={1}>{o.subtitle}</Text> : null}
+                      <Text className="h6" numberOfLines={1}>{item.label}</Text>
+                      {item.subtitle ? <Text className="body-xs" numberOfLines={1}>{item.subtitle}</Text> : null}
                     </View>
                     <XCircle size={22} color={colors.textMuted} strokeWidth={2} />
                   </TouchableOpacity>
-                  {i < selectedOptions.length - 1 && (
-                    <View className="bg-white"><View className="h-px bg-border ml-[68px]" /></View>
-                  )}
-                </View>
-              ))}
-
-              <View className="h-4 bg-background" />
-
-              {unselectedOptions.length === 0 ? (
-                <View>
-                  <View className="px-4 py-3.5 bg-white">
-                    <Text className="body-md !text-secondary">Ingen resultater</Text>
-                  </View>
-                </View>
-              ) : unselectedOptions.map((o, i) => (
-                <View key={o.value}>
-                  <TouchableOpacity onPress={() => add(o.value)} className="flex-row items-center px-4 py-3 bg-white">
+                ) : (
+                  <TouchableOpacity onPress={() => add(item.value)} className="flex-row items-center px-4 py-3 bg-white">
                     <View className="mr-4">
-                      {o.color
-                        ? <ProjectAvatar name={o.label} color={o.color} size="sm" />
-                        : <SingleAvatar name={o.label} imageUrl={o.imageUrl} size="lg" />}
+                      {item.color
+                        ? <ProjectAvatar name={item.label} color={item.color} size="sm" />
+                        : <SingleAvatar name={item.label} imageUrl={item.imageUrl} size="lg" />}
                     </View>
                     <View className="flex-1">
-                      <Text className="h6" numberOfLines={1}>{o.label}</Text>
-                      {o.subtitle ? <Text className="body-xs" numberOfLines={1}>{o.subtitle}</Text> : null}
+                      <Text className="h6" numberOfLines={1}>{item.label}</Text>
+                      {item.subtitle ? <Text className="body-xs" numberOfLines={1}>{item.subtitle}</Text> : null}
                     </View>
                     <CirclePlus size={22} color={colors.green} strokeWidth={2} />
                   </TouchableOpacity>
-                  {i < unselectedOptions.length - 1 && (
-                    <View className="bg-white"><View className="h-px bg-border ml-[68px]" /></View>
-                  )}
+                )
+              }
+              ItemSeparatorComponent={() => (
+                <View className="bg-white">
+                  <View className="h-px bg-border ml-[68px]" />
                 </View>
-              ))}
-            </ScrollView>
+              )}
+              renderSectionFooter={({ section }) =>
+                section.key === "selected" && selectedOptions.length === 0 ? (
+                  <View className="px-4 py-3.5 bg-white">
+                    <Text className="body-md !text-secondary">Ingen valgt</Text>
+                  </View>
+                ) : section.key === "unselected" && unselectedOptions.length === 0 ? (
+                  <View className="px-4 py-3.5 bg-white">
+                    <Text className="body-md !text-secondary">Ingen resultater</Text>
+                  </View>
+                ) : null
+              }
+            />
           )}
           {searchable && <SearchBarOverlay onChangeText={setSearch} onFocusChange={handleFocusChange} bottomInset={20} />}
         </View>
