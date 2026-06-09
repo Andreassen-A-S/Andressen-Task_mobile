@@ -1,4 +1,5 @@
 import { Platform, Share } from "react-native";
+import { Ellipsis, Share as LShare } from "lucide-react-native";
 import PathHeader from "@/components/userView/common/PathHeader";
 import GlassPillButton from "@/components/userView/common/buttons/GlassPillButton";
 import { MenuAction } from "@/types/pill";
@@ -22,7 +23,7 @@ export default function TaskDetailsHeader({ title, path, taskId, menuActions = [
           items={[
             ...(taskId
               ? [{
-                systemName: "square.and.arrow.up" as const,
+                icon: LShare,
                 onPress: async () => {
                   const url = `${FE_URL}/tasks?taskId=${encodeURIComponent(taskId)}`;
                   try {
@@ -37,7 +38,7 @@ export default function TaskDetailsHeader({ title, path, taskId, menuActions = [
                 },
               }]
               : []),
-            ...(menuActions.length > 0 ? [{ systemName: "ellipsis" as const, menuActions }] : []),
+            ...(menuActions.length > 0 ? [{ icon: Ellipsis, menuActions }] : []),
           ]}
         />
       }

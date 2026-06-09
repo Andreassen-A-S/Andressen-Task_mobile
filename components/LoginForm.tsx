@@ -10,10 +10,9 @@ import {
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -47,7 +46,7 @@ export default function LoginForm() {
   const isDisabled = !email.trim() || !password || isLoading;
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.eggWhite }}>
+    <SafeAreaView className="flex-1 bg-background">
       <KeyboardAvoidingView className="flex-1" behavior="padding">
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 32 }}
@@ -61,25 +60,26 @@ export default function LoginForm() {
               style={{ height: 80, width: 150 }}
               resizeMode="contain"
             />
-            <Text style={typography.h2}>Andreassen TMS</Text>
-            <Text className="mt-1" style={typography.bodySm}>Log ind for at fortsætte</Text>
+            <Text className="h2">Andreassen TMS</Text>
+            <Text className="mt-1 body-sm">Log ind for at fortsætte</Text>
           </View>
 
           {/* Form */}
           <View className="gap-4">
             <View className="gap-1.5">
-              <Text style={typography.labelLg}>E-mail</Text>
+              <Text className="label-lg">E-mail</Text>
               <View
-                className="flex-row items-center bg-white border rounded-[10px] px-3"
-                style={{ borderColor: colors.border, height: 48 }}
+                className="flex-row items-center bg-white border-border border rounded-[10px] px-3"
+                style={{ height: 48 }}
               >
                 {/* height: 20 works around a Fabric stale-view bug that clips the TextInput after navigating away and back */}
                 <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
-                  <Ionicons name="mail-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+                  <Mail size={18} color={colors.textMuted} style={{ marginRight: 8 }} strokeWidth={2.2} />
                   <View className="flex-1">
                     {!email && (
                       <Text
-                        style={[typography.labelLgGray, { position: "absolute", color: colors.textMuted, lineHeight: undefined }]}
+                        className="label-lg-gray text-muted"
+                        style={{ position: "absolute", lineHeight: undefined }}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
                         pointerEvents="none"
@@ -89,8 +89,8 @@ export default function LoginForm() {
                       </Text>
                     )}
                     <TextInput
-                      className="flex-1"
-                      style={[typography.labelLgGray, { lineHeight: undefined }]}
+                      className="flex-1 label-lg-gray"
+                      style={{ lineHeight: undefined }}
                       value={email}
                       onChangeText={setEmail}
                       autoCapitalize="none"
@@ -108,18 +108,19 @@ export default function LoginForm() {
             </View>
 
             <View className="gap-1.5">
-              <Text style={typography.labelLg}>Adgangskode</Text>
+              <Text className="label-lg">Adgangskode</Text>
               <View
-                className="flex-row items-center bg-white border rounded-[10px] px-3"
-                style={{ borderColor: colors.border, height: 48 }}
+                className="flex-row items-center bg-white border-border border rounded-[10px] px-3"
+                style={{ height: 48 }}
               >
                 {/* height: 20 works around a Fabric stale-view bug that clips the TextInput after navigating away and back */}
                 <View className="flex-1 flex-row items-center" style={{ height: 20 }}>
-                  <Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+                  <Lock size={18} color={colors.textMuted} style={{ marginRight: 8 }} strokeWidth={2.2} />
                   <View className="flex-1">
                     {!password && (
                       <Text
-                        style={[typography.labelLgGray, { position: "absolute", color: colors.textMuted, lineHeight: undefined }]}
+                        className="label-lg-gray text-muted"
+                        style={{ position: "absolute", lineHeight: undefined }}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
                         pointerEvents="none"
@@ -129,8 +130,8 @@ export default function LoginForm() {
                       </Text>
                     )}
                     <TextInput
-                      className="flex-1"
-                      style={[typography.labelLgGray, { lineHeight: undefined }]}
+                      className="flex-1 label-lg-gray"
+                      style={{ lineHeight: undefined }}
                       value={password}
                       onChangeText={setPassword}
                       secureTextEntry={!showPassword}
@@ -144,18 +145,17 @@ export default function LoginForm() {
                   </View>
                 </View>
                 <TouchableOpacity onPress={() => setShowPassword((v) => !v)} className="p-1">
-                  <Ionicons
-                    name={showPassword ? "eye-off-outline" : "eye-outline"}
-                    size={18}
-                    color={colors.textMuted}
-                  />
+                  {showPassword
+                    ? <EyeOff size={18} color={colors.textMuted} strokeWidth={2.2} />
+                    : <Eye size={18} color={colors.textMuted} strokeWidth={2.2} />
+                  }
                 </TouchableOpacity>
               </View>
             </View>
 
             {error && (
-              <View className="border rounded-[10px] p-3" style={{ backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
-                <Text className="text-center" style={[typography.bodySm, { color: colors.red }]}>
+              <View className="bg-danger-surface border-danger-border border rounded-[10px] p-3">
+                <Text className="body-sm text-danger text-center">
                   {error}
                 </Text>
               </View>
@@ -170,12 +170,12 @@ export default function LoginForm() {
               {isLoading ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text style={[typography.btnLg, { color: "white" }]}>Log ind</Text>
+                <Text className="btn-lg" style={{ color: "white" }}>Log ind</Text>
               )}
             </TouchableOpacity>
           </View>
 
-          <Text className="text-center mt-6" style={[typography.bodySm, { color: colors.textMuted }]}>
+          <Text className="body-sm text-muted text-center mt-6">
             Har du glemt dine loginoplysninger eller mangler du en konto?{"\n"}Kontakt din administrator.
           </Text>
         </ScrollView>

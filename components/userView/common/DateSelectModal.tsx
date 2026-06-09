@@ -1,26 +1,17 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { useState, useRef, useMemo, useCallback } from "react";
+import { View, Text, TouchableOpacity, FlatList, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions } from "react-native";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react-native";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import ClearButton from "@/components/userView/common/buttons/ClearButton";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
+import { getMonthStart, addMonths, getMonthDiff, YEAR_RANGE, getDaysInMonth } from "@/components/userView/calendar/calendarUtils";
 
-const DAY_LABELS = ["Ma", "Ti", "On", "To", "Fr", "Lø", "Sø"];
-const MONTH_LABELS = [
-  "Januar", "Februar", "Marts", "April", "Maj", "Juni",
-  "Juli", "August", "September", "Oktober", "November", "December",
-];
-
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate();
-}
-
-function getFirstWeekday(year: number, month: number) {
-  const day = new Date(year, month, 1).getDay();
-  return day === 0 ? 6 : day - 1; // Monday = 0
-}
+const MONTH_COUNT = YEAR_RANGE * 12 * 2 + 1;
+const DAY_LABELS = ["MAN.", "TIRS.", "ONS.", "TORS.", "FRE.", "LØR.", "SØN."];
+const MONTH_LABELS = ["Januar", "Februar", "Marts", "April", "Maj", "Juni", "Juli", "August", "September", "Oktober", "November", "December"];
+const TODAY = new Date().toDateString();
+const CALENDAR_BODY_HEIGHT = 276;
 
 interface Props {
   title: string;
@@ -31,102 +22,119 @@ interface Props {
 
 export default function DateSelectModal({ title, value, onConfirm, onClose }: Props) {
   const headerHeight = useModalHeaderHeight();
-  const today = new Date();
-  const initial = value ?? today;
+  const { width } = useWindowDimensions();
+  const pageWidth = width - 40;
+  const listRef = useRef<FlatList<Date>>(null);
+
+  const initial = value ?? new Date();
+  const months = useMemo(() => {
+    const start = addMonths(getMonthStart(initial), -YEAR_RANGE * 12);
+    return Array.from({ length: MONTH_COUNT }, (_, i) => addMonths(start, i));
+  }, []);
+  const initialIndex = getMonthDiff(months[0], getMonthStart(initial));
 
   const [selected, setSelected] = useState<Date>(initial);
-  const [viewYear, setViewYear] = useState(initial.getFullYear());
-  const [viewMonth, setViewMonth] = useState(initial.getMonth());
+  const [visibleMonth, setVisibleMonth] = useState(() => getMonthStart(initial));
 
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else setViewMonth(m => m - 1);
+  const visibleIndex = getMonthDiff(months[0], visibleMonth);
+  const monthLabel = `${MONTH_LABELS[visibleMonth.getMonth()]} ${visibleMonth.getFullYear()}`;
+
+  const scrollTo = (index: number) => {
+    const clamped = Math.min(Math.max(index, 0), MONTH_COUNT - 1);
+    listRef.current?.scrollToIndex({ index: clamped, animated: true });
+    setVisibleMonth(months[clamped]);
   };
 
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else setViewMonth(m => m + 1);
-  };
+  const handleScrollEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.min(Math.max(Math.round(e.nativeEvent.contentOffset.x / pageWidth), 0), MONTH_COUNT - 1);
+    setVisibleMonth(months[index]);
+  }, [months, pageWidth]);
 
-  const cells: (number | null)[] = [
-    ...Array(getFirstWeekday(viewYear, viewMonth)).fill(null),
-    ...Array.from({ length: getDaysInMonth(viewYear, viewMonth) }, (_, i) => i + 1),
-  ];
-  while (cells.length % 7 !== 0) cells.push(null);
+  const renderMonth = useCallback(({ item: month }: { item: Date }) => {
+    const days = getDaysInMonth(month);
+    const rows = Array.from({ length: days.length / 7 }, (_, r) => days.slice(r * 7, r * 7 + 7));
 
-  const isSelected = (day: number) =>
-    selected.getFullYear() === viewYear &&
-    selected.getMonth() === viewMonth &&
-    selected.getDate() === day;
-
-  const isToday = (day: number) =>
-    today.getFullYear() === viewYear &&
-    today.getMonth() === viewMonth &&
-    today.getDate() === day;
+    return (
+      <View style={{ width: pageWidth, height: CALENDAR_BODY_HEIGHT }}>
+        {rows.map((row, rowIdx) => (
+          <View key={rowIdx} className="flex-1 flex-row px-2 pb-2">
+            {row.map(({ date, isCurrentMonth }, col) => {
+              const isSelected = isCurrentMonth && date.toDateString() === selected.toDateString();
+              const isToday = isCurrentMonth && date.toDateString() === TODAY;
+              return (
+                <View key={col} className="flex-1 items-center justify-center">
+                  {isCurrentMonth && (
+                    <TouchableOpacity
+                      onPress={() => setSelected(date)}
+                      style={{
+                        width: 44, height: 44, borderRadius: 999,
+                        alignItems: "center", justifyContent: "center",
+                        backgroundColor: isSelected && isToday ? colors.green : isSelected ? colors.green + "20" : "transparent",
+                      }}
+                    >
+                      <Text className={`body-lg${isSelected && isToday ? " !text-white font-semibold" : isSelected ? " !text-accent font-semibold" : isToday ? " !text-accent" : ""}`}>
+                        {date.getDate()}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        ))}
+      </View>
+    );
+  }, [selected, pageWidth]);
 
   return (
     <ModalScreen
       title={title}
       onClose={onClose}
-      rightContent={
-        <GlassIconButton systemName="checkmark" onPress={() => onConfirm(selected)} size="lg" variant="active" />
-      }
+      rightContent={<GlassIconButton icon={Check} onPress={() => onConfirm(selected)} size="lg" variant="active" />}
     >
-      <View style={{ paddingTop: headerHeight + 16 }}>
-        {/* Month navigator */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginBottom: 12 }}>
-          <TouchableOpacity onPress={prevMonth} hitSlop={16}>
-            <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={typography.h6}>{MONTH_LABELS[viewMonth]} {viewYear}</Text>
-          <TouchableOpacity onPress={nextMonth} hitSlop={16}>
-            <Ionicons name="chevron-forward" size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-        </View>
+      <View className="px-5" style={{ paddingTop: headerHeight + 16 }}>
+        <View className="rounded-2xl overflow-hidden bg-surface">
+          <View className="flex-row items-center justify-between px-5 my-6">
+            <TouchableOpacity onPress={() => scrollTo(visibleIndex - 1)} hitSlop={16}>
+              <ChevronLeft size={20} color={colors.textPrimary} strokeWidth={2.2} />
+            </TouchableOpacity>
+            <Text className="h6">{monthLabel}</Text>
+            <TouchableOpacity onPress={() => scrollTo(visibleIndex + 1)} hitSlop={16}>
+              <ChevronRight size={20} color={colors.textPrimary} strokeWidth={2.2} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Weekday headers */}
-        <View style={{ flexDirection: "row", paddingHorizontal: 8, marginBottom: 4 }}>
-          {DAY_LABELS.map(d => (
-            <View key={d} style={{ flex: 1, alignItems: "center" }}>
-              <Text style={[typography.bodyXs, { color: colors.textMuted }]}>{d}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Day grid */}
-        {Array.from({ length: cells.length / 7 }, (_, row) => (
-          <View key={row} style={{ flexDirection: "row", paddingHorizontal: 8 }}>
-            {cells.slice(row * 7, row * 7 + 7).map((day, col) => (
-              <View key={col} style={{ flex: 1, alignItems: "center", paddingVertical: 3 }}>
-                {day ? (
-                  <TouchableOpacity
-                    onPress={() => setSelected(new Date(viewYear, viewMonth, day))}
-                    style={{
-                      width: 38,
-                      height: 38,
-                      borderRadius: 19,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: isSelected(day) ? colors.green : "transparent",
-                      borderWidth: isToday(day) && !isSelected(day) ? 1 : 0,
-                      borderColor: colors.green,
-                    }}
-                  >
-                    <Text style={[
-                      typography.bodySm,
-                      { color: isSelected(day) ? colors.white : isToday(day) ? colors.green : colors.textPrimary },
-                    ]}>
-                      {day}
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
+          <View style={{ width: pageWidth }} className="flex-row px-2 mb-1">
+            {DAY_LABELS.map(d => (
+              <View key={d} className="flex-1 items-center">
+                <Text className="body-xs text-muted">{d}</Text>
               </View>
             ))}
           </View>
-        ))}
 
-        <View style={{ alignItems: "center", marginTop: 16 }}>
-          <ClearButton label="Ryd dato" onPress={() => onConfirm(null)} />
+          <FlatList
+            ref={listRef}
+            data={months}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            initialScrollIndex={initialIndex}
+            keyExtractor={(m) => `${m.getFullYear()}-${m.getMonth()}`}
+            renderItem={renderMonth}
+            getItemLayout={(_, index) => ({ length: pageWidth, offset: pageWidth * index, index })}
+            onMomentumScrollEnd={handleScrollEnd}
+            onScrollToIndexFailed={({ index }) => listRef.current?.scrollToOffset({ offset: pageWidth * index, animated: false })}
+            style={{ width: pageWidth, height: CALENDAR_BODY_HEIGHT }}
+            bounces={false}
+            removeClippedSubviews
+            initialNumToRender={3}
+            maxToRenderPerBatch={3}
+            windowSize={3}
+          />
+        </View>
+
+        <View className="self-stretch mt-4">
+          <ClearButton label="Ryd dato" onPress={() => onConfirm(null)} disabled={!value} className="bg-surface" />
         </View>
       </View>
     </ModalScreen>

@@ -1,10 +1,10 @@
 import { View, ScrollView } from "react-native";
+import { type LucideIcon } from "lucide-react-native";
 import GlassFilterButton from "@/components/userView/common/buttons/GlassFilterButton";
 import ClearFiltersButton from "@/components/userView/common/buttons/ClearFiltersButton";
-import { colors } from "@/constants/colors";
 
 export interface FilterToolbarItem {
-  icon?: string;
+  icon?: LucideIcon;
   label: string;
   variant: "regular" | "active";
   count?: number;
@@ -34,7 +34,7 @@ export default function FilterToolbar({ items, height, activeCount, onClearAll, 
       ))}
       {sortItem && (
         <>
-          <View style={{ width: 1, height: 20, backgroundColor: colors.border, marginHorizontal: 2 }} />
+          <View className="w-px h-5 mx-0.5 bg-border" />
           <GlassFilterButton icon={sortItem.icon} label={sortItem.label} variant={sortItem.variant} onPress={sortItem.onPress} />
         </>
       )}

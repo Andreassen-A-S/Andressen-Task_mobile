@@ -12,7 +12,7 @@ export default function KeyboardSafeAreaSpacer({ bottomInset, keyboardGap = 0 }:
 
   const animatedStyle = useAnimatedStyle(() => ({
     height: Platform.OS === "android" || keyboardGap > 0
-      ? bottomInset * (1 - progress.value) + keyboardGap * progress.value
+      ? progress.value > 0 ? keyboardGap : bottomInset
       : bottomInset,
   }), [bottomInset, keyboardGap]);
 

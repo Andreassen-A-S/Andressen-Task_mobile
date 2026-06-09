@@ -8,7 +8,6 @@ import {
   TextInput,
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { parseLocalizedNumber, formatNumber } from "@/helpers/helpers";
 
@@ -53,11 +52,11 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
         <View className="px-4 pt-4 pb-4">
           <View className="flex-row items-stretch justify-between mb-1">
             <View>
-              <Text className="leading-tight" style={[typography.h2, { color: colors.green }]}>
+              <Text className="h2 text-accent leading-tight">
                 {formatNumber(clampedPct)}%
               </Text>
               {unitLabel && unitLabel !== "%" && (
-                <Text style={[typography.monoXs, { color: colors.textMuted }]}>
+                <Text className="mono-xs text-muted">
                   {formatNumber(currentQuantity)} / {formatNumber(targetQuantity)} {unitLabel}
                 </Text>
               )}
@@ -71,7 +70,7 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
               {isUpdating ? (
                 <ActivityIndicator color={colors.green} size="small" />
               ) : (
-                <Text style={[typography.btnMd, { color: colors.green }]}>
+                <Text className="btn-md text-accent">
                   + Tilføj {unitLabel || "%"}
                 </Text>
               )}
@@ -90,10 +89,10 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
       <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancel}>
         <KeyboardAvoidingView
           behavior="padding"
-          style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.4)" }}
+          className="flex-1 justify-center items-center bg-black/40"
         >
-          <View style={{ width: 280, backgroundColor: colors.surface, borderRadius: 16, padding: 24, gap: 16 }}>
-            <Text style={typography.h5}>Tilføj {unitLabel || "fremskridt"}</Text>
+          <View className="w-[280px] bg-surface rounded-2xl p-6 gap-4">
+            <Text className="h5">Tilføj {unitLabel || "fremskridt"}</Text>
 
             <TextInput
               autoFocus
@@ -103,31 +102,31 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
               onSubmitEditing={handleConfirm}
               placeholder="0"
               placeholderTextColor={colors.textMuted}
-              style={[typography.bodyMd, {
+              className="body-md"
+              style={{
                 borderWidth: 1,
                 borderColor: inputError ? colors.redBorder : colors.border,
                 borderRadius: 10,
                 paddingHorizontal: 12,
                 paddingVertical: 10,
-                color: colors.textPrimary,
-              }]}
+              }}
             />
             {inputError && (
-              <Text style={[typography.bodyXs, { color: colors.redText }]}>Indtast et gyldigt tal større end 0</Text>
+              <Text className="body-xs text-danger-text">Indtast et gyldigt tal større end 0</Text>
             )}
 
-            <View style={{ flexDirection: "row", gap: 10 }}>
+            <View className="flex-row gap-2.5">
               <TouchableOpacity
                 onPress={handleCancel}
-                style={{ flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: "center", backgroundColor: colors.muted }}
+                className="flex-1 py-3 rounded-[10px] items-center bg-muted"
               >
-                <Text style={[typography.btnMd, { color: colors.textSecondary }]}>Annuller</Text>
+                <Text className="btn-md text-secondary">Annuller</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleConfirm}
-                style={{ flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: "center", backgroundColor: colors.green }}
+                className="flex-1 py-3 rounded-[10px] items-center bg-accent"
               >
-                <Text style={[typography.btnMd, { color: colors.white }]}>Tilføj</Text>
+                <Text className="btn-md text-white">Tilføj</Text>
               </TouchableOpacity>
             </View>
           </View>

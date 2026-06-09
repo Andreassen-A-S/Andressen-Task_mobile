@@ -1,9 +1,8 @@
 import React from "react";
 import { ActivityIndicator, SectionList, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { ClipboardList } from "lucide-react-native";
 import { Task } from "@/types/task";
 import { formatLocalDate } from "@/helpers/helpers";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import CalendarTaskCard from "./CalendarTaskCard";
 
@@ -47,18 +46,12 @@ const CalendarAgenda = React.forwardRef<SectionList<Task, MonthAgendaSection>, C
                 {showDateLabel && (
                   <>
                     <Text
-                      style={[
-                        typography.labelSm,
-                        { color: isFocusedDate ? colors.green : colors.textSecondary },
-                      ]}
+                      className={`label-sm ${isFocusedDate ? "text-accent" : "text-secondary"}`}
                     >
                       {formatLocalDate(section.date, "da-DK", { weekday: "short" }).replace(".", "")}
                     </Text>
                     <Text
-                      style={[
-                        typography.h2,
-                        { color: isFocusedDate ? colors.green : colors.textPrimary },
-                      ]}
+                      className={`h2 ${isFocusedDate ? "text-accent" : ""}`}
                     >
                       {String(section.date.getDate()).padStart(2, "0")}
                     </Text>
@@ -92,13 +85,12 @@ const CalendarAgenda = React.forwardRef<SectionList<Task, MonthAgendaSection>, C
           ) : (
             <View className="flex-1 items-center justify-center pb-20">
               <View
-                className="w-14 h-14 border rounded-lg items-center justify-center mb-3"
-                style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+                className="w-14 h-14 bg-surface border-border border rounded-lg items-center justify-center mb-3"
               >
-                <Ionicons name="clipboard-outline" size={24} color={colors.textSecondary} />
+                <ClipboardList size={24} color={colors.textSecondary} strokeWidth={2.2} />
               </View>
-              <Text style={typography.bodyMd}>Ingen opgaver</Text>
-              <Text style={typography.bodyXs}>Der er ingen planlagte opgaver denne måned</Text>
+              <Text className="body-md">Ingen opgaver</Text>
+              <Text className="body-xs">Der er ingen planlagte opgaver denne måned</Text>
             </View>
           )
         }

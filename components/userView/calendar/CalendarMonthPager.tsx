@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import {
   DAY_CELL_HEIGHT,
@@ -29,7 +28,7 @@ function CalendarWeekdayHeader() {
     <View className="flex-row gap-0.5 px-3 pt-3 pb-1">
       {WEEKDAYS.map((day) => (
         <View key={day} className="flex-1 items-center py-1">
-          <Text style={typography.labelSm}>{day}</Text>
+          <Text className="label-sm">{day}</Text>
         </View>
       ))}
     </View>
@@ -58,7 +57,7 @@ const MonthGridPage = React.memo(function MonthGridPage({ date, selectedDate, to
               }}
               className={`items-center justify-center rounded-lg ${!day.isCurrentMonth ? "opacity-30" : ""}`}
             >
-              <Text style={[isSelected ? typography.labelSmWhite : typography.labelSm, isTodayDate && { fontFamily: "Outfit_700Bold", textDecorationLine: "underline" }]}>
+              <Text className={`${isTodayDate ? "h6 underline" : "label-sm"}${isSelected ? " !text-white" : ""}`}>
                 {day.date.getDate()}
               </Text>
 

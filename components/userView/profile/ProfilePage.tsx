@@ -7,7 +7,7 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Bell, Calendar, Check, CheckCircle2, ChevronRight, LogOut, Moon, UserRound } from "lucide-react-native";
 import { AuthContext } from "@/contexts/AuthContext";
 import { getMyStats, getUser, getUserAssignments } from "@/lib/api";
 import { UserStats } from "@/types/stats";
@@ -15,7 +15,6 @@ import { User } from "@/types/users";
 import { TaskAssignment } from "@/types/assignment";
 import { formatNumber, getTodayAssignmentStats } from "@/helpers/helpers";
 import UserHeader from "../common/UserHeader";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 
 export default function ProfilePage() {
@@ -58,62 +57,62 @@ export default function ProfilePage() {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.charcoal }} edges={["left", "right"]}>
+    <SafeAreaView className="flex-1 bg-charcoal" edges={["left", "right"]}>
       <UserHeader variant="profile" user={currentUser} position={userDetails?.position?.name ?? undefined} />
-      <ScrollView className="flex-1" style={{ backgroundColor: colors.eggWhite }} showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
 
         {/* Stats Cards */}
         <View className="px-5 pt-4">
           <View className="flex-row gap-2">
-            <View className="flex-1 bg-white border rounded-lg p-3" style={{ borderColor: colors.border }}>
-              <Text style={typography.h3}>
+            <View className="flex-1 bg-white border-border border rounded-lg p-3">
+              <Text className="h3">
                 {isLoading ? "—" : formatNumber(assignedToday || 0)}
               </Text>
-              <Text style={typography.labelSmUppercase}>I dag</Text>
+              <Text className="label-sm uppercase">I dag</Text>
             </View>
-            <View className="flex-1 bg-white border rounded-lg p-3" style={{ borderColor: colors.border }}>
-              <Text style={[typography.h3, { color: colors.greenMid }]}>
+            <View className="flex-1 bg-white border-border border rounded-lg p-3">
+              <Text className="h3 text-accent-mid">
                 {isLoading ? "—" : formatNumber(completedToday || 0)}
               </Text>
-              <Text style={typography.labelSmUppercase}>Færdige</Text>
+              <Text className="label-sm uppercase">Færdige</Text>
             </View>
-            <View className="flex-1 bg-white border rounded-lg p-3" style={{ borderColor: colors.border }}>
-              <Text style={[typography.h3, { color: colors.red }]}>
+            <View className="flex-1 bg-white border-border border rounded-lg p-3">
+              <Text className="h3 text-danger">
                 {isLoading ? "—" : formatNumber(stats?.overdue_tasks ?? 0)}
               </Text>
-              <Text style={typography.labelSmUppercase}>Forfaldne</Text>
+              <Text className="label-sm uppercase">Forfaldne</Text>
             </View>
           </View>
         </View>
 
         {/* This week */}
         <View className="px-5 pt-6">
-          <Text style={typography.labelSmUppercase} className="mb-3">Denne uge</Text>
-          <View className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: colors.border }}>
-            <View className="flex-row items-center px-4 py-3 border-b" style={{ borderColor: colors.border }}  >
-              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.greenLight }}>
-                <Ionicons name="checkmark-circle-outline" size={16} color={colors.green} />
+          <Text className="label-sm uppercase mb-3">Denne uge</Text>
+          <View className="bg-white border-border border rounded-lg overflow-hidden">
+            <View className="flex-row items-center px-4 py-3 border-b border-border">
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3 bg-accent-surface">
+                <CheckCircle2 size={16} color={colors.green} strokeWidth={2.2} />
               </View>
-              <Text style={typography.labelLg} className="flex-1">Fuldførelsesrate</Text>
-              <Text style={typography.monoMd}>
+              <Text className="label-lg flex-1">Fuldførelsesrate</Text>
+              <Text className="mono-md">
                 {isLoading ? "—" : stats?.weekly_stats?.completion_rate != null ? `${formatNumber(stats.weekly_stats.completion_rate)}%` : "n/a"}
               </Text>
             </View>
-            <View className="flex-row items-center px-4 py-3 border-b" style={{ borderColor: colors.border }}>
-              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.muted }}>
-                <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
+            <View className="flex-row items-center px-4 py-3 border-b border-border">
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3 bg-surface-subtle">
+                <Calendar size={16} color={colors.textSecondary} strokeWidth={2.2} />
               </View>
-              <Text style={typography.labelLg} className="flex-1">Opgaver tildelt</Text>
-              <Text style={typography.monoMd}>
+              <Text className="label-lg flex-1">Opgaver tildelt</Text>
+              <Text className="mono-md">
                 {isLoading ? "—" : stats?.weekly_stats?.assigned_tasks != null ? formatNumber(stats.weekly_stats.assigned_tasks) : "n/a"}
               </Text>
             </View>
             <View className="flex-row items-center px-4 py-3">
-              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.greenLight }}>
-                <Ionicons name="checkmark" size={16} color={colors.green} />
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3 bg-accent-surface">
+                <Check size={16} color={colors.green} strokeWidth={2.4} />
               </View>
-              <Text style={typography.labelLg} className="flex-1">Fuldført</Text>
-              <Text style={typography.monoMd}>
+              <Text className="label-lg flex-1">Fuldført</Text>
+              <Text className="mono-md">
                 {isLoading ? "—" : stats?.weekly_stats?.completed_tasks != null ? formatNumber(stats.weekly_stats.completed_tasks) : "n/a"}
               </Text>
             </View>
@@ -122,28 +121,28 @@ export default function ProfilePage() {
 
         {/* Settings */}
         <View className="px-5 pt-6">
-          <Text style={typography.labelSmUppercase} className="mb-3">Indstillinger</Text>
-          <View className="bg-white border rounded-lg overflow-hidden" style={{ borderColor: colors.border }}>
-            <TouchableOpacity className="flex-row items-center px-4 py-3 border-b" style={{ borderColor: colors.border }}>
-              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.muted }}>
-                <Ionicons name="notifications-outline" size={16} color={colors.textSecondary} />
+          <Text className="label-sm uppercase mb-3">Indstillinger</Text>
+          <View className="bg-white border-border border rounded-lg overflow-hidden">
+            <TouchableOpacity className="flex-row items-center px-4 py-3 border-b border-border">
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3 bg-surface-subtle">
+                <Bell size={16} color={colors.textSecondary} strokeWidth={2.2} />
               </View>
-              <Text style={typography.labelLg} className="flex-1">Notifikationer</Text>
-              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+              <Text className="label-lg flex-1">Notifikationer</Text>
+              <ChevronRight size={14} color={colors.textMuted} strokeWidth={2.2} />
             </TouchableOpacity>
-            <TouchableOpacity className="flex-row items-center px-4 py-3 border-b" style={{ borderColor: colors.border }}>
-              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.muted }}>
-                <Ionicons name="moon-outline" size={16} color={colors.textSecondary} />
+            <TouchableOpacity className="flex-row items-center px-4 py-3 border-b border-border">
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3 bg-surface-subtle">
+                <Moon size={16} color={colors.textSecondary} strokeWidth={2.2} />
               </View>
-              <Text style={typography.labelLg} className="flex-1">Tema</Text>
-              <Text style={typography.labelLgGray} className="mr-2">Lyst</Text>
-              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+              <Text className="label-lg flex-1">Tema</Text>
+              <Text className="label-lg-gray mr-2">Lyst</Text>
+              <ChevronRight size={14} color={colors.textMuted} strokeWidth={2.2} />
             </TouchableOpacity>
             <View className="flex-row items-center px-4 py-3">
-              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: colors.muted }}>
-                <Ionicons name="person-outline" size={16} color={colors.textSecondary} />
+              <View className="w-8 h-8 rounded-lg items-center justify-center mr-3 bg-surface-subtle">
+                <UserRound size={16} color={colors.textSecondary} strokeWidth={2.2} />
               </View>
-              <Text style={typography.labelLg} className="flex-1" numberOfLines={1}>
+              <Text className="label-lg flex-1" numberOfLines={1}>
                 {currentUser?.email}
               </Text>
             </View>
@@ -154,10 +153,10 @@ export default function ProfilePage() {
         <View className="px-5 pt-4 pb-8">
           <TouchableOpacity
             onPress={handleLogout}
-            className="h-12 bg-transparent border rounded-lg flex-row items-center justify-center gap-2"
-            style={{ borderColor: colors.red }}>
-            <Ionicons name="log-out-outline" size={18} color={colors.red} />
-            <Text style={[typography.btnLg, { color: colors.red }]}>Log ud</Text>
+            className="h-12 bg-transparent border-danger border rounded-lg flex-row items-center justify-center gap-2"
+          >
+            <LogOut size={18} color={colors.red} strokeWidth={2.2} />
+            <Text className="btn-lg text-danger">Log ud</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import { ArrowDown, Lock } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import MaskedView from "@react-native-masked-view/masked-view";
@@ -28,7 +28,6 @@ import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { TaskComment } from "@/types/comment";
 import { TaskStatus } from "@/types/task";
 import { User } from "@/types/users";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -393,9 +392,9 @@ export default function TaskComments() {
           ) : fetchError ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight, paddingHorizontal: 24 }}>
               <View style={{ borderRadius: 12, padding: 16, width: "100%", alignItems: "center", borderWidth: 1, backgroundColor: colors.redLight, borderColor: colors.redBorder }}>
-                <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center", marginBottom: 12 }]}>{fetchError}</Text>
+                <Text className="body-sm text-danger-text" style={{ textAlign: "center", marginBottom: 12 }}>{fetchError}</Text>
                 <TouchableOpacity onPress={() => fetchComments()} style={{ paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.red }}>
-                  <Text style={typography.btnMdWhite}>Prøv igen</Text>
+                  <Text className="btn-md text-white">Prøv igen</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -426,7 +425,7 @@ export default function TaskComments() {
 
               {listData.length === 0 ? (
                 <View style={{ alignItems: "center" }}>
-                  <Text style={[typography.bodySm, { color: colors.textMuted, textAlign: "center" }]}>
+                  <Text className="body-sm text-muted" style={{ textAlign: "center" }}>
                     Ingen kommentarer endnu.{"\n"}Skriv den første!
                   </Text>
                 </View>
@@ -434,7 +433,7 @@ export default function TaskComments() {
                 listData.map((item) => {
                   if (item.type === "timestamp") {
                     return (
-                      <Text key={item.key} style={[typography.monoXs, { color: colors.textMuted, textAlign: "center", marginVertical: 4 }]}>
+                      <Text key={item.key} className="mono-xs text-muted" style={{ textAlign: "center", marginVertical: 4 }}>
                         {item.label}
                       </Text>
                     );
@@ -464,7 +463,7 @@ export default function TaskComments() {
               }}
             >
               <GlassIconButton
-                systemName="arrow.down"
+                icon={ArrowDown}
                 onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
                 size="lg"
               />
@@ -474,8 +473,8 @@ export default function TaskComments() {
 
         {isLoading ? null : isArchived ? (
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 12, paddingHorizontal: 16, backgroundColor: colors.muted, borderTopWidth: 1, borderTopColor: colors.border }}>
-            <Ionicons name="lock-closed-outline" size={13} color={colors.textMuted} />
-            <Text style={[typography.labelSm, { color: colors.textMuted }]}>Arkiveret — kun visning</Text>
+            <Lock size={13} color={colors.textMuted} strokeWidth={2.2} />
+            <Text className="label-sm text-muted">Arkiveret — kun visning</Text>
           </View>
         ) : (
           <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>

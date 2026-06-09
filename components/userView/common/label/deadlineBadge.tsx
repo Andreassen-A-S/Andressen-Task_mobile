@@ -1,6 +1,5 @@
 import { View, Text } from "react-native";
 import { Clock } from "lucide-react-native";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { formatRelativeDate, toDateKey } from "@/helpers/helpers";
 
@@ -25,7 +24,7 @@ export default function DeadlineBadge({ deadline, size = "md" }: DeadlineBadgePr
   return (
     <View className={containerClass[size]}>
       <Clock size={iconSize[size]} color={color} />
-      <Text style={[typography.badge, { color }]} numberOfLines={1}>
+      <Text className="badge-md" style={{ color }} numberOfLines={1}>
         {formatRelativeDate(deadline)}
       </Text>
     </View>

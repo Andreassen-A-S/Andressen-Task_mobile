@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { formatRelativeDate, formatLocalDate } from "@/helpers/helpers";
 
 interface Props {
@@ -26,7 +26,7 @@ export default function UserTaskDateNavigator({ selectedDate, onDateChange }: Pr
         onPress={prevDay}
         className="w-8 h-8 border border-gray-200 rounded-lg items-center justify-center"
       >
-        <Ionicons name="chevron-back" size={16} color="#6B7084" />
+        <ChevronLeft size={16} color="#6B7084" strokeWidth={2.2} />
       </TouchableOpacity>
 
       <View className="items-center">
@@ -46,7 +46,7 @@ export default function UserTaskDateNavigator({ selectedDate, onDateChange }: Pr
         onPress={nextDay}
         className="w-8 h-8 border border-gray-200 rounded-lg items-center justify-center"
       >
-        <Ionicons name="chevron-forward" size={16} color="#6B7084" />
+        <ChevronRight size={16} color="#6B7084" strokeWidth={2.2} />
       </TouchableOpacity>
     </View>
   );

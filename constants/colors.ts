@@ -26,7 +26,7 @@ export const colors = {
 
   // Semantic — red / danger
   red: "#D64545",
-  redLight: "#FEE2E2",
+  redLight: "#FDECEC",
   redBorder: "#FCA5A5",
   redText: "#991B1B",
 

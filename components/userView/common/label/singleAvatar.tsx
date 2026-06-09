@@ -1,5 +1,4 @@
 import { Image } from "expo-image";
-import { typography } from "@/constants/typography";
 import { getInitials, getAvatarColor } from "@/helpers/helpers";
 import { View, Text } from "react-native";
 
@@ -24,11 +23,11 @@ const sizePx = {
     lg: 34,
 };
 
-const fontSize = {
-    xs: typography.initialsSm,
-    sm: typography.initialsSm,
-    md: typography.initialsMd,
-    lg: typography.initialsLg,
+const initialsClass = {
+    xs: "initials-sm",
+    sm: "initials-sm",
+    md: "initials-md",
+    lg: "initials-lg",
 };
 
 export default function SingleAvatar({
@@ -59,7 +58,7 @@ export default function SingleAvatar({
             `}
             style={{ backgroundColor: getAvatarColor(name) }}
         >
-            <Text style={[fontSize[size]]}>{getInitials(name)}</Text>
+            <Text className={initialsClass[size]}>{getInitials(name)}</Text>
         </View>
     );
 }

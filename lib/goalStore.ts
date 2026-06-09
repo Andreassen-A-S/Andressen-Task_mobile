@@ -3,6 +3,7 @@ import { TaskUnit } from "@/types/task";
 export type GoalData = {
   target_quantity: number;
   unit: TaskUnit;
+  current_quantity?: number;
 };
 
 type Callback = (goal: GoalData | null) => void;

@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import { Platform, View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Platform, View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Check, CirclePlus, XCircle } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
-import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
+import Animated from "react-native-reanimated";
+import ModalScreen, { useCompactingModalHeader, useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import SearchBarOverlay from "@/components/userView/common/SearchBarOverlay";
 import SingleAvatar from "@/components/userView/common/label/singleAvatar";
 import ProjectAvatar from "@/components/userView/common/label/ProjectAvatar";
 import { multiSelectStore } from "@/lib/multiSelectStore";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
 
 const SEARCHBAR_HEIGHT = Platform.OS === "ios" ? 56 : 64;
 
@@ -22,14 +22,6 @@ export interface MultiSelectOption {
   color?: string;
   imageUrl?: string | null;
 }
-
-type ListItem =
-  | { type: "header"; title: string }
-  | { type: "border"; id: string }
-  | { type: "placeholder"; id: string }
-  | { type: "no-results"; id: string }
-  | { type: "divider"; id: string }
-  | { type: "option"; option: MultiSelectOption; isSelected: boolean; isLast: boolean };
 
 interface Props {
   title: string;
@@ -43,6 +35,7 @@ export default function MultiPicker({ title, options, isLoading, error, searchab
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const headerHeight = useModalHeaderHeight(true);
+  const { headerStyle, headerPointerEvents, spacerStyle, handleFocusChange } = useCompactingModalHeader(headerHeight);
 
   const [selected, setSelected] = useState<string[]>(multiSelectStore.getInitial());
   const [search, setSearch] = useState("");
@@ -63,118 +56,97 @@ export default function MultiPicker({ title, options, isLoading, error, searchab
     router.back();
   };
 
-  const selectedOptions = options.filter((o) => selected.includes(o.value));
-  const unselectedOptions = options
-    .filter((o) => !selected.includes(o.value))
-    .filter((o) => !search.trim() || o.label.toLowerCase().includes(search.toLowerCase()));
-
-  const data: ListItem[] = [
-    { type: "header", title: "Valgte" },
-    { type: "border", id: "selected-top" },
-    ...(selectedOptions.length === 0
-      ? [{ type: "placeholder", id: "placeholder" } as ListItem]
-      : selectedOptions.map((o, i) => ({ type: "option", option: o, isSelected: true, isLast: i === selectedOptions.length - 1 } as ListItem))),
-    { type: "border", id: "selected-bottom" },
-    { type: "divider", id: "divider" },
-    { type: "border", id: "unselected-top" },
-    ...(unselectedOptions.length === 0
-      ? [{ type: "no-results", id: "no-results" } as ListItem]
-      : unselectedOptions.map((o, i) => ({ type: "option", option: o, isSelected: false, isLast: i === unselectedOptions.length - 1 } as ListItem))),
-    { type: "border", id: "unselected-bottom" },
-  ];
-
-  const renderItem = ({ item }: { item: ListItem }) => {
-    if (item.type === "header") {
-      return (
-        <View style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 6, backgroundColor: colors.eggWhite }}>
-          <Text style={typography.overline}>{item.title}</Text>
-        </View>
-      );
-    }
-    if (item.type === "border") {
-      return <View style={{ height: 1, backgroundColor: colors.border }} />;
-    }
-    if (item.type === "placeholder") {
-      return (
-        <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: colors.white }}>
-          <Text style={[typography.bodySm, { color: colors.textMuted }]}>Ingen valgt</Text>
-        </View>
-      );
-    }
-    if (item.type === "no-results") {
-      return (
-        <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: colors.white }}>
-          <Text style={[typography.bodySm, { color: colors.textMuted }]}>Ingen resultater</Text>
-        </View>
-      );
-    }
-    if (item.type === "divider") {
-      return <View style={{ height: 16, backgroundColor: colors.eggWhite }} />;
-    }
-    const { option, isSelected } = item;
-    return (
-      <TouchableOpacity
-        onPress={() => isSelected ? remove(option.value) : add(option.value)}
-        style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.white }}
-      >
-        <View style={{ marginRight: 16 }}>
-          {option.color
-            ? <ProjectAvatar name={option.label} color={option.color} size="sm" />
-            : <SingleAvatar name={option.label} imageUrl={option.imageUrl} size="lg" />}
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={typography.h6} numberOfLines={1}>{option.label}</Text>
-          {option.subtitle ? <Text style={typography.bodyXs} numberOfLines={1}>{option.subtitle}</Text> : null}
-        </View>
-        {isSelected
-          ? <Ionicons name="close-circle" size={22} color={colors.textMuted} />
-          : <Ionicons name="add-circle-outline" size={22} color={colors.green} />}
-      </TouchableOpacity>
-    );
-  };
-
-  const keyExtractor = (item: ListItem) => {
-    if (item.type === "option") return item.option.value;
-    if (item.type === "header") return `header-${item.title}`;
-    return (item as { id: string }).id;
-  };
+  const optionsByValue = new Map(options.map((o) => [o.value, o]));
+  const selectedOptions = selected
+    .map((value) => optionsByValue.get(value))
+    .filter((o): o is MultiSelectOption => Boolean(o));
+  const unselectedOptions = options.filter((o) =>
+    !selected.includes(o.value) && (!search.trim() || o.label.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
     <ModalScreen
       title={title}
       onClose={handleClose}
-      rightContent={
-        <GlassIconButton variant="active" systemName="checkmark" onPress={handleConfirm} />
-      }
+      headerStyle={headerStyle}
+      headerPointerEvents={headerPointerEvents}
+      rightContent={<GlassIconButton variant="active" size="lg" icon={Check} onPress={handleConfirm} />}
     >
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
-        <View style={{ flex: 1 }}>
+        <View className="flex-1">
+          <Animated.View style={spacerStyle} />
           {isLoading ? (
-            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <View className="flex-1 items-center justify-center">
               <ActivityIndicator color={colors.green} />
             </View>
           ) : error ? (
-            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
-              <Text style={[typography.bodySm, { textAlign: "center" }]}>{error}</Text>
+            <View className="flex-1 items-center justify-center px-6">
+              <Text className="body-sm text-center">{error}</Text>
             </View>
           ) : (
-            <FlatList
-              data={data}
-              keyExtractor={keyExtractor}
-              renderItem={renderItem}
+            <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingTop: headerHeight, paddingBottom: searchable ? SEARCHBAR_HEIGHT + insets.bottom + 16 : insets.bottom + 16 }}
-              ItemSeparatorComponent={({ leadingItem }) => {
-                if (leadingItem.type !== "option" || leadingItem.isLast) return null;
-                return (
-                  <View style={{ backgroundColor: colors.white }}>
-                    <View style={{ height: 1, backgroundColor: colors.border, marginLeft: 68 }} />
+              contentContainerStyle={{ paddingBottom: searchable ? SEARCHBAR_HEIGHT + insets.bottom + 16 : insets.bottom + 16 }}
+            >
+              <View className="px-4 pb-2 bg-background">
+                <Text className="body-md font-semibold !text-secondary">Valgte</Text>
+              </View>
+              {selectedOptions.length === 0 ? (
+                <View>
+                  <View className="px-4 py-3.5 bg-white">
+                    <Text className="body-md !text-secondary">Ingen valgt</Text>
                   </View>
-                );
-              }}
-            />
+                </View>
+              ) : selectedOptions.map((o, i) => (
+                <View key={o.value}>
+                  <TouchableOpacity onPress={() => remove(o.value)} className="flex-row items-center px-4 py-3 bg-white">
+                    <View className="mr-4">
+                      {o.color
+                        ? <ProjectAvatar name={o.label} color={o.color} size="sm" />
+                        : <SingleAvatar name={o.label} imageUrl={o.imageUrl} size="lg" />}
+                    </View>
+                    <View className="flex-1">
+                      <Text className="h6" numberOfLines={1}>{o.label}</Text>
+                      {o.subtitle ? <Text className="body-xs" numberOfLines={1}>{o.subtitle}</Text> : null}
+                    </View>
+                    <XCircle size={22} color={colors.textMuted} strokeWidth={2} />
+                  </TouchableOpacity>
+                  {i < selectedOptions.length - 1 && (
+                    <View className="bg-white"><View className="h-px bg-border ml-[68px]" /></View>
+                  )}
+                </View>
+              ))}
+
+              <View className="h-4 bg-background" />
+
+              {unselectedOptions.length === 0 ? (
+                <View>
+                  <View className="px-4 py-3.5 bg-white">
+                    <Text className="body-md !text-secondary">Ingen resultater</Text>
+                  </View>
+                </View>
+              ) : unselectedOptions.map((o, i) => (
+                <View key={o.value}>
+                  <TouchableOpacity onPress={() => add(o.value)} className="flex-row items-center px-4 py-3 bg-white">
+                    <View className="mr-4">
+                      {o.color
+                        ? <ProjectAvatar name={o.label} color={o.color} size="sm" />
+                        : <SingleAvatar name={o.label} imageUrl={o.imageUrl} size="lg" />}
+                    </View>
+                    <View className="flex-1">
+                      <Text className="h6" numberOfLines={1}>{o.label}</Text>
+                      {o.subtitle ? <Text className="body-xs" numberOfLines={1}>{o.subtitle}</Text> : null}
+                    </View>
+                    <CirclePlus size={22} color={colors.green} strokeWidth={2} />
+                  </TouchableOpacity>
+                  {i < unselectedOptions.length - 1 && (
+                    <View className="bg-white"><View className="h-px bg-border ml-[68px]" /></View>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
           )}
-          {searchable && <SearchBarOverlay onChangeText={setSearch} bottomInset={insets.bottom} />}
+          {searchable && <SearchBarOverlay onChangeText={setSearch} onFocusChange={handleFocusChange} bottomInset={20} />}
         </View>
       </KeyboardAvoidingView>
     </ModalScreen>

@@ -1,6 +1,5 @@
 import { ReactNode, RefObject, useRef } from "react";
 import { View, TextInput, LayoutChangeEvent } from "react-native";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import KeyboardInputBarAction from "./KeyboardInputBarAction";
 
@@ -50,7 +49,8 @@ export default function KeyboardInputBar({
             multiline
             autoCorrect
             autoCapitalize="sentences"
-            style={[typography.bodyMd, { maxHeight: 120, paddingVertical: 0, paddingHorizontal: 10 }]}
+            className="body-md"
+            style={{ maxHeight: 120, paddingVertical: 0, paddingHorizontal: 10 }}
           />
 
           {/* Action row */}

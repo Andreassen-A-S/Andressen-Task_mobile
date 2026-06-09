@@ -1,8 +1,7 @@
 import { View, Text, Image, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { X } from "lucide-react-native";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
-import { getFileIcon } from "@/helpers/attachmentHelpers";
+import { getFileIconComponent } from "@/helpers/attachmentHelpers";
 
 interface Props {
   uri: string;
@@ -13,16 +12,17 @@ interface Props {
 
 export default function PendingAttachmentCard({ uri, mimeType, fileName, onRemove }: Props) {
   const isImage = mimeType?.startsWith("image/") ?? true;
+  const FileIcon = getFileIconComponent(mimeType);
 
   return (
-    <View style={{ width: 96, height: 96, borderRadius: 16, overflow: "hidden", borderWidth: 0.5, borderColor: colors.border }}>
+    <View className="w-24 h-24 rounded-2xl overflow-hidden border border-border">
       {isImage ? (
-        <Image source={{ uri }} style={{ width: 96, height: 96 }} resizeMode="cover" />
+        <Image source={{ uri }} className="w-24 h-24" resizeMode="cover" />
       ) : (
-        <View style={{ flex: 1, backgroundColor: colors.white, alignItems: "center", justifyContent: "center", gap: 4, paddingHorizontal: 6 }}>
-          <Ionicons name={getFileIcon(mimeType) as any} size={28} color={colors.textPrimary} />
+        <View className="flex-1 bg-white items-center justify-center gap-1 px-1.5">
+          <FileIcon size={28} color={colors.textPrimary} strokeWidth={2.1} />
           {fileName ? (
-            <Text style={[typography.bodyXs, { color: colors.textMuted, textAlign: "center" }]} numberOfLines={2}>
+            <Text className="body-xs text-muted text-center" numberOfLines={2}>
               {fileName}
             </Text>
           ) : null}
@@ -30,9 +30,9 @@ export default function PendingAttachmentCard({ uri, mimeType, fileName, onRemov
       )}
       <TouchableOpacity
         onPress={onRemove}
-        style={{ position: "absolute", top: 6, right: 6, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 14, width: 28, height: 28, alignItems: "center", justifyContent: "center" }}
+        className="absolute top-1.5 right-1.5 bg-black/50 rounded-full w-7 h-7 items-center justify-center"
       >
-        <Ionicons name="close" size={18} color={colors.white} />
+        <X size={18} color={colors.white} strokeWidth={2.2} />
       </TouchableOpacity>
     </View>
   );

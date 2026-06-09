@@ -87,7 +87,7 @@ function RootGuard() {
 
   if (isInitializing) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.eggWhite }}>
+      <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator size="large" color={colors.green} />
       </View>
     );
@@ -109,7 +109,7 @@ export default function RootLayout() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.eggWhite }}>
+      <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator size="large" color={colors.green} />
       </View>
     );

@@ -7,7 +7,7 @@ import {
   Alert,
   TouchableOpacity,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Calendar, Camera, Clock, Folder, Lock, MessageCircle } from "lucide-react-native";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 import { Task, TaskStatus, TaskUnit } from "@/types/task";
 import { isAdminRole, User, UserRole } from "@/types/users";
@@ -17,7 +17,6 @@ import { formatRelativeDate, translateTaskUnit } from "@/helpers/helpers";
 import { useRouter, Stack, useLocalSearchParams, usePathname, useFocusEffect, useNavigation } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import TaskDetailsHeader from "./TaskDetailsHeader";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import SingleAvatar from "../../common/label/singleAvatar";
 import Badge from "../../common/label/badge";
@@ -168,10 +167,10 @@ export default function UserTaskDetails() {
       ...(!!task ? [{ label: "Slet", systemImage: "trash" as const, onPress: handleDelete, role: "destructive" as const }] : []),
     ]
     : isArchived
-    ? []
-    : [
-      { label: "Afvis", systemImage: "xmark" as const, onPress: handleReject, role: "destructive" as const, disabled: !task },
-    ];
+      ? []
+      : [
+        { label: "Afvis", systemImage: "xmark" as const, onPress: handleReject, role: "destructive" as const, disabled: !task },
+      ];
 
   const handleComplete = async () => {
     if (!task) return;
@@ -239,33 +238,33 @@ export default function UserTaskDetails() {
         {isLoading && (
           <View className="items-center justify-center py-20">
             <ActivityIndicator color={colors.green} size="large" />
-            <Text className="mt-3" style={typography.bodySm}>Henter opgave...</Text>
+            <Text className="body-sm mt-3">Henter opgave...</Text>
           </View>
         )}
 
         {error && !isLoading && (
-          <View style={{ backgroundColor: colors.redLight, borderWidth: 1, borderColor: colors.redBorder, borderRadius: 8, padding: 16, gap: 12 }}>
-            <Text style={[typography.bodySm, { color: colors.redText, textAlign: "center" }]}>{error}</Text>
+          <View className="bg-danger-surface border border-danger-border rounded-lg p-4 gap-3">
+            <Text className="body-sm text-danger-text text-center">{error}</Text>
             <TouchableOpacity
               onPress={() => fetchTask()}
-              style={{ alignSelf: "center", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.redText }}
+              className="self-center px-4 py-2 rounded-lg bg-danger-text"
             >
-              <Text style={[typography.btnMd, { color: colors.white }]}>Prøv igen</Text>
+              <Text className="btn-md text-white">Prøv igen</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {task && !isLoading && !error && isArchived && (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: colors.muted, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 4 }}>
-            <Ionicons name="lock-closed-outline" size={14} color={colors.textSecondary} />
-            <Text style={[typography.labelSm, { color: colors.textSecondary }]}>Denne opgave er arkiveret og kan ikke redigeres</Text>
+          <View className="flex-row items-center gap-2 bg-muted border border-border rounded-[10px] px-3 py-2.5 mb-1">
+            <Lock size={14} color={colors.textSecondary} strokeWidth={2.2} />
+            <Text className="label-sm text-secondary">Denne opgave er arkiveret og kan ikke redigeres</Text>
           </View>
         )}
 
         {task && !isLoading && !error && (
-          <View style={{ flex: 1, justifyContent: "space-between", gap: 16 }}>
-            <View style={{ gap: 16 }}>
-              <Text style={typography.h2}>{task.title}</Text>
+          <View className="flex-1 justify-between gap-4">
+            <View className="gap-4">
+              <Text className="h2">{task.title}</Text>
 
               {/* Badges */}
               <View className="flex-row flex-wrap gap-2">
@@ -278,26 +277,26 @@ export default function UserTaskDetails() {
                 <View className="flex-row items-center gap-3">
                   <SingleAvatar name={creator.name} imageUrl={creator.profile_picture_url} size="lg" />
                   <View>
-                    <Text style={[typography.labelMd, { marginBottom: 2 }]}>
+                    <Text className="label-md mb-0.5">
                       Oprettet af {creator.name}
                     </Text>
-                    <Text style={typography.bodyXs}>
+                    <Text className="body-xs">
                       {task.created_at ? formatRelativeDate(task.created_at) : ""}
                     </Text>
                   </View>
                 </View>
               )}
 
-              <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", columnGap: 14, rowGap: 6 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                  <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
-                  <Text style={typography.bodyXs}>
+              <View className="flex-row items-center flex-wrap gap-x-3.5 gap-y-1.5">
+                <View className="flex-row items-center gap-1">
+                  <Calendar size={13} color={colors.textMuted} strokeWidth={2.2} />
+                  <Text className="body-xs">
                     Start {task.start_date ? formatRelativeDate(task.start_date) : "ikke sat"}
                   </Text>
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                  <Ionicons name="time-outline" size={13} color={colors.textMuted} />
-                  <Text style={typography.bodyXs}>
+                <View className="flex-row items-center gap-1">
+                  <Clock size={13} color={colors.textMuted} strokeWidth={2.2} />
+                  <Text className="body-xs">
                     Deadline {task.deadline ? formatRelativeDate(task.deadline) : "ikke sat"}
                   </Text>
                 </View>
@@ -315,34 +314,14 @@ export default function UserTaskDetails() {
                 />
               )}
 
-              <View style={{ gap: 8 }}>
-                <Text style={typography.overline}>Beskrivelse</Text>
-                <Text style={[typography.bodySm, { lineHeight: 22 }]}>
+              <View className="gap-2">
+                <Text className="overline">Beskrivelse</Text>
+                <Text className="body-sm" style={{ lineHeight: 22 }}>
                   {task.description}
                 </Text>
               </View>
             </View>
 
-            {/* <TouchableOpacity
-              onPress={handleComplete}
-              disabled={isUpdating}
-              style={{ height: 56, borderRadius: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, opacity: isUpdating ? 0.5 : 1, backgroundColor: task.status === TaskStatus.DONE ? colors.textMuted : colors.green }}
-            >
-              {isUpdating ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <>
-                  <Ionicons
-                    name={task.status === TaskStatus.DONE ? "refresh" : "checkmark"}
-                    size={20}
-                    color={colors.white}
-                  />
-                  <Text style={typography.btnMdWhite}>
-                    {task.status === TaskStatus.DONE ? "Marker som ikke færdig" : "Marker som færdig"}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity> */}
             {!isArchived && (
               <SlideToComplete
                 onComplete={handleComplete}
@@ -355,10 +334,10 @@ export default function UserTaskDetails() {
       </ScrollView>
 
       {task && !isLoading && !error && (
-        <View style={{ position: "absolute", right: 20, bottom: 40, alignItems: "flex-end", gap: 10 }}>
-          <GlassIconButton systemName="camera" onPress={() => router.navigate(`${pathname}/photos`)} size="lg" />
-          <GlassIconButton systemName="bubble.right" onPress={handleOpenComments} size="lg" />
-          <GlassIconButton systemName="folder" onPress={() => router.navigate(`${pathname}/files`)} size="lg" />
+        <View className="absolute right-5 bottom-10 items-end gap-2.5">
+          <GlassIconButton icon={Camera} onPress={() => router.navigate(`${pathname}/photos`)} size="lg" />
+          <GlassIconButton icon={MessageCircle} onPress={handleOpenComments} size="lg" />
+          <GlassIconButton icon={Folder} onPress={() => router.navigate(`${pathname}/files`)} size="lg" />
         </View>
       )}
     </View>

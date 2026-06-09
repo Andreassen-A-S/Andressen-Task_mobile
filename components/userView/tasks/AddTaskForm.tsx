@@ -13,12 +13,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/hooks/useAuth";
 import { createTask } from "@/lib/api";
 import { TaskPriority, TaskStatus } from "@/types/task";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import { formatRelativeDate, toDateKey, toIsoDate, parseDateParam, translatePriority, translateTaskUnit } from "@/helpers/helpers";
 import { pickerStore } from "@/lib/pickerStore";
 import { multiSelectStore } from "@/lib/multiSelectStore";
 import { goalStore, GoalData } from "@/lib/goalStore";
+import { Calendar, Clock, Flag, Target, UserRound } from "lucide-react-native";
 import ToolbarGlassButton from "@/components/userView/common/buttons/ToolbarGlassButton";
 import GlassTextButton from "@/components/userView/common/buttons/GlassTextButton";
 import ModalScreen from "@/components/userView/common/ModalScreen";
@@ -92,7 +92,7 @@ export default function AddTaskForm() {
         start_date: toIsoDate(toDateKey(startDate ?? new Date())),
         created_by: user.user_id,
         assigned_users: assignedUsers,
-        ...(goal ? { goal: { target_quantity: goal.target_quantity, unit: goal.unit } } : {}),
+        ...(goal ? { goal: { target_quantity: goal.target_quantity, unit: goal.unit, current_quantity: goal.current_quantity } } : {}),
       });
       router.dismissAll();
     } catch {
@@ -125,7 +125,8 @@ export default function AddTaskForm() {
         underlineColorAndroid="transparent"
         placeholder="Titel"
         placeholderTextColor={colors.textMuted}
-        style={[typography.h3, { color: colors.textPrimary, marginBottom: 22, padding: 0 }]}
+        className="h3"
+        style={{ marginBottom: 22, padding: 0 }}
         multiline
       />
       <TextInput
@@ -136,7 +137,8 @@ export default function AddTaskForm() {
         underlineColorAndroid="transparent"
         placeholder="Tilføj en beskrivelse"
         placeholderTextColor={colors.textMuted}
-        style={[typography.bodyMd, { color: colors.textPrimary, minHeight: 250, padding: 0, textAlignVertical: "top" }]}
+        className="body-md"
+        style={{ minHeight: 250, padding: 0, textAlignVertical: "top" }}
         multiline
         scrollEnabled={false}
         autoCorrect={true}
@@ -151,7 +153,7 @@ export default function AddTaskForm() {
           borderWidth: 1,
           borderColor: colors.redBorder,
         }}>
-          <Text style={[typography.bodySm, { color: colors.redText }]}>{error}</Text>
+          <Text className="body-sm text-danger-text">{error}</Text>
         </View>
       ) : null}
     </>
@@ -159,11 +161,11 @@ export default function AddTaskForm() {
 
   const toolbarButtons = (
     <>
-      <ToolbarGlassButton icon="flag" label={translatePriority(priority).charAt(0) + translatePriority(priority).slice(1).toLowerCase()} tint={priority ? "#007AFF" : undefined} onPress={() => openPicker("Prioritet", PRIORITY_OPTIONS, priority, (v) => setPriority(v as TaskPriority))} />
-      <ToolbarGlassButton icon="calendar" label={startDate ? formatRelativeDate(startDate) : "Startdato"} tint={startDate ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setStartDate(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Startdato", selected: toDateKey(startDate ?? new Date()) } }); }} />
-      <ToolbarGlassButton icon="clock" label={deadline ? formatRelativeDate(deadline) : "Deadline"} tint={deadline ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setDeadline(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Deadline", selected: toDateKey(deadline ?? new Date()) } }); }} />
-      <ToolbarGlassButton icon="target" label={goal?.target_quantity ? translateTaskUnit(goal.unit).replace(/^./, (c) => c.toUpperCase()) : "Mål"} tint={goal ? "#007AFF" : undefined} onPress={() => { goalStore.set(setGoal, goal); router.push({ pathname: "/(tabs)/tasks/add-goal-picker" }); }} />
-      <ToolbarGlassButton icon="person" label={assignedUsers.length > 0 ? `${assignedUsers.length} Tildelt${assignedUsers.length === 1 ? "" : "e"}` : "Tildelte"} tint={assignedUsers.length > 0 ? "#007AFF" : undefined} onPress={() => { multiSelectStore.set(setAssignedUsers, assignedUsers); router.push({ pathname: "/(tabs)/tasks/add-assignees-picker" }); }} />
+      <ToolbarGlassButton icon={Flag} label={translatePriority(priority).charAt(0) + translatePriority(priority).slice(1).toLowerCase()} tint={priority ? "#007AFF" : undefined} onPress={() => openPicker("Prioritet", PRIORITY_OPTIONS, priority, (v) => setPriority(v as TaskPriority))} />
+      <ToolbarGlassButton icon={Calendar} label={startDate ? formatRelativeDate(startDate) : "Startdato"} tint={startDate ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setStartDate(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Startdato", selected: startDate ? toDateKey(startDate) : "" } }); }} />
+      <ToolbarGlassButton icon={Clock} label={deadline ? formatRelativeDate(deadline) : "Deadline"} tint={deadline ? "#007AFF" : undefined} onPress={() => { pickerStore.set((v) => setDeadline(v ? parseDateParam(v) : null)); router.push({ pathname: "/(tabs)/tasks/date-picker", params: { title: "Deadline", selected: deadline ? toDateKey(deadline) : "" } }); }} />
+      <ToolbarGlassButton icon={Target} label={goal?.target_quantity ? translateTaskUnit(goal.unit).replace(/^./, (c) => c.toUpperCase()) : "Mål"} tint={goal ? "#007AFF" : undefined} onPress={() => { goalStore.set(setGoal, goal); router.push({ pathname: "/(tabs)/tasks/add-goal-picker" }); }} />
+      <ToolbarGlassButton icon={UserRound} label={assignedUsers.length > 0 ? `${assignedUsers.length} Tildelt${assignedUsers.length === 1 ? "" : "e"}` : "Tildelte"} tint={assignedUsers.length > 0 ? "#007AFF" : undefined} onPress={() => { multiSelectStore.set(setAssignedUsers, assignedUsers); router.push({ pathname: "/(tabs)/tasks/add-assignees-picker" }); }} />
     </>
   );
 

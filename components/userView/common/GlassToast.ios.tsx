@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
-import { Ionicons } from "@expo/vector-icons";
+import { TriangleAlert, X } from "lucide-react-native";
 
 interface Props {
   title: string;
@@ -17,13 +17,13 @@ export function GlassToast({ title, message, onDismiss }: Props) {
         style={{ borderRadius: 20, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.6)" }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: "rgba(255,255,255,0.35)" }}>
-          <Ionicons name="warning-outline" size={22} color="orange" />
+          <TriangleAlert size={22} color="orange" strokeWidth={2.2} />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: "Outfit_600SemiBold", fontSize: 15, color: "#1B1D22" }}>{title}</Text>
-            <Text style={{ fontFamily: "Outfit_400Regular", fontSize: 13, color: "#6B7280", marginTop: 2 }}>{message}</Text>
+            <Text className="btn-lg text-charcoal">{title}</Text>
+            <Text className="body-xs mt-0.5">{message}</Text>
           </View>
           <Pressable onPress={onDismiss} hitSlop={8}>
-            <Ionicons name="close" size={16} color="#9CA3AF" />
+            <X size={16} color="#9CA3AF" strokeWidth={2.2} />
           </Pressable>
         </View>
       </BlurView>

@@ -1,24 +1,13 @@
 import { View, Pressable, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { SFSymbol } from "sf-symbols-typescript";
+import { Ellipsis } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 import { PillItem } from "@/types/pill";
 
 type Variant = "sm" | "lg";
 
 const VARIANTS: Record<Variant, { size: number; paddingSize: number }> = {
-  sm: { size: 16, paddingSize: 10 },
-  lg: { size: 18, paddingSize: 11 },
-};
-
-const SF_TO_IONICON: Partial<Record<SFSymbol, keyof typeof Ionicons.glyphMap>> = {
-  "xmark": "close",
-  "chevron.left": "chevron-back",
-  "camera": "camera",
-  "bubble.right": "chatbubble",
-  "folder": "folder",
-  "square.and.arrow.up": "share-social",
-  "ellipsis": "ellipsis-horizontal",
+  sm: { size: 20, paddingSize: 12 },
+  lg: { size: 24, paddingSize: 12 },
 };
 
 
@@ -40,7 +29,7 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
       overflow: "hidden",
     }}>
       {items.map((item, index) => {
-        const iconName = SF_TO_IONICON[item.systemName] ?? "ellipsis-horizontal";
+        const Icon = item.icon ?? Ellipsis;
         const enabledActions = item.menuActions?.filter((a) => !a.disabled) ?? [];
         const handlePress = enabledActions.length
           ? () => Alert.alert(
@@ -69,7 +58,7 @@ export default function GlassPillButton({ items, variant = "sm" }: Props) {
               justifyContent: "center",
             }}
           >
-            <Ionicons name={iconName} size={size} color={colors.textPrimary} />
+            <Icon size={size} color={colors.textPrimary} strokeWidth={2.2} />
           </Pressable>
         );
       })}

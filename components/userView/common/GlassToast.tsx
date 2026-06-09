@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { TriangleAlert, X } from "lucide-react-native";
 
 interface Props {
   title: string;
@@ -9,14 +9,14 @@ interface Props {
 
 export function GlassToast({ title, message, onDismiss }: Props) {
   return (
-    <View style={{ backgroundColor: "white", borderRadius: 16, padding: 16, flexDirection: "row", alignItems: "center", gap: 12, elevation: 5 }}>
-      <Ionicons name="warning-outline" size={22} color="orange" />
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: "Outfit_600SemiBold", fontSize: 15, color: "#1B1D22" }}>{title}</Text>
-        <Text style={{ fontFamily: "Outfit_400Regular", fontSize: 13, color: "#6B7280", marginTop: 2 }}>{message}</Text>
+    <View className="bg-white rounded-2xl p-4 flex-row items-center gap-3" style={{ elevation: 5 }}>
+      <TriangleAlert size={22} color="orange" strokeWidth={2.2} />
+      <View className="flex-1">
+        <Text className="btn-lg text-charcoal">{title}</Text>
+        <Text className="body-xs mt-0.5">{message}</Text>
       </View>
       <Pressable onPress={onDismiss} hitSlop={8}>
-        <Ionicons name="close" size={18} color="#9CA3AF" />
+        <X size={18} color="#9CA3AF" strokeWidth={2.2} />
       </Pressable>
     </View>
   );

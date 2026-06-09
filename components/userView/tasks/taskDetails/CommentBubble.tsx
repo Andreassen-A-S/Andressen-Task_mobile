@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, TouchableOpacity, Animated, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { RotateCw } from "lucide-react-native";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
-import { typography } from "@/constants/typography";
 import { colors } from "@/constants/colors";
 import SingleAvatar from "../../common/label/singleAvatar";
 import CommentAttachments from "./CommentAttachments";
@@ -56,11 +55,11 @@ export default function CommentBubble({ comment, isOwn, author, sending, failed,
   const align = isOwn ? "flex-end" : "flex-start";
 
   return (
-    <View style={{ alignSelf: align, gap: 4 }}>
+    <View className={`gap-1 ${isOwn ? "self-end" : "self-start"}`}>
       {!isOwn && (
         <View className="flex-row items-center gap-2">
           <SingleAvatar name={author?.name || "?"} imageUrl={author?.profile_picture_url} size="xs" />
-          <Text style={typography.labelMd}>{author?.name || author?.email || "Ukendt bruger"}</Text>
+          <Text className="label-md">{author?.name || author?.email || "Ukendt bruger"}</Text>
         </View>
       )}
 
@@ -77,29 +76,28 @@ export default function CommentBubble({ comment, isOwn, author, sending, failed,
           activeOpacity={0.8}
           onLongPress={status === "idle" ? handleLongPress : undefined}
           delayLongPress={400}
-          className="max-w-[75%] rounded-lg px-3 py-2"
-          style={{ alignSelf: align, backgroundColor: isOwn ? colors.green : colors.white }}
+          className={`max-w-[75%] rounded-lg px-3 py-2 ${isOwn ? "self-end bg-accent" : "self-start bg-surface"}`}
         >
           <LinkedText
             text={comment.message}
-            style={isOwn ? typography.bodySmWhite : typography.bodySm}
+            className={isOwn ? "body-sm-white" : "body-sm"}
             linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
           />
         </TouchableOpacity>
       ) : null}
 
       {isOwn && (
-        <View style={{ minHeight: 16, justifyContent: "center", alignItems: "flex-end" }}>
+        <View className="min-h-4 justify-center items-end">
           {status === "sending" && (
-            <Text style={[typography.bodyXs, { color: colors.textMuted }]}>Sender</Text>
+            <Text className="body-xs text-muted">Sender</Text>
           )}
           {status === "afsendt" && (
-            <Animated.Text style={[typography.bodyXs, { color: colors.textMuted, opacity }]}>Afsendt</Animated.Text>
+            <Animated.Text className="body-xs text-muted" style={{ opacity }}>Afsendt</Animated.Text>
           )}
           {status === "failed" && (
-            <TouchableOpacity onPress={() => onRetry?.(comment.comment_id)} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Text style={[typography.bodyXs, { color: colors.red }]}>{errorMessage ?? "Kunne ikke sende"}</Text>
-              <Ionicons name="refresh-outline" size={12} color={colors.red} />
+            <TouchableOpacity onPress={() => onRetry?.(comment.comment_id)} className="flex-row items-center gap-1">
+              <Text className="body-xs text-danger">{errorMessage ?? "Kunne ikke sende"}</Text>
+              <RotateCw size={12} color={colors.red} strokeWidth={2.2} />
             </TouchableOpacity>
           )}
         </View>

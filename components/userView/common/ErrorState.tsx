@@ -1,6 +1,4 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import { typography } from "@/constants/typography";
-import { colors } from "@/constants/colors";
 
 interface ErrorStateProps {
   message?: string;
@@ -10,13 +8,12 @@ interface ErrorStateProps {
 export default function ErrorState({ message = "Noget gik galt.", onRetry }: ErrorStateProps) {
   return (
     <View className="flex-1 items-center justify-center gap-3">
-      <Text style={typography.bodyMd}>{message}</Text>
+      <Text className="body-md">{message}</Text>
       <TouchableOpacity
         onPress={onRetry}
-        className="px-5 py-2 rounded-full bg-white"
-        style={{ borderWidth: 1, borderColor: colors.border }}
+        className="px-5 py-2 rounded-full bg-white border border-border"
       >
-        <Text style={typography.btnMd}>Prøv igen</Text>
+        <Text className="btn-md">Prøv igen</Text>
       </TouchableOpacity>
     </View>
   );

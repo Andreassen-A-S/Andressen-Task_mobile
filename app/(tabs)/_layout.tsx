@@ -1,9 +1,8 @@
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Platform, Text } from "react-native";
+import { Calendar, ClipboardList, UserRound } from "lucide-react-native";
+import { Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/constants/colors";
-import { typography } from "@/constants/typography";
 
 const TAB_BAR_HEIGHT = 50;
 
@@ -23,7 +22,7 @@ export default function TabLayout() {
           paddingBottom: bottomInset,
         },
         tabBarLabel: ({ focused, children }) => (
-          <Text style={focused ? typography.navItemActive : typography.navItem}>
+          <Text className={focused ? "nav-item-active" : "nav-item"}>
             {children}
           </Text>
         ),
@@ -35,7 +34,7 @@ export default function TabLayout() {
         options={{
           title: "Opgaver",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? "checkbox" : "checkbox-outline"} size={size} color={color} />
+            <ClipboardList size={size} color={color} strokeWidth={focused ? 2.6 : 2} />
           ),
         }}
       />
@@ -44,7 +43,7 @@ export default function TabLayout() {
         options={{
           title: "Kalender",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? "calendar" : "calendar-outline"} size={size} color={color} />
+            <Calendar size={size} color={color} strokeWidth={focused ? 2.6 : 2} />
           ),
         }}
       />
@@ -53,7 +52,7 @@ export default function TabLayout() {
         options={{
           title: "Profil",
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? "person" : "person-outline"} size={size} color={color} />
+            <UserRound size={size} color={color} strokeWidth={focused ? 2.6 : 2} />
           ),
         }}
       />
