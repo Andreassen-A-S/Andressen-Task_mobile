@@ -31,6 +31,7 @@ export default function UserHeader({ variant, user, heading, sub, position, scro
     const [query, setQuery] = useState("");
     const searchAnim = useRef(new Animated.Value(0)).current;
     const inputRef = useRef<TextInput>(null);
+    const router = useRouter();
 
     const activateSearch = () => {
         setSearchActive(true);
@@ -158,8 +159,6 @@ export default function UserHeader({ variant, user, heading, sub, position, scro
             </View>
         );
     }
-
-    const router = useRouter();
 
     return (
         <View style={{ paddingTop: top }} className="flex-row items-center bg-charcoal border-b border-border px-4 pb-3 gap-3">

@@ -19,8 +19,8 @@ export default function AccountSettingsPage() {
   }, [currentUser?.user_id]);
 
   const rows: { label: string; value: string | null | undefined }[] = [
-    { label: "Navn", value: userDetails?.name },
-    { label: "E-mail", value: userDetails?.email },
+    { label: "Navn", value: userDetails?.name ?? currentUser?.name },
+    { label: "E-mail", value: userDetails?.email ?? currentUser?.email },
     { label: "Stilling", value: userDetails?.position?.name ?? "—" },
     { label: "Organisation", value: userDetails?.organization?.name ?? "—" },
   ];
