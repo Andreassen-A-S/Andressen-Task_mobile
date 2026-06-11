@@ -1,16 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { Animated } from "react-native";
+import { Animated, View, Text, TouchableOpacity, Alert, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PROFILE_HEADER_HEIGHT_BASE } from "@/components/userView/common/UserHeader";
 import { useRouter } from "expo-router";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { Linking } from "react-native";
 import { Bell, Calendar, Check, CheckCircle2, ChevronRight, ExternalLink, LogOut, Mail, Moon, Shield, UserRound } from "lucide-react-native";
 import { AuthContext } from "@/contexts/AuthContext";
 import { getMyStats, getUser, getUserAssignments } from "@/lib/api";
@@ -18,7 +9,7 @@ import { UserStats } from "@/types/stats";
 import { User } from "@/types/users";
 import { TaskAssignment } from "@/types/assignment";
 import { formatNumber, getTodayAssignmentStats } from "@/helpers/helpers";
-import UserHeader from "../common/UserHeader";
+import UserHeader, { PROFILE_HEADER_HEIGHT_BASE } from "@/components/userView/common/UserHeader";
 import { colors } from "@/constants/colors";
 
 export default function ProfilePage() {

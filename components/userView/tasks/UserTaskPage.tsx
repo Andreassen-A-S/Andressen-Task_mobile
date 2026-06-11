@@ -32,7 +32,7 @@ export default function UserTaskPage() {
   const fetchTasks = useCallback(async (refresh = false) => {
     if (!user?.user_id) return;
     try {
-      refresh ? setIsRefreshing(true) : setIsLoading(true);
+      if (refresh) setIsRefreshing(true); else setIsLoading(true);
       setError(null);
       const [assignmentsResult, projectsResult] = await Promise.allSettled([
         getUserAssignments(user.user_id),
@@ -46,7 +46,7 @@ export default function UserTaskPage() {
     } catch {
       setError("Kunne ikke hente opgaver. Prøv igen senere.");
     } finally {
-      refresh ? setIsRefreshing(false) : setIsLoading(false);
+      if (refresh) setIsRefreshing(false); else setIsLoading(false);
     }
   }, [user?.user_id]);
 

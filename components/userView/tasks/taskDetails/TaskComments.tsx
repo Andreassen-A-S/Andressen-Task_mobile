@@ -92,7 +92,7 @@ export default function TaskComments() {
     return result;
   }, [comments]);
 
-  const uploadAttachments = async (attachments: Array<{ uri: string; fileName: string; mimeType: string }>): Promise<string[]> => {
+  const uploadAttachments = async (attachments: { uri: string; fileName: string; mimeType: string }[]): Promise<string[]> => {
     const blobsWithMeta = await Promise.all(
       attachments.map(async ({ uri, fileName, mimeType }) => {
         let effectiveUri = uri;

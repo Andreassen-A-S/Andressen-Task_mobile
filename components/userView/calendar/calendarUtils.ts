@@ -3,14 +3,14 @@ export const DAY_CELL_HEIGHT = 38;
 export const GRID_ROW_GAP = 2;
 export const YEAR_RANGE = 5;
 
-export function getDaysInMonth(date: Date): Array<{ date: Date; isCurrentMonth: boolean }> {
+export function getDaysInMonth(date: Date): { date: Date; isCurrentMonth: boolean }[] {
   const year = date.getFullYear();
   const month = date.getMonth();
   const startDow = new Date(year, month, 1).getDay();
   const prevMonthDays = startDow === 0 ? 6 : startDow - 1;
   const prevMonthLastDay = new Date(year, month, 0).getDate();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const days: Array<{ date: Date; isCurrentMonth: boolean }> = [];
+  const days: { date: Date; isCurrentMonth: boolean }[] = [];
 
   for (let i = prevMonthDays; i > 0; i--) {
     days.push({ date: new Date(year, month - 1, prevMonthLastDay - i + 1), isCurrentMonth: false });

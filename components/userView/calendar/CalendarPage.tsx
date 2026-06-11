@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import {
   View,
-  Text,
   ScrollView,
   RefreshControl,
   SectionList,
@@ -83,14 +82,14 @@ export default function CalendarPage() {
   const fetchTasks = useCallback(async (refresh = false) => {
     if (!user?.user_id) return;
     try {
-      refresh ? setIsRefreshing(true) : setIsLoading(true);
+      if (refresh) setIsRefreshing(true); else setIsLoading(true);
       setError(null);
       const assignments = await getUserAssignments(user.user_id);
       setTasks(assignments.map((a) => ({ ...a.task, goal: a.task.goal ?? null })).filter(Boolean));
     } catch {
       setError("Kunne ikke hente opgaver. Prøv igen senere.");
     } finally {
-      refresh ? setIsRefreshing(false) : setIsLoading(false);
+      if (refresh) setIsRefreshing(false); else setIsLoading(false);
     }
   }, [user?.user_id]);
 

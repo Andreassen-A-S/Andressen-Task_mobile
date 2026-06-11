@@ -27,7 +27,7 @@ function splitTrailingPunctuation(value: string) {
 }
 
 export default function LinkedText({ text, style, linkStyle, ...props }: LinkedTextProps) {
-  const parts: Array<{ type: "text" | "link"; value: string }> = [];
+  const parts: { type: "text" | "link"; value: string }[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 

@@ -1,5 +1,4 @@
-import { View, Text, TouchableOpacity } from "react-native";
-import { ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Check } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";

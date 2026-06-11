@@ -108,7 +108,7 @@ export default function AdminTaskPage() {
 
   const fetchData = useCallback(async (refresh = false) => {
     try {
-      refresh ? setIsRefreshing(true) : setIsLoading(true);
+      if (refresh) setIsRefreshing(true); else setIsLoading(true);
       setError(null);
       const [tasksResult, projectsResult, usersResult] = await Promise.allSettled([
         getTasks(),
@@ -126,7 +126,7 @@ export default function AdminTaskPage() {
     } catch {
       setError("Kunne ikke hente opgaver. Prøv igen senere.");
     } finally {
-      refresh ? setIsRefreshing(false) : setIsLoading(false);
+      if (refresh) setIsRefreshing(false); else setIsLoading(false);
     }
   }, []);
 
