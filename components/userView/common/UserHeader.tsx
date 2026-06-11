@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
-import { View, Text, TextInput, Animated, Platform } from "react-native";
+import { View, Text, TextInput, Animated, Platform, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import MaskedView from "@react-native-masked-view/masked-view";
@@ -158,13 +159,17 @@ export default function UserHeader({ variant, user, heading, sub, position, scro
         );
     }
 
+    const router = useRouter();
+
     return (
         <View style={{ paddingTop: top }} className="flex-row items-center bg-charcoal border-b border-border px-4 pb-3 gap-3">
             <View className="flex-1">
                 <Text className="h3-white">{heading || "Mine opgaver"}</Text>
                 <Text className="caption">{sub || `Velkommen, ${user?.name || user?.email}`}</Text>
             </View>
-            <SingleAvatar size="lg" name={user?.name || "Ukendt bruger"} imageUrl={user?.profile_picture_url} />
+            <TouchableOpacity onPress={() => router.navigate("/(tabs)/profile")}>
+                <SingleAvatar size="lg" name={user?.name || "Ukendt bruger"} imageUrl={user?.profile_picture_url} />
+            </TouchableOpacity>
         </View>
     );
 }

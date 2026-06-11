@@ -64,12 +64,12 @@ export default function ListPicker() {
             contentContainerStyle={{ paddingBottom: isSearchable ? SEARCHBAR_HEIGHT + 20 + 16 : insets.bottom + 16 }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
-              <View className="px-4 py-3.5 bg-white">
+              <View className="px-4 py-3.5 bg-surface">
                 <Text className="body-sm text-muted">Ingen resultater</Text>
               </View>
             )}
             ItemSeparatorComponent={() => (
-              <View className="bg-white">
+              <View className="bg-surface">
                 <View className="h-px bg-border ml-4" />
               </View>
             )}
@@ -78,7 +78,7 @@ export default function ListPicker() {
               return (
                 <TouchableOpacity
                   onPress={() => handleSelect(isClearable && isSelected ? "" : item.value)}
-                  className="flex-row items-center px-4 py-3.5 bg-white"
+                  className="flex-row items-center px-4 py-3.5 bg-surface"
                 >
                   {item.icon ? <View className="mr-3">{item.icon}</View> : null}
                   {item.label ? <Text className="body-md flex-1" numberOfLines={1}>{item.label}</Text> : <View className="flex-1" />}

@@ -99,7 +99,7 @@ export default function ProfilePage() {
 
         {/* This week */}
         <View className="px-4 pt-6">
-          <Text className="label-sm uppercase mb-3">Denne uge</Text>
+          <Text className="body-md font-semibold !text-secondary mb-2">Denne uge</Text>
           <View className="bg-surface rounded-2xl overflow-hidden">
             <View className="flex-row items-center px-4 py-4">
               <View className="w-8 h-8 rounded-2xl items-center justify-center mr-3 bg-accent-surface">
@@ -135,7 +135,7 @@ export default function ProfilePage() {
 
         {/* Settings */}
         <View className="px-4 pt-6">
-          <Text className="label-sm uppercase mb-3">Indstillinger</Text>
+          <Text className="body-md font-semibold !text-secondary mb-2">Indstillinger</Text>
           <View className="bg-surface rounded-2xl overflow-hidden">
             <TouchableOpacity className="flex-row items-center px-4 py-4" onPress={() => Linking.openSettings()}>
               <View className="w-8 h-8 rounded-2xl items-center justify-center mr-3 bg-surface-subtle">
@@ -161,7 +161,7 @@ export default function ProfilePage() {
               <View className="w-8 h-8 rounded-2xl items-center justify-center mr-3 bg-surface-subtle">
                 <UserRound size={16} color={colors.textSecondary} strokeWidth={2.2} />
               </View>
-              <Text className="body-md flex-1 text-text-muted" numberOfLines={1}>
+              <Text className="body-md flex-1 text-muted" numberOfLines={1}>
                 Konto
               </Text>
               <ChevronRight size={20} color={colors.textMuted} strokeWidth={2.2} />
@@ -171,7 +171,7 @@ export default function ProfilePage() {
 
         {/* Legal & Support */}
         <View className="px-4 pt-6">
-          <Text className="label-sm uppercase mb-3">Support</Text>
+          <Text className="body-md font-semibold !text-secondary mb-2">Support</Text>
           <View className="bg-surface rounded-2xl overflow-hidden">
             <TouchableOpacity
               className="flex-row items-center px-4 py-4"

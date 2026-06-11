@@ -21,19 +21,19 @@ export default function UserTaskDateNavigator({ selectedDate, onDateChange }: Pr
   };
 
   return (
-    <View className="bg-white border-b border-gray-200 flex-row items-center justify-between px-4 h-12">
+    <View className="bg-surface border-b border-border flex-row items-center justify-between px-4 h-12">
       <TouchableOpacity
         onPress={prevDay}
-        className="w-8 h-8 border border-gray-200 rounded-lg items-center justify-center"
+        className="w-8 h-8 border border-border rounded-lg items-center justify-center"
       >
         <ChevronLeft size={16} color="#6B7084" strokeWidth={2.2} />
       </TouchableOpacity>
 
       <View className="items-center">
-        <Text className="text-base font-semibold text-gray-900">
+        <Text className="body-md">
           {formatRelativeDate(selectedDate)}
         </Text>
-        <Text className="text-xs text-gray-500">
+        <Text className="body-sm text-muted">
           {formatLocalDate(selectedDate, "da-DK", {
             weekday: "long",
             day: "numeric",
@@ -44,7 +44,7 @@ export default function UserTaskDateNavigator({ selectedDate, onDateChange }: Pr
 
       <TouchableOpacity
         onPress={nextDay}
-        className="w-8 h-8 border border-gray-200 rounded-lg items-center justify-center"
+        className="w-8 h-8 border border-border rounded-lg items-center justify-center"
       >
         <ChevronRight size={16} color="#6B7084" strokeWidth={2.2} />
       </TouchableOpacity>
