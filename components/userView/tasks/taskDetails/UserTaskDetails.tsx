@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Calendar, Camera, Clock, Folder, Lock, MessageCircle } from "lucide-react-native";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
-import { Task, TaskStatus, TaskUnit } from "@/types/task";
+import { Task, TaskStatus } from "@/types/task";
 import { isAdminRole, User, UserRole } from "@/types/users";
 import { addTaskProgress, getTask, updateTask, getUser, deleteTask } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";

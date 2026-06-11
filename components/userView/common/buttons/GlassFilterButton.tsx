@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Alert } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { ChevronDown, type LucideIcon } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 

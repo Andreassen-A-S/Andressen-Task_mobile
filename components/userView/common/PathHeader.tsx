@@ -15,6 +15,7 @@ interface Props {
   rightContent?: ReactNode;
   modal?: boolean;
   bottomBorder?: boolean;
+  centered?: boolean;
 }
 
 export function usePathHeaderHeight(modal = false): number {
@@ -23,7 +24,7 @@ export function usePathHeaderHeight(modal = false): number {
   return topSpacing + 56;
 }
 
-export default function PathHeader({ title, path, rightContent, modal = false, bottomBorder = false }: Props) {
+export default function PathHeader({ title, path, rightContent, modal = false, bottomBorder = false, centered = false }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const topSpacing = modal ? (Platform.OS === "ios" ? 12 : insets.top) : insets.top;
@@ -64,14 +65,19 @@ export default function PathHeader({ title, path, rightContent, modal = false, b
       )}
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, height: 56, marginTop: topSpacing }} >
-        <View className="flex-row items-center gap-3 flex-1">
-          <GlassIconButton icon={ChevronLeft} onPress={() => router.back()} size="lg" />
-          <View className="flex-1">
+        <GlassIconButton icon={ChevronLeft} onPress={() => router.back()} size="lg" />
+        {centered ? (
+          <View className="absolute left-0 right-0 items-center" pointerEvents="none">
+            <Text className="h4" numberOfLines={1}>{title ?? ""}</Text>
+            {path ? <Text className="body-xs" numberOfLines={1}>{path}</Text> : null}
+          </View>
+        ) : (
+          <View className="flex-1 ml-3">
             <Text className="h6" numberOfLines={1}>{title ?? ""}</Text>
             {path ? <Text className="body-xs" numberOfLines={1}>{path}</Text> : null}
           </View>
-        </View>
-        {rightContent}
+        )}
+        {rightContent ?? (centered ? <View className="w-12" /> : null)}
       </View>
     </View>
   );

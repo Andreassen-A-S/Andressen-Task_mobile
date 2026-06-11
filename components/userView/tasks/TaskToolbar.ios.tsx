@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function TaskToolbar({ items }: Props) {
-  const pressRefs = useRef<Array<() => void>>([]);
+  const pressRefs = useRef<(() => void)[]>([]);
   pressRefs.current = items.map((item) => item.onPress);
 
   return (
