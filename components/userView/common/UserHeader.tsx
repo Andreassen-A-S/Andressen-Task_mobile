@@ -1,10 +1,16 @@
 import { useRef, useState, useEffect } from "react";
-import { View, Text, TextInput, Animated } from "react-native";
+import { View, Text, TextInput, Animated, Platform } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+import MaskedView from "@react-native-masked-view/masked-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import SingleAvatar from "./label/singleAvatar";
 import { Plus, Search, X } from "lucide-react-native";
 import GlassIconButton from "./buttons/GlassIconButton";
 import { colors } from "@/constants/colors";
+
+const CHARCOAL = "#1B1D22";
+export const PROFILE_HEADER_HEIGHT_BASE = 58;
 
 type UserHeaderProps = {
     variant: "user" | "profile" | "admin";
@@ -12,12 +18,13 @@ type UserHeaderProps = {
     heading?: string;
     sub?: string;
     position?: string;
+    scrollY?: Animated.Value;
     onAdd?: () => void;
     onSearchChange?: (query: string) => void;
     searchResetKey?: number;
 };
 
-export default function UserHeader({ variant, user, heading, sub, position, onAdd, onSearchChange, searchResetKey }: UserHeaderProps) {
+export default function UserHeader({ variant, user, heading, sub, position, scrollY, onAdd, onSearchChange, searchResetKey }: UserHeaderProps) {
     const { top } = useSafeAreaInsets();
     const [searchActive, setSearchActive] = useState(false);
     const [query, setQuery] = useState("");
@@ -47,23 +54,63 @@ export default function UserHeader({ variant, user, heading, sub, position, onAd
     }, [searchResetKey]);
 
     if (variant === "profile") {
+        const expandedOpacity = scrollY?.interpolate({ inputRange: [0, 50], outputRange: [1, 0], extrapolate: "clamp" }) ?? 1;
+        const compactOpacity = scrollY?.interpolate({ inputRange: [30, 70], outputRange: [0, 1], extrapolate: "clamp" }) ?? 0;
+        const solidOpacity = scrollY?.interpolate({ inputRange: [0, 60], outputRange: [1, 0], extrapolate: "clamp" }) ?? 1;
+        const glassOpacity = scrollY?.interpolate({ inputRange: [0, 60], outputRange: [0, 1], extrapolate: "clamp" }) ?? 0;
+        const headerHeight = scrollY?.interpolate({ inputRange: [0, 60], outputRange: [top + PROFILE_HEADER_HEIGHT_BASE, top + 44], extrapolate: "clamp" }) ?? top + PROFILE_HEADER_HEIGHT_BASE;
+
         return (
-            <View style={{ paddingTop: top }} className="bg-charcoal px-4 pb-3">
-                <Text className="label-sm uppercase mb-3">
-                    Andreassen A/S · Task Management
-                </Text>
-                <View className="flex-row items-center gap-3">
+            <Animated.View style={{ position: "absolute", top: 0, left: 0, right: 0, height: headerHeight, zIndex: 10, overflow: "hidden" }}>
+
+                {/* Expanded: solid charcoal */}
+                <Animated.View style={{ position: "absolute", inset: 0, opacity: solidOpacity, backgroundColor: CHARCOAL }} />
+
+                {/* Compact: same frosted glass as ModalHeader */}
+                <Animated.View style={{ position: "absolute", inset: 0, opacity: glassOpacity }}>
+                    {Platform.OS === "ios" ? (
+                        <MaskedView
+                            style={{ position: "absolute", inset: 0 }}
+                            maskElement={
+                                <LinearGradient
+                                    colors={["black", "black", "transparent"]}
+                                    locations={[0, 0.8, 1]}
+                                    style={{ flex: 1 }}
+                                />
+                            }
+                        >
+                            <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} />
+                        </MaskedView>
+                    ) : null}
+                    <LinearGradient
+                        colors={[`${colors.eggWhite}CC`, `${colors.eggWhite}00`]}
+                        locations={[0, 1]}
+                        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+                    />
+                </Animated.View>
+
+                {/* Compact bar — fades in on scroll */}
+                <Animated.View
+                    style={{ opacity: compactOpacity, position: "absolute", left: 0, right: 0, bottom: 0, height: 44, flexDirection: "row", alignItems: "center", paddingHorizontal: 16 }}
+                    pointerEvents="none"
+                >
                     <SingleAvatar name={user?.name || "Ukendt bruger"} imageUrl={user?.profile_picture_url} size="lg" />
-                    <View className="flex-1">
-                        <Text className="h3-white" numberOfLines={1}>
-                            {user?.name || "Ukendt bruger"}
-                        </Text>
-                        <Text className="body-sm" numberOfLines={1}>
-                            {position || "Ukendt position"}
-                        </Text>
+                    <View style={{ position: "absolute", left: 0, right: 0, alignItems: "center" }}>
+                        <Text className="h4" numberOfLines={1}>{user?.name || "Profil"}</Text>
                     </View>
-                </View>
-            </View>
+                </Animated.View>
+
+                {/* Expanded content — fades out on scroll */}
+                <Animated.View style={{ opacity: expandedOpacity, paddingTop: top, paddingBottom: 10, paddingHorizontal: 16 }}>
+                    <View className="flex-row items-center gap-3">
+                        <SingleAvatar name={user?.name || "Ukendt bruger"} imageUrl={user?.profile_picture_url} size="lg" />
+                        <View className="flex-1">
+                            <Text className="h3-white" numberOfLines={1}>{user?.name || "Ukendt bruger"}</Text>
+                            <Text className="body-sm" numberOfLines={1}>{position || "Ukendt position"}</Text>
+                        </View>
+                    </View>
+                </Animated.View>
+            </Animated.View>
         );
     }
 

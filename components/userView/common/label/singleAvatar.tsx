@@ -5,22 +5,24 @@ import { View, Text } from "react-native";
 interface SingleAvatarProps {
     name: string;
     imageUrl?: string | null;
-    size?: "xs" | "sm" | "md" | "lg";
+    size?: "xs" | "sm" | "md" | "lg" | "xl";
     className?: string;
 }
 
 const sizeClasses = {
     xs: "w-6 h-6",
     sm: "w-8 h-8",
-    md: "w-[26px] h-[26px]",
-    lg: "w-[34px] h-[34px]",
+    md: "w-9 h-9",
+    lg: "w-10 h-10",
+    xl: "w-20 h-20",
 };
 
 const sizePx = {
     xs: 24,
     sm: 32,
-    md: 26,
-    lg: 34,
+    md: 36,
+    lg: 40,
+    xl: 80,
 };
 
 const initialsClass = {
@@ -28,6 +30,7 @@ const initialsClass = {
     sm: "initials-sm",
     md: "initials-md",
     lg: "initials-lg",
+    xl: "initials-lg",
 };
 
 export default function SingleAvatar({
