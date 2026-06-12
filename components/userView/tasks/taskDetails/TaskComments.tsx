@@ -51,7 +51,7 @@ type DisplayComment = TaskComment & {
   serverCommentId?: string;
 };
 
-const INPUT_BAR_OVERLAP = 120;
+const INPUT_BAR_OVERLAP = 135;
 const TIMESTAMP_THRESHOLD_MS = 30 * 60 * 1000;
 
 type ListItem = { type: "comment"; data: DisplayComment } | { type: "timestamp"; key: string; label: string };
