@@ -13,7 +13,8 @@ import {
   Alert,
   Animated,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import Reanimated, { useAnimatedStyle } from "react-native-reanimated";
+import { KeyboardAvoidingView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
@@ -32,7 +33,6 @@ import { colors } from "@/constants/colors";
 import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
 import AvatarCluster from "@/components/userView/common/label/AvatarCluster";
 import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
-import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
 import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
 import KeyboardInputBarAction from "@/components/userView/common/KeyboardInputBarAction";
 import CommentBubble from "./CommentBubble";
@@ -80,6 +80,11 @@ export default function TaskComments() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const scrollDownAnim = useRef(new Animated.Value(0)).current;
+
+  const { progress } = useReanimatedKeyboardAnimation();
+  const safeAreaStyle = useAnimatedStyle(() => ({ height: (1 - progress.value) * insets.bottom }));
+  const composerMarginStyle = useAnimatedStyle(() => ({ marginTop: -(INPUT_BAR_OVERLAP - progress.value * insets.bottom) }));
+  const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: INPUT_BAR_OVERLAP - progress.value * insets.bottom + 8 }));
 
   const listData = useMemo<ListItem[]>(() => {
     const result: ListItem[] = [];
@@ -152,7 +157,6 @@ export default function TaskComments() {
   useFocusEffect(useCallback(() => {
     fetchComments(hasLoadedRef.current);
     hasLoadedRef.current = true;
-
   }, [fetchComments]));
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
@@ -390,7 +394,7 @@ export default function TaskComments() {
             : undefined
         }
       />
-      <KeyboardAvoidingView behavior="padding" className="flex-1" >
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
         <View className="flex-1">
           {isLoading ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
@@ -459,21 +463,22 @@ export default function TaskComments() {
             </ScrollView>
           )}
           {!isLoading && !fetchError && (
-            <Animated.View
+            <Reanimated.View
               pointerEvents={showScrollDown ? "box-none" : "none"}
-              style={{
-                position: "absolute",
-                bottom: isArchived ? 8 : INPUT_BAR_OVERLAP + 8,
-                alignSelf: "center",
-                opacity: scrollDownAnim,
-                transform: [{ translateY: scrollDownAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
-              }}
+              style={[{ position: "absolute", alignSelf: "center" }, isArchived ? { bottom: 8 } : arrowBottomStyle]}
             >
-              <GlassIconButton
-                icon={ArrowDown}
-                onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
-              />
-            </Animated.View>
+              <Animated.View
+                style={{
+                  opacity: scrollDownAnim,
+                  transform: [{ translateY: scrollDownAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+                }}
+              >
+                <GlassIconButton
+                  icon={ArrowDown}
+                  onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+                />
+              </Animated.View>
+            </Reanimated.View>
           )}
         </View>
 
@@ -483,7 +488,7 @@ export default function TaskComments() {
             <Text className="label-sm text-muted">Arkiveret — kun visning</Text>
           </View>
         ) : (
-          <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>
+          <Reanimated.View style={[{ zIndex: 1 }, composerMarginStyle]}>
             <MaskedView
               style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
               pointerEvents="none"
@@ -532,10 +537,10 @@ export default function TaskComments() {
                 </ScrollView>
               ) : undefined}
             />
-          </View>
+            <Reanimated.View style={safeAreaStyle} />
+          </Reanimated.View>
         )}
       </KeyboardAvoidingView>
-      <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />
     </View>
   );
 }
