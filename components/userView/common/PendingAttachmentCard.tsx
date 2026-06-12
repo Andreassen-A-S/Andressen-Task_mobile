@@ -15,9 +15,9 @@ export default function PendingAttachmentCard({ uri, mimeType, fileName, onRemov
   const FileIcon = getFileIconComponent(mimeType);
 
   return (
-    <View className="w-24 h-24 rounded-2xl overflow-hidden border border-border">
+    <View className="w-24 h-24 rounded-2xl overflow-hidden border border-border" style={{ width: 96, height: 96 }}>
       {isImage ? (
-        <Image source={{ uri }} className="w-24 h-24" resizeMode="cover" />
+        <Image source={{ uri }} className="w-24 h-24" style={{ width: 96, height: 96 }} resizeMode="cover" />
       ) : (
         <View className="flex-1 bg-white items-center justify-center gap-1 px-1.5">
           <FileIcon size={28} color={colors.textPrimary} strokeWidth={2.1} />

@@ -42,6 +42,7 @@ type PendingAttachment = {
   localUri: string;
   fileName: string;
   mimeType: string;
+  fileSize?: number;
 };
 
 type DisplayComment = TaskComment & {
@@ -92,30 +93,27 @@ export default function TaskComments() {
     return result;
   }, [comments]);
 
-  const uploadAttachments = async (attachments: { uri: string; fileName: string; mimeType: string }[]): Promise<string[]> => {
-    const blobsWithMeta = await Promise.all(
-      attachments.map(async ({ uri, fileName, mimeType }) => {
-        let effectiveUri = uri;
-        let effectiveMime = mimeType;
-        let effectiveFileName = fileName;
+  const uploadAttachments = async (attachments: { uri: string; fileName: string; mimeType: string; fileSize?: number }[]): Promise<string[]> => {
+    const processed = await Promise.all(
+      attachments.map(async ({ uri, fileName, mimeType, fileSize }) => {
         const isHeicLike = mimeType === "image/heic" || mimeType === "image/heif" || /\.(heic|heif)$/i.test(fileName);
         if (isHeicLike) {
           const converted = await ImageManipulator.manipulateAsync(uri, [], { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG });
-          effectiveUri = converted.uri;
-          effectiveMime = "image/jpeg";
-          effectiveFileName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
+          return {
+            uri: converted.uri,
+            fileName: fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg"),
+            mimeType: "image/jpeg",
+            fileSize: fileSize ?? 0,
+          };
         }
-        const blob = await fetch(effectiveUri).then((r) => r.blob());
-        const maxBytes = MAX_FILE_SIZE[effectiveMime] ?? 10 * 1024 * 1024;
-        if (blob.size > maxBytes) throw new Error(`${effectiveFileName} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
-        return { blob, fileName: effectiveFileName, mimeType: effectiveMime };
+        return { uri, fileName, mimeType, fileSize: fileSize ?? 0 };
       }),
     );
     const prepared = await prepareAttachments(
       taskId,
-      blobsWithMeta.map(({ blob, fileName, mimeType }) => ({ file_name: fileName, mime_type: mimeType, file_size: blob.size })),
+      processed.map(({ fileName, mimeType, fileSize }) => ({ file_name: fileName, mime_type: mimeType, file_size: fileSize })),
     );
-    await Promise.all(prepared.map((p, i) => uploadToGcs(p.upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].mimeType)));
+    await Promise.all(prepared.map((p, i) => uploadToGcs(p.upload_url, processed[i].uri, processed[i].mimeType)));
     return prepared.map((p) => p.upload_token);
   };
 
@@ -182,7 +180,7 @@ export default function TaskComments() {
       if (asset.fileSize != null && asset.fileSize > maxBytes) {
         oversized.push(fileName);
       } else {
-        newAttachments.push({ localUri: asset.uri, fileName, mimeType: mime });
+        newAttachments.push({ localUri: asset.uri, fileName, mimeType: mime, fileSize: asset.fileSize ?? undefined });
       }
     });
 
@@ -221,7 +219,7 @@ export default function TaskComments() {
             if (asset.size != null && asset.size > maxBytes) {
               oversized.push(name);
             } else {
-              newFiles.push({ localUri: asset.uri, fileName: name, mimeType });
+              newFiles.push({ localUri: asset.uri, fileName: name, mimeType, fileSize: asset.size ?? undefined });
             }
           }
           if (oversized.length > 0) {
@@ -298,7 +296,7 @@ export default function TaskComments() {
 
     try {
       const upload_tokens = pendingAttachments.length > 0
-        ? await uploadAttachments(pendingAttachments.map((a) => ({ uri: a.localUri, fileName: a.fileName, mimeType: a.mimeType })))
+        ? await uploadAttachments(pendingAttachments.map((a) => ({ uri: a.localUri, fileName: a.fileName, mimeType: a.mimeType, fileSize: a.fileSize })))
         : undefined;
 
       const newComment = await createComment(taskId, {
@@ -474,7 +472,6 @@ export default function TaskComments() {
               <GlassIconButton
                 icon={ArrowDown}
                 onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
-                size="lg"
               />
             </Animated.View>
           )}
@@ -516,7 +513,13 @@ export default function TaskComments() {
                 <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} disabled={isSubmitting} />
               }
               attachments={pendingAttachments.length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
+                <ScrollView
+                  horizontal
+                  className="mb-2"
+                  showsHorizontalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={{ gap: 4 }}
+                >
                   {pendingAttachments.map((attachment) => (
                     <PendingAttachmentCard
                       key={attachment.localUri}

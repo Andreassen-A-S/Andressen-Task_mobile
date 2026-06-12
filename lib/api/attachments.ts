@@ -26,16 +26,21 @@ export async function prepareAttachments(
 
 export async function uploadToGcs(
   upload_url: string,
-  blob: Blob,
+  fileUri: string,
   mime_type: string,
 ): Promise<void> {
-  // Direct GCS upload — intentionally uses raw fetch, not apiFetch (not our API)
-  const uploadRes = await fetch(upload_url, {
-    method: "PUT",
-    body: blob,
-    headers: { "Content-Type": mime_type },
+  // Direct GCS upload via XHR — fetch(localUri).blob() is unsupported in RN new arch
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", upload_url);
+    xhr.setRequestHeader("Content-Type", mime_type);
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`GCS upload failed (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error("Network error during GCS upload"));
+    xhr.send({ uri: fileUri, type: mime_type, name: "file" } as unknown as Document);
   });
-  if (!uploadRes.ok) throw new Error(`GCS upload failed (${uploadRes.status})`);
 }
 
 export async function getTaskAttachments(taskId: string): Promise<TaskAttachment[]> {

@@ -34,7 +34,7 @@ export default function KeyboardInputBar({
   return (
     <>
       <View className="pt-3 px-3 pb-1" onLayout={onLayout}>
-        <View className={`bg-surface rounded-3xl border border-surface-subtle px-2 ${attachments ? "pt-2" : "pt-[14]"} pb-2 overflow-hidden`}>
+        <View className={`bg-surface rounded-3xl border border-surface-subtle px-2 ${attachments ? "pt-2" : "pt-[14]"} pb-2`}>
 
           {/* Attachments slot */}
           {attachments}
