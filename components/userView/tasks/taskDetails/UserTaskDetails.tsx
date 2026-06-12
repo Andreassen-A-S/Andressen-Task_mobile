@@ -92,7 +92,7 @@ export default function UserTaskDetails() {
         didOpen = true;
         navigationTask = runAfterNavigationFrame(() => {
           const commentQuery = commentId ? `?commentId=${encodeURIComponent(commentId)}` : "";
-          router.push(`${pathname}/comments${commentQuery}`);
+          router.push(`/comments/${taskId}${commentQuery}`);
         });
       };
 
@@ -118,7 +118,7 @@ export default function UserTaskDetails() {
   );
 
   const handleOpenComments = () => {
-    router.navigate(`${pathname}/comments`);
+    router.navigate(`/comments/${taskId}`);
   };
 
   const handleDelete = () => {

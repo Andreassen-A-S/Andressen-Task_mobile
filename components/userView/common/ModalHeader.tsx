@@ -29,7 +29,7 @@ export default function ModalHeader({ title, sub, rightContent, onClose, style, 
     <Animated.View style={[{ position: "absolute", left: 0, right: 0, top: 0, zIndex: 10, height: headerHeight }, style]} pointerEvents={pointerEvents}>
       {Platform.OS === "ios" && (
         <MaskedView
-          className="absolute inset-0"
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
           maskElement={
             <LinearGradient
               colors={["black", "black", "transparent"]}

@@ -9,7 +9,6 @@ const TAB_BAR_HEIGHT = 50;
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const bottomInset = insets.bottom;
-
   return (
     <Tabs
       screenOptions={{

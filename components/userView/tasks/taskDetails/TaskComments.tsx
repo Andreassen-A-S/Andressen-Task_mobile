@@ -12,10 +12,10 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Platform,
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
 import { showToast } from "@/lib/toast";
 import * as ImagePicker from "expo-image-picker";
@@ -29,8 +29,8 @@ import { TaskComment } from "@/types/comment";
 import { TaskStatus } from "@/types/task";
 import { User } from "@/types/users";
 import { colors } from "@/constants/colors";
-import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
+import AvatarCluster from "@/components/userView/common/label/AvatarCluster";
 import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
 import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
 import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
@@ -58,20 +58,20 @@ type ListItem = { type: "comment"; data: DisplayComment } | { type: "timestamp";
 
 export default function TaskComments() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
+  const insets = useSafeAreaInsets();
   const [isArchived, setIsArchived] = useState(false);
   const router = useRouter();
-  const headerHeight = useModalHeaderHeight();
-  const insets = useSafeAreaInsets();
+  const headerHeight = usePathHeaderHeight();
   const { user: currentUser } = useAuth();
   const inputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const isNearBottomRef = useRef(true);
   const hasLoadedRef = useRef(false);
-  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollPendingRef = useRef(false);
 
   const [comments, setComments] = useState<DisplayComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
+  const [assignees, setAssignees] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -134,17 +134,16 @@ export default function TaskComments() {
       const archived = taskData.status === TaskStatus.ARCHIVED;
       setIsArchived(archived);
       setComments(data);
-      if (!archived && !silent) {
-        if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
-        focusTimerRef.current = setTimeout(() => inputRef.current?.focus(), 600);
-      }
       setFetchError(null);
-      const uniqueIds = [...new Set(data.map((c) => c.user_id))];
-      const authors: Record<string, User> = {};
+      const assigneeIds = (taskData.assignment_users ?? []).map((u) => u.user_id);
+      const commentIds = data.map((c) => c.user_id);
+      const uniqueIds = [...new Set([...assigneeIds, ...commentIds])];
+      const userMap: Record<string, User> = {};
       await Promise.all(uniqueIds.map(async (id) => {
-        try { authors[id] = await getUser(id); } catch { }
+        try { userMap[id] = await getUser(id); } catch { }
       }));
-      setCommentAuthors(authors);
+      setCommentAuthors(userMap);
+      setAssignees(assigneeIds.flatMap((id) => userMap[id] ? [userMap[id]] : []));
     } catch {
       if (!silent) setFetchError("Kunne ikke hente kommentarer");
     } finally {
@@ -155,9 +154,7 @@ export default function TaskComments() {
   useFocusEffect(useCallback(() => {
     fetchComments(hasLoadedRef.current);
     hasLoadedRef.current = true;
-    return () => {
-      if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
-    };
+
   }, [fetchComments]));
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
@@ -261,7 +258,7 @@ export default function TaskComments() {
       }
       return false;
     });
-    router.push("./add-attachment");
+    router.push(`/comments/${taskId}/add-attachment`);
   };
 
   const handleSubmit = async () => {
@@ -382,8 +379,20 @@ export default function TaskComments() {
   const canSend = input.trim().length > 0 || pendingAttachments.length > 0;
 
   return (
-    <ModalScreen title="Kommentarer">
-      <KeyboardAvoidingView behavior="padding" className="flex-1" keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
+    <View className="flex-1 bg-background">
+      <PathHeader
+        title="Kommentarer"
+        centered
+        rightContent={
+          assignees.length > 0
+            ? <AvatarCluster
+              users={assignees.map((u) => ({ name: u.name || u.email || "?", imageUrl: u.profile_picture_url }))}
+              onPress={() => router.push(`/comments/${taskId}/assignees`)}
+            />
+            : undefined
+        }
+      />
+      <KeyboardAvoidingView behavior="padding" className="flex-1" >
         <View className="flex-1">
           {isLoading ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
@@ -524,6 +533,6 @@ export default function TaskComments() {
         )}
       </KeyboardAvoidingView>
       <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />
-    </ModalScreen>
+    </View>
   );
 }

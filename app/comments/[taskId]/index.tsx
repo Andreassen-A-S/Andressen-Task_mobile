@@ -1,5 +1,5 @@
 import TaskComments from "@/components/userView/tasks/taskDetails/TaskComments";
 
-export default function CalendarTaskCommentsScreen() {
+export default function CommentsScreen() {
   return <TaskComments />;
 }

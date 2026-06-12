@@ -1,7 +1,7 @@
 // @ts-ignore -- NativeWind CSS side-effect, processed by Metro not TypeScript
 import "../global.css";
 import { Toaster } from "sonner-native";
-import { Slot, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useRef } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -37,9 +37,10 @@ function RootGuard() {
   useEffect(() => {
     if (isInitializing) return;
     const inTabs = segments[0] === "(tabs)";
-    if (!isAuthenticated && inTabs) {
+    const inComments = segments[0] === "comments";
+    if (!isAuthenticated && (inTabs || inComments)) {
       router.replace("/login");
-    } else if (isAuthenticated && !inTabs) {
+    } else if (isAuthenticated && !inTabs && !inComments) {
       router.replace("/(tabs)/tasks");
     }
   }, [isAuthenticated, isInitializing, segments[0]]);
@@ -93,7 +94,14 @@ function RootGuard() {
     );
   }
 
-  return <Slot />;
+  return (
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="comments/[taskId]" options={{ headerShown: false }} />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="index" />
+      </Stack>
+    );
 }
 
 export default function RootLayout() {
