@@ -1,7 +1,7 @@
 import { ReactNode, RefObject, useRef } from "react";
 import { View, TextInput, LayoutChangeEvent } from "react-native";
 import { colors } from "@/constants/colors";
-import KeyboardInputBarAction from "./KeyboardInputBarAction";
+import ComposerButton from "./ComposerButton";
 
 interface Props {
   value: string;
@@ -54,13 +54,12 @@ export default function KeyboardInputBar({
         <View className="flex-row items-center mt-3">
           {leftActions}
           <View className="flex-1" />
-          <KeyboardInputBarAction
+          <ComposerButton
             icon="arrow-up"
             onPress={onSubmit}
             disabled={!canSubmit}
             loading={isSubmitting}
-            backgroundColor={canSubmit ? colors.green : colors.muted}
-            iconColor={canSubmit ? colors.white : colors.textMuted}
+            variant={canSubmit ? "primary" : "secondary"}
           />
         </View>
       </View>

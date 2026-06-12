@@ -1,12 +1,12 @@
 import { RefObject } from "react";
 import { View, TextInput } from "react-native";
-import { colors } from "@/constants/colors";
 import ComposerChrome, {
   COMPOSER_ATTACHMENT_EXTRA_HEIGHT,
   COMPOSER_INPUT_OVERLAP,
 } from "@/components/userView/common/ComposerChrome";
+import ComposerSurface from "@/components/userView/common/ComposerSurface";
 import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
-import KeyboardInputBarAction from "@/components/userView/common/KeyboardInputBarAction";
+import ComposerButton from "@/components/userView/common/ComposerButton";
 import PendingAttachmentStrip from "@/components/userView/common/PendingAttachmentStrip";
 import { PendingAttachment } from "./TaskComments";
 
@@ -41,10 +41,7 @@ export default function CommentComposer({
   return (
     <ComposerChrome hasAttachments={hasAttachments}>
       <View className="px-3 pt-3 pb-1" style={{ zIndex: 2 }}>
-        <View
-          className="bg-surface rounded-3xl border border-surface-subtle"
-          style={{ backgroundColor: colors.surface, borderRadius: 24, elevation: 2 }}
-        >
+        <ComposerSurface>
           <PendingAttachmentStrip
             attachments={pendingAttachments}
             onRemoveAttachment={onRemoveAttachment}
@@ -57,11 +54,11 @@ export default function CommentComposer({
             canSubmit={canSubmit}
             isSubmitting={isSubmitting}
             leftActions={
-              <KeyboardInputBarAction icon="add" onPress={onPickAttachments} iconSize={26} disabled={isSubmitting} />
+              <ComposerButton icon="add" onPress={onPickAttachments} disabled={isSubmitting} variant="secondary" />
             }
             surface="embedded"
           />
-        </View>
+        </ComposerSurface>
       </View>
     </ComposerChrome>
   );
