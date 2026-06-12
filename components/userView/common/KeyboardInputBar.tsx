@@ -11,7 +11,7 @@ interface Props {
   isSubmitting?: boolean;
   canSubmit?: boolean;
   leftActions?: ReactNode;
-  attachments?: ReactNode;
+  surface?: "standalone" | "embedded";
   inputRef?: RefObject<TextInput | null>;
   onLayout?: (e: LayoutChangeEvent) => void;
 }
@@ -24,50 +24,46 @@ export default function KeyboardInputBar({
   isSubmitting = false,
   canSubmit = false,
   leftActions,
-  attachments,
+  surface = "standalone",
   inputRef: externalInputRef,
   onLayout,
 }: Props) {
   const internalRef = useRef<TextInput>(null);
   const inputRef = externalInputRef ?? internalRef;
+  const embedded = surface === "embedded";
 
   return (
-    <>
-      <View className="pt-3 px-3 pb-1" onLayout={onLayout}>
-        <View className={`bg-surface rounded-3xl border border-surface-subtle px-2 ${attachments ? "pt-2" : "pt-[14]"} pb-2`}>
+    <View className={embedded ? "" : "pt-3 px-3 pb-1"} onLayout={onLayout}>
+      <View
+        className={`${embedded ? "" : "bg-surface rounded-3xl border border-surface-subtle"} px-2 pt-[14] pb-2`}
+      >
+        {/* Text input */}
+        <TextInput
+          ref={inputRef}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textMuted}
+          multiline
+          autoCorrect
+          autoCapitalize="sentences"
+          className="body-md max-h-[120] py-0 px-2.5"
+        />
 
-          {/* Attachments slot */}
-          {attachments}
-
-          {/* Text input */}
-          <TextInput
-            ref={inputRef}
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            placeholderTextColor={colors.textMuted}
-            multiline
-            autoCorrect
-            autoCapitalize="sentences"
-            className="body-md max-h-[120] py-0 px-2.5"
+        {/* Action row */}
+        <View className="flex-row items-center mt-3">
+          {leftActions}
+          <View className="flex-1" />
+          <KeyboardInputBarAction
+            icon="arrow-up"
+            onPress={onSubmit}
+            disabled={!canSubmit}
+            loading={isSubmitting}
+            backgroundColor={canSubmit ? colors.green : colors.muted}
+            iconColor={canSubmit ? colors.white : colors.textMuted}
           />
-
-          {/* Action row */}
-          <View className="flex-row items-center mt-3">
-            {leftActions}
-            <View className="flex-1" />
-            <KeyboardInputBarAction
-              icon="arrow-up"
-              onPress={onSubmit}
-              disabled={!canSubmit}
-              loading={isSubmitting}
-              backgroundColor={canSubmit ? colors.green : colors.muted}
-              iconColor={canSubmit ? colors.white : colors.textMuted}
-            />
-          </View>
         </View>
       </View>
-
-    </>
+    </View>
   );
 }

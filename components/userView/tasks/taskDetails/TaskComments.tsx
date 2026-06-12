@@ -1,8 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { ArrowDown, Lock } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-import MaskedView from "@react-native-masked-view/masked-view";
 import {
   View,
   Text,
@@ -32,18 +29,12 @@ import { User } from "@/types/users";
 import { colors } from "@/constants/colors";
 import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
 import AvatarCluster from "@/components/userView/common/label/AvatarCluster";
-import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
-import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
-import KeyboardInputBarAction from "@/components/userView/common/KeyboardInputBarAction";
+import { PendingAttachmentPreview } from "@/components/userView/common/PendingAttachmentStrip";
 import CommentBubble from "./CommentBubble";
+import CommentComposer, { INPUT_BAR_OVERLAP, ATTACHMENT_LIST_EXTRA_HEIGHT } from "./CommentComposer";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
-type PendingAttachment = {
-  localUri: string;
-  fileName: string;
-  mimeType: string;
-  fileSize?: number;
-};
+export type PendingAttachment = PendingAttachmentPreview;
 
 type DisplayComment = TaskComment & {
   sending?: boolean;
@@ -52,7 +43,6 @@ type DisplayComment = TaskComment & {
   serverCommentId?: string;
 };
 
-const INPUT_BAR_OVERLAP = 135;
 const TIMESTAMP_THRESHOLD_MS = 30 * 60 * 1000;
 
 type ListItem = { type: "comment"; data: DisplayComment } | { type: "timestamp"; key: string; label: string };
@@ -80,11 +70,11 @@ export default function TaskComments() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const scrollDownAnim = useRef(new Animated.Value(0)).current;
+  const pendingAttachmentIdRef = useRef(0);
 
   const { progress } = useReanimatedKeyboardAnimation();
-  const safeAreaStyle = useAnimatedStyle(() => ({ height: (1 - progress.value) * insets.bottom }));
-  const composerMarginStyle = useAnimatedStyle(() => ({ marginTop: -(INPUT_BAR_OVERLAP - progress.value * insets.bottom) }));
-  const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: INPUT_BAR_OVERLAP - progress.value * insets.bottom + 8 }));
+  const composerHeight = INPUT_BAR_OVERLAP + (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0);
+  const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: composerHeight - progress.value * insets.bottom + 8 }));
 
   const listData = useMemo<ListItem[]>(() => {
     const result: ListItem[] = [];
@@ -169,24 +159,40 @@ export default function TaskComments() {
     }).start();
   }, [showScrollDown]);
 
-  const addPickedAssets = (assets: ImagePicker.ImagePickerAsset[]) => {
+  const addPickedAssets = async (assets: ImagePicker.ImagePickerAsset[]) => {
     const ts = Date.now();
     const newAttachments: PendingAttachment[] = [];
     const oversized: string[] = [];
 
-    assets.forEach((asset, i) => {
+    for (let i = 0; i < assets.length; i++) {
+      const asset = assets[i];
       const assetFileName = asset.fileName ?? "";
       const isHeicLike = asset.mimeType === "image/heic" || asset.mimeType === "image/heif" || /\.(heic|heif)$/i.test(assetFileName);
-      const mime = asset.mimeType ?? (isHeicLike ? "image/heic" : "image/jpeg");
-      const ext = isHeicLike ? "heic" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
-      const fileName = asset.fileName ?? `photo_${ts}_${i}.${ext}`;
+      let localUri = asset.uri;
+      let mime = asset.mimeType ?? (isHeicLike ? "image/heic" : "image/jpeg");
+      let ext = isHeicLike ? "heic" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+      let fileName = asset.fileName ?? `photo_${ts}_${i}.${ext}`;
       const maxBytes = MAX_FILE_SIZE[mime] ?? 10 * 1024 * 1024;
       if (asset.fileSize != null && asset.fileSize > maxBytes) {
         oversized.push(fileName);
       } else {
-        newAttachments.push({ localUri: asset.uri, fileName, mimeType: mime, fileSize: asset.fileSize ?? undefined });
+        if (isHeicLike) {
+          try {
+            const converted = await ImageManipulator.manipulateAsync(asset.uri, [], { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG });
+            localUri = converted.uri;
+            mime = "image/jpeg";
+            fileName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
+          } catch { }
+        }
+        newAttachments.push({
+          id: `pending-image-${ts}-${pendingAttachmentIdRef.current++}`,
+          localUri,
+          fileName,
+          mimeType: mime,
+          fileSize: asset.fileSize ?? undefined,
+        });
       }
-    });
+    }
 
     if (oversized.length > 0) {
       showToast({
@@ -223,7 +229,13 @@ export default function TaskComments() {
             if (asset.size != null && asset.size > maxBytes) {
               oversized.push(name);
             } else {
-              newFiles.push({ localUri: asset.uri, fileName: name, mimeType, fileSize: asset.size ?? undefined });
+              newFiles.push({
+                id: `pending-file-${Date.now()}-${pendingAttachmentIdRef.current++}`,
+                localUri: asset.uri,
+                fileName: name,
+                mimeType,
+                fileSize: asset.size ?? undefined,
+              });
             }
           }
           if (oversized.length > 0) {
@@ -243,8 +255,8 @@ export default function TaskComments() {
           Alert.alert("Tilladelse krævet", "Kameraadgang er nødvendig for at tage billeder.");
           return false;
         }
-        const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
-        if (!result.canceled) { addPickedAssets(result.assets); return true; }
+        const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8 });
+        if (!result.canceled) { await addPickedAssets(result.assets); return true; }
       } else {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== "granted") {
@@ -252,11 +264,11 @@ export default function TaskComments() {
           return false;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ["images"],
           allowsMultipleSelection: true,
           selectionLimit: 20,
         });
-        if (!result.canceled) { addPickedAssets(result.assets); return true; }
+        if (!result.canceled) { await addPickedAssets(result.assets); return true; }
       }
       return false;
     });
@@ -459,7 +471,7 @@ export default function TaskComments() {
                 })
               )}
 
-              <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP }} />
+              <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP + (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0) }} />
             </ScrollView>
           )}
           {!isLoading && !fetchError && (
@@ -488,57 +500,17 @@ export default function TaskComments() {
             <Text className="label-sm text-muted">Arkiveret — kun visning</Text>
           </View>
         ) : (
-          <Reanimated.View style={[{ zIndex: 1 }, composerMarginStyle]}>
-            <MaskedView
-              style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
-              pointerEvents="none"
-              maskElement={
-                <LinearGradient
-                  colors={["transparent", "black", "black"]}
-                  locations={[0, 0.7, 1]}
-                  style={{ flex: 1 }}
-                />
-              }
-            >
-              <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} pointerEvents="none" />
-            </MaskedView>
-            <LinearGradient
-              colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
-              style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
-              pointerEvents="none"
-            />
-            <KeyboardInputBar
-              inputRef={inputRef}
-              value={input}
-              onChangeText={setInput}
-              onSubmit={handleSubmit}
-              canSubmit={canSend && !isSubmitting}
-              isSubmitting={isSubmitting}
-              leftActions={
-                <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} disabled={isSubmitting} />
-              }
-              attachments={pendingAttachments.length > 0 ? (
-                <ScrollView
-                  horizontal
-                  className="mb-2"
-                  showsHorizontalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                  contentContainerStyle={{ gap: 4 }}
-                >
-                  {pendingAttachments.map((attachment) => (
-                    <PendingAttachmentCard
-                      key={attachment.localUri}
-                      uri={attachment.localUri}
-                      mimeType={attachment.mimeType}
-                      fileName={attachment.fileName}
-                      onRemove={() => setPendingAttachments((prev) => prev.filter((a) => a.localUri !== attachment.localUri))}
-                    />
-                  ))}
-                </ScrollView>
-              ) : undefined}
-            />
-            <Reanimated.View style={safeAreaStyle} />
-          </Reanimated.View>
+          <CommentComposer
+            inputRef={inputRef}
+            value={input}
+            onChangeText={setInput}
+            onSubmit={handleSubmit}
+            canSubmit={canSend && !isSubmitting}
+            isSubmitting={isSubmitting}
+            pendingAttachments={pendingAttachments}
+            onPickAttachments={pickAttachments}
+            onRemoveAttachment={(id) => setPendingAttachments((prev) => prev.filter((a) => a.id !== id))}
+          />
         )}
       </KeyboardAvoidingView>
     </View>
