@@ -32,6 +32,7 @@ import AvatarCluster from "@/components/userView/common/label/AvatarCluster";
 import { PendingAttachmentPreview } from "@/components/userView/common/PendingAttachmentStrip";
 import CommentBubble from "./CommentBubble";
 import CommentComposer, { INPUT_BAR_OVERLAP, ATTACHMENT_LIST_EXTRA_HEIGHT } from "./CommentComposer";
+import CommentContextMenu, { type MenuParams } from "./CommentContextMenu";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
 export type PendingAttachment = PendingAttachmentPreview;
@@ -402,6 +403,9 @@ export default function TaskComments() {
     }
   };
 
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuParams, setMenuParams] = useState<MenuParams | null>(null);
+
   const canSend = input.trim().length > 0 || pendingAttachments.length > 0;
 
   return (
@@ -477,8 +481,8 @@ export default function TaskComments() {
                   return (
                     <View key={item.data.comment_id} style={{ marginBottom: item.isLastInGroup ? 8 : 2 }}>
                       {currentUser?.user_id === item.data.user_id
-                        ? <CommentBubble comment={item.data} isOwn isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} />
-                        : <CommentBubble comment={item.data} isOwn={false} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} />}
+                        ? <CommentBubble comment={item.data} isOwn isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); }} />
+                        : <CommentBubble comment={item.data} isOwn={false} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); }} />}
                     </View>
                   );
                 })
@@ -526,6 +530,11 @@ export default function TaskComments() {
           />
         )}
       </KeyboardAvoidingView>
+      <CommentContextMenu
+        visible={menuVisible}
+        params={menuParams}
+        onClose={() => setMenuVisible(false)}
+      />
     </View>
   );
 }

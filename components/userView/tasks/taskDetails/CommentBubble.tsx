@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, Animated, ActionSheetIOS } from "react-native";
+import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { RotateCw } from "lucide-react-native";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
@@ -7,6 +7,7 @@ import { colors } from "@/constants/colors";
 import SingleAvatar from "../../common/label/singleAvatar";
 import CommentAttachments from "./CommentAttachments";
 import LinkedText from "../../common/LinkedText";
+import { type BubbleLayout, type MenuParams } from "./CommentContextMenu";
 
 type StatusState = "sending" | "afsendt" | "failed" | "idle";
 
@@ -22,11 +23,13 @@ interface Props {
   deleteId?: string;
   onDelete?: (commentId: string) => void;
   onRetry?: (commentId: string) => void;
+  onMenuOpen?: (params: MenuParams) => void;
 }
 
-export default function CommentBubble({ comment, isOwn, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, onDelete, onRetry }: Props) {
+export default function CommentBubble({ comment, isOwn, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, onDelete, onRetry, onMenuOpen }: Props) {
   const opacity = useRef(new Animated.Value(1)).current;
   const [status, setStatus] = useState<StatusState>(sending ? "sending" : failed ? "failed" : "idle");
+  const bubbleRef = useRef<View>(null);
 
   useEffect(() => {
     if (!isOwn) return;
@@ -45,17 +48,15 @@ export default function CommentBubble({ comment, isOwn, isFirstInGroup = true, i
   }, [sending, failed, isOwn]);
 
   const handleLongPress = () => {
-    if (!isOwn || !onDelete || status !== "idle") return;
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: ["Annuller", "Slet besked"],
-        destructiveButtonIndex: 1,
-        cancelButtonIndex: 0,
-      },
-      (index) => {
-        if (index === 1) onDelete(deleteId ?? comment.comment_id);
-      },
-    );
+    bubbleRef.current?.measure((_, __, width, height, pageX, pageY) => {
+      onMenuOpen?.({
+        layout: { pageX, pageY, width, height },
+        message: comment.message || undefined,
+        isOwn,
+        canDelete: isOwn && !!onDelete && status === "idle",
+        onDelete: () => onDelete?.(deleteId ?? comment.comment_id),
+      });
+    });
   };
 
   if (!isOwn) {
@@ -91,18 +92,17 @@ export default function CommentBubble({ comment, isOwn, isFirstInGroup = true, i
   }
 
   return (
-    <View className="gap-1 self-end">
+    <View ref={bubbleRef} className="gap-1 self-end">
       <CommentAttachments
         attachments={comment.attachments ?? []}
         align="flex-end"
         onLongPress={status === "idle" && !comment.message ? handleLongPress : undefined}
       />
-
       {comment.message ? (
         <TouchableOpacity
           activeOpacity={0.8}
           onLongPress={status === "idle" ? handleLongPress : undefined}
-          delayLongPress={400}
+          delayLongPress={350}
           className="max-w-[85%] rounded-2xl px-3 py-2 self-end bg-accent"
         >
           <LinkedText
