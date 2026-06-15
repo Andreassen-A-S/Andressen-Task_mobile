@@ -63,6 +63,7 @@ export default function TaskComments() {
   const [comments, setComments] = useState<DisplayComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
   const [assignees, setAssignees] = useState<User[]>([]);
+  const [taskTitle, setTaskTitle] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -75,6 +76,7 @@ export default function TaskComments() {
   const { progress } = useReanimatedKeyboardAnimation();
   const composerHeight = INPUT_BAR_OVERLAP + (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0);
   const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: composerHeight - progress.value * insets.bottom + 8 }));
+  const scrollSpacerStyle = useAnimatedStyle(() => ({ height: isArchived ? 16 : composerHeight - progress.value * insets.bottom }));
 
   const listData = useMemo<ListItem[]>(() => {
     const result: ListItem[] = [];
@@ -126,6 +128,7 @@ export default function TaskComments() {
       const [data, taskData] = await Promise.all([getTaskComments(taskId), getTask(taskId)]);
       const archived = taskData.status === TaskStatus.ARCHIVED;
       setIsArchived(archived);
+      setTaskTitle(taskData.title);
       setComments(data);
       setFetchError(null);
       const assigneeIds = (taskData.assignment_users ?? []).map((u) => u.user_id);
@@ -396,6 +399,7 @@ export default function TaskComments() {
     <View className="flex-1 bg-background">
       <PathHeader
         title="Kommentarer"
+        path={taskTitle}
         centered
         rightContent={
           assignees.length > 0
@@ -471,7 +475,7 @@ export default function TaskComments() {
                 })
               )}
 
-              <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP + (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0) }} />
+              <Reanimated.View style={scrollSpacerStyle} />
             </ScrollView>
           )}
           {!isLoading && !fetchError && (

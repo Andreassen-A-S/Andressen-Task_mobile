@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, Animated, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Animated, ActionSheetIOS } from "react-native";
 import { RotateCw } from "lucide-react-native";
 import { TaskComment } from "@/types/comment";
 import { User } from "@/types/users";
@@ -43,13 +43,17 @@ export default function CommentBubble({ comment, isOwn, author, sending, failed,
   }, [sending, failed, isOwn]);
 
   const handleLongPress = () => {
-    const options: { text: string; style?: "default" | "cancel" | "destructive"; onPress?: () => void }[] = [
-      { text: "Annuller", style: "cancel" },
-    ];
-    if (isOwn && onDelete) {
-      options.push({ text: "Slet", style: "destructive", onPress: () => onDelete(deleteId ?? comment.comment_id) });
-    }
-    Alert.alert(comment.message ? "" : "Vedhæftning", comment.message ?? "Handlinger", options);
+    if (!isOwn || !onDelete || status !== "idle") return;
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options: ["Annuller", "Slet besked"],
+        destructiveButtonIndex: 1,
+        cancelButtonIndex: 0,
+      },
+      (index) => {
+        if (index === 1) onDelete(deleteId ?? comment.comment_id);
+      },
+    );
   };
 
   const align = isOwn ? "flex-end" : "flex-start";
@@ -72,7 +76,7 @@ export default function CommentBubble({ comment, isOwn, author, sending, failed,
       {comment.message ? (
         <TouchableOpacity
           activeOpacity={0.8}
-          onLongPress={status === "idle" ? handleLongPress : undefined}
+          onLongPress={isOwn && status === "idle" ? handleLongPress : undefined}
           delayLongPress={400}
           className={`max-w-[75%] rounded-lg px-3 py-2 ${isOwn ? "self-end bg-accent" : "self-start bg-surface"}`}
         >

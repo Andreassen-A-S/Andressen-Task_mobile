@@ -7,7 +7,6 @@ import ImageView from "react-native-image-viewing";
 import { TaskAttachment } from "@/types/comment";
 import { colors } from "@/constants/colors";
 import { getFileIconComponent } from "@/helpers/attachmentHelpers";
-import { formatNumber } from "@/helpers/helpers";
 
 interface Props {
   attachments: TaskAttachment[];
@@ -15,67 +14,136 @@ interface Props {
   onLongPress?: () => void;
 }
 
-const STACK_OFFSET = 8;
-const MAX_VISIBLE = 3;
-const IMAGE_SIZE = 160;
+const MAX_W = 220;
+const MAX_H = 300;
+const MIN_SIZE = 80;
+const GRID_GAP = 3;
+const THUMB = Math.floor((MAX_W - GRID_GAP) / 2); // ~108
 
-function ImageGrid({ images, align, onLongPress }: { images: TaskAttachment[]; align: "flex-start" | "flex-end"; onLongPress?: () => void }) {
+function clampToAspect(naturalW: number, naturalH: number) {
+  if (!naturalW || !naturalH) return { w: MAX_W, h: Math.round(MAX_W * 0.75) };
+  const ratio = naturalW / naturalH;
+  let w = MAX_W;
+  let h = MAX_W / ratio;
+  if (h > MAX_H) { h = MAX_H; w = MAX_H * ratio; }
+  return { w: Math.max(Math.round(w), MIN_SIZE), h: Math.max(Math.round(h), MIN_SIZE) };
+}
+
+function SingleImage({ image, onLongPress, allImages, index }: {
+  image: TaskAttachment;
+  onLongPress?: () => void;
+  allImages: TaskAttachment[];
+  index: number;
+}) {
+  const [size, setSize] = useState({ w: MAX_W, h: Math.round(MAX_W * 0.75) });
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const imageUris = allImages.map((img) => ({ uri: img.url }));
+
+  return (
+    <>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => setViewerVisible(true)}
+        onLongPress={onLongPress}
+        delayLongPress={400}
+      >
+        <Image
+          source={{ uri: image.url, cacheKey: image.attachment_id }}
+          cachePolicy="memory-disk"
+          style={{ width: size.w, height: size.h, borderRadius: 10, backgroundColor: colors.border }}
+          contentFit="cover"
+          transition={200}
+          onLoad={(e) => setSize(clampToAspect(e.source.width, e.source.height))}
+        />
+      </TouchableOpacity>
+      <ImageView
+        images={imageUris}
+        imageIndex={index}
+        visible={viewerVisible}
+        onRequestClose={() => setViewerVisible(false)}
+      />
+    </>
+  );
+}
+
+function ImageGrid({ images, align, onLongPress }: {
+  images: TaskAttachment[];
+  align: "flex-start" | "flex-end";
+  onLongPress?: () => void;
+}) {
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const imageUris = images.map((img) => ({ uri: img.url }));
 
   if (images.length === 1) {
     return (
-      <>
-        <TouchableOpacity onPress={() => setViewerIndex(0)} onLongPress={onLongPress} delayLongPress={400} activeOpacity={0.9} style={{ alignSelf: align }}>
-          <View style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10, overflow: "hidden", borderWidth: 0.5, borderColor: colors.border, backgroundColor: colors.border }}>
-            <Image
-              source={{ uri: images[0].url, cacheKey: images[0].attachment_id }}
-              cachePolicy="memory-disk"
-              style={{ width: "100%", height: "100%" }}
-              contentFit="cover"
-              transition={200}
-            />
-          </View>
-        </TouchableOpacity>
-        <ImageView images={imageUris} imageIndex={0} visible={viewerIndex !== null} onRequestClose={() => setViewerIndex(null)} />
-      </>
+      <SingleImage
+        image={images[0]}
+        onLongPress={onLongPress}
+        allImages={images}
+        index={0}
+      />
     );
   }
 
-  const visibleCount = Math.min(images.length, MAX_VISIBLE);
-  const containerSize = IMAGE_SIZE + (visibleCount - 1) * STACK_OFFSET;
+  // Grid: max 4 visible, "+N" badge on last cell if more
+  const MAX_GRID = 4;
+  const visible = images.slice(0, MAX_GRID);
+  const overflow = images.length - MAX_GRID;
+  const rows: TaskAttachment[][] = [];
+  for (let i = 0; i < visible.length; i += 2) {
+    rows.push(visible.slice(i, i + 2));
+  }
 
   return (
     <>
-      <Text className="body-xs text-muted mb-1.5" style={{ alignSelf: align }}>
-        {formatNumber(images.length)} billeder
-      </Text>
-      <View style={{ width: containerSize, height: containerSize, alignSelf: align }}>
-        {Array.from({ length: visibleCount }).map((_, i) => {
-          const imgIndex = visibleCount - 1 - i;
-          const offset = imgIndex * STACK_OFFSET;
-          return (
-            <TouchableOpacity
-              key={images[imgIndex].attachment_id}
-              style={{ position: "absolute", top: offset, left: offset }}
-              onPress={() => setViewerIndex(imgIndex)}
-              onLongPress={onLongPress}
-              delayLongPress={400}
-              activeOpacity={0.9}
-            >
-              <View style={{ width: IMAGE_SIZE, height: IMAGE_SIZE, borderRadius: 10, overflow: "hidden", borderWidth: 0.5, borderColor: colors.border, backgroundColor: colors.muted }}>
-                <Image
-                  source={{ uri: images[imgIndex].url, cacheKey: images[imgIndex].attachment_id }}
-                  style={{ width: "100%", height: "100%" }}
-                  contentFit="cover"
-                  transition={200}
-                />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={{ width: MAX_W, gap: GRID_GAP, alignSelf: align }}>
+        {rows.map((row, rowIndex) => (
+          <View key={rowIndex} style={{ flexDirection: "row", gap: GRID_GAP }}>
+            {row.map((img, colIndex) => {
+              const globalIndex = rowIndex * 2 + colIndex;
+              const isLastVisible = globalIndex === MAX_GRID - 1 && overflow > 0;
+              return (
+                <TouchableOpacity
+                  key={img.attachment_id}
+                  activeOpacity={0.9}
+                  onPress={() => setViewerIndex(globalIndex)}
+                  onLongPress={onLongPress}
+                  delayLongPress={400}
+                  style={{ flex: 1 }}
+                >
+                  <View style={{ height: THUMB, borderRadius: 8, overflow: "hidden", backgroundColor: colors.border }}>
+                    <Image
+                      source={{ uri: img.url, cacheKey: img.attachment_id }}
+                      cachePolicy="memory-disk"
+                      style={{ width: "100%", height: "100%" }}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                    {isLastVisible && (
+                      <View style={{
+                        position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: "rgba(0,0,0,0.45)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}>
+                        <Text style={{ color: "#fff", fontSize: 20, fontWeight: "600" }}>+{overflow + 1}</Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+            {/* Fill empty cell in odd-count last row */}
+            {row.length === 1 && <View style={{ flex: 1 }} />}
+          </View>
+        ))}
       </View>
-      <ImageView images={imageUris} imageIndex={viewerIndex ?? 0} visible={viewerIndex !== null} onRequestClose={() => setViewerIndex(null)} />
+      <ImageView
+        images={imageUris}
+        imageIndex={viewerIndex ?? 0}
+        visible={viewerIndex !== null}
+        onRequestClose={() => setViewerIndex(null)}
+      />
     </>
   );
 }
