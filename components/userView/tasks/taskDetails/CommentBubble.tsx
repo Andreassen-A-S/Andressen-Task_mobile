@@ -13,6 +13,8 @@ type StatusState = "sending" | "afsendt" | "failed" | "idle";
 interface Props {
   comment: TaskComment;
   isOwn: boolean;
+  isFirstInGroup?: boolean;
+  isLastInGroup?: boolean;
   author?: User;
   sending?: boolean;
   failed?: boolean;
@@ -22,7 +24,7 @@ interface Props {
   onRetry?: (commentId: string) => void;
 }
 
-export default function CommentBubble({ comment, isOwn, author, sending, failed, errorMessage, deleteId, onDelete, onRetry }: Props) {
+export default function CommentBubble({ comment, isOwn, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, onDelete, onRetry }: Props) {
   const opacity = useRef(new Animated.Value(1)).current;
   const [status, setStatus] = useState<StatusState>(sending ? "sending" : failed ? "failed" : "idle");
 
@@ -56,54 +58,75 @@ export default function CommentBubble({ comment, isOwn, author, sending, failed,
     );
   };
 
-  const align = isOwn ? "flex-end" : "flex-start";
+  if (!isOwn) {
+    return (
+      <View className="flex-row items-end gap-2">
+        {isLastInGroup
+          ? <SingleAvatar name={author?.name || "?"} imageUrl={author?.profile_picture_url} size="xs" />
+          : <View style={{ width: 24 }} />
+        }
+        <View style={{ flex: 1, gap: 4 }}>
+          {isFirstInGroup && (
+            <Text className="label-sm text-muted">{author?.name || author?.email || "Ukendt bruger"}</Text>
+          )}
+          <CommentAttachments
+            attachments={comment.attachments ?? []}
+            align="flex-start"
+          />
+          {comment.message ? (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              className="max-w-[85%] rounded-2xl px-3 py-2 self-start bg-surface"
+            >
+              <LinkedText
+                text={comment.message}
+                className="body-md !text-secondary"
+                linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
+              />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <View className={`gap-1 ${isOwn ? "self-end" : "self-start"}`}>
-      {!isOwn && (
-        <View className="flex-row items-center gap-2">
-          <SingleAvatar name={author?.name || "?"} imageUrl={author?.profile_picture_url} size="xs" />
-          <Text className="label-md">{author?.name || author?.email || "Ukendt bruger"}</Text>
-        </View>
-      )}
-
+    <View className="gap-1 self-end">
       <CommentAttachments
         attachments={comment.attachments ?? []}
-        align={align}
-        onLongPress={isOwn && status === "idle" && !comment.message ? handleLongPress : undefined}
+        align="flex-end"
+        onLongPress={status === "idle" && !comment.message ? handleLongPress : undefined}
       />
 
       {comment.message ? (
         <TouchableOpacity
           activeOpacity={0.8}
-          onLongPress={isOwn && status === "idle" ? handleLongPress : undefined}
+          onLongPress={status === "idle" ? handleLongPress : undefined}
           delayLongPress={400}
-          className={`max-w-[75%] rounded-lg px-3 py-2 ${isOwn ? "self-end bg-accent" : "self-start bg-surface"}`}
+          className="max-w-[85%] rounded-2xl px-3 py-2 self-end bg-accent"
         >
           <LinkedText
             text={comment.message}
-            className={isOwn ? "body-sm-white" : "body-sm"}
+            className="body-md !text-white"
             linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
           />
         </TouchableOpacity>
       ) : null}
 
-      {isOwn && (
-        <View className="min-h-4 justify-center items-end">
-          {status === "sending" && (
-            <Text className="body-xs text-muted">Sender</Text>
-          )}
-          {status === "afsendt" && (
-            <Animated.Text className="body-xs text-muted" style={{ opacity }}>Afsendt</Animated.Text>
-          )}
-          {status === "failed" && (
-            <TouchableOpacity onPress={() => onRetry?.(comment.comment_id)} className="flex-row items-center gap-1">
-              <Text className="body-xs text-danger">{errorMessage ?? "Kunne ikke sende"}</Text>
-              <RotateCw size={12} color={colors.red} strokeWidth={2.2} />
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+      <View className="min-h-4 justify-center items-end">
+        {status === "sending" && (
+          <Text className="body-xs text-muted">Sender</Text>
+        )}
+        {status === "afsendt" && (
+          <Animated.Text className="body-xs text-muted" style={{ opacity }}>Afsendt</Animated.Text>
+        )}
+        {status === "failed" && (
+          <TouchableOpacity onPress={() => onRetry?.(comment.comment_id)} className="flex-row items-center gap-1">
+            <Text className="body-xs text-danger">{errorMessage ?? "Kunne ikke sende"}</Text>
+            <RotateCw size={12} color={colors.red} strokeWidth={2.2} />
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }

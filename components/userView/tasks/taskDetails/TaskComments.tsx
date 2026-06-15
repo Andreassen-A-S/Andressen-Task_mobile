@@ -45,7 +45,9 @@ type DisplayComment = TaskComment & {
 
 const TIMESTAMP_THRESHOLD_MS = 30 * 60 * 1000;
 
-type ListItem = { type: "comment"; data: DisplayComment } | { type: "timestamp"; key: string; label: string };
+type ListItem =
+  | { type: "comment"; data: DisplayComment; isFirstInGroup: boolean; isLastInGroup: boolean }
+  | { type: "timestamp"; key: string; label: string };
 
 export default function TaskComments() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
@@ -83,9 +85,16 @@ export default function TaskComments() {
     for (let i = 0; i < comments.length; i++) {
       const comment = comments[i];
       const prev = comments[i - 1];
-      const showTimestamp = !prev || new Date(comment.created_at).getTime() - new Date(prev.created_at).getTime() > TIMESTAMP_THRESHOLD_MS;
-      if (showTimestamp) result.push({ type: "timestamp", key: `ts-${comment.comment_id}`, label: formatGroupTimestamp(comment.created_at) });
-      result.push({ type: "comment", data: comment });
+      const next = comments[i + 1];
+      const prevGap = !prev || new Date(comment.created_at).getTime() - new Date(prev.created_at).getTime() > TIMESTAMP_THRESHOLD_MS;
+      const nextGap = !next || new Date(next.created_at).getTime() - new Date(comment.created_at).getTime() > TIMESTAMP_THRESHOLD_MS;
+      if (prevGap) result.push({ type: "timestamp", key: `ts-${comment.comment_id}`, label: formatGroupTimestamp(comment.created_at) });
+      result.push({
+        type: "comment",
+        data: comment,
+        isFirstInGroup: prevGap || !prev || prev.user_id !== comment.user_id,
+        isLastInGroup: nextGap || !next || next.user_id !== comment.user_id,
+      });
     }
     return result;
   }, [comments]);
@@ -466,10 +475,10 @@ export default function TaskComments() {
                     );
                   }
                   return (
-                    <View key={item.data.comment_id} className="mb-2">
+                    <View key={item.data.comment_id} style={{ marginBottom: item.isLastInGroup ? 8 : 2 }}>
                       {currentUser?.user_id === item.data.user_id
-                        ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} />
-                        : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />}
+                        ? <CommentBubble comment={item.data} isOwn isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} />
+                        : <CommentBubble comment={item.data} isOwn={false} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} />}
                     </View>
                   );
                 })
