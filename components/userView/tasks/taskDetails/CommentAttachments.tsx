@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
-import { ExternalLink } from "lucide-react-native";
 import * as WebBrowser from "expo-web-browser";
 import ImageView from "react-native-image-viewing";
 import { TaskAttachment } from "@/types/comment";
@@ -42,7 +41,7 @@ function SingleImage({ image, onLongPress, allImages, index }: {
   return (
     <>
       <TouchableOpacity
-        activeOpacity={0.9}
+        activeOpacity={1}
         onPress={() => setViewerVisible(true)}
         onLongPress={onLongPress}
         delayLongPress={400}
@@ -105,7 +104,7 @@ function ImageGrid({ images, align, onLongPress }: {
               return (
                 <TouchableOpacity
                   key={img.attachment_id}
-                  activeOpacity={0.9}
+                  activeOpacity={1}
                   onPress={() => setViewerIndex(globalIndex)}
                   onLongPress={onLongPress}
                   delayLongPress={400}
@@ -160,17 +159,33 @@ export default function CommentAttachments({ attachments, align = "flex-start", 
       {files.map((file) => {
         const isLocal = file.url.startsWith("file://") || file.url.startsWith("content://") || file.url.startsWith("ph://");
         const FileIcon = getFileIconComponent(file.mime_type);
+        const ext = file.file_name?.split(".").pop()?.toUpperCase() ?? "FIL";
         return (
           <TouchableOpacity
             key={file.attachment_id}
             onPress={isLocal ? undefined : () => WebBrowser.openBrowserAsync(file.url)}
-            activeOpacity={isLocal ? 1 : 0.7}
-            className="flex-row items-center gap-2 bg-white rounded-[10px] border border-muted py-2 px-3 w-[220px]"
-            style={{ alignSelf: align }}
+            onLongPress={onLongPress}
+            delayLongPress={400}
+            activeOpacity={0.75}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              backgroundColor: colors.muted,
+              borderRadius: 16,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              width: 240,
+              alignSelf: align,
+            }}
           >
-            <FileIcon size={20} color={colors.textPrimary} strokeWidth={2.1} />
-            <Text className="body-sm flex-1" numberOfLines={1}>{file.file_name ?? "Fil"}</Text>
-            {!isLocal && <ExternalLink size={14} color={colors.textMuted} strokeWidth={2.1} />}
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.blue, alignItems: "center", justifyContent: "center" }}>
+              <FileIcon size={22} color="#fff" strokeWidth={2} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text className="body-sm font-semibold" numberOfLines={1}>{file.file_name ?? "Fil"}</Text>
+              <Text className="body-xs text-muted">{ext}</Text>
+            </View>
           </TouchableOpacity>
         );
       })}

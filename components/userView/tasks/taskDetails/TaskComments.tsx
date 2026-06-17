@@ -20,7 +20,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useAuth } from "@/hooks/useAuth";
-import { getTaskComments, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs } from "@/lib/api";
+import { getTaskEvents, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs, type TaskEvent } from "@/lib/api";
 import { formatGroupTimestamp } from "@/helpers/helpers";
 import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { TaskComment } from "@/types/comment";
@@ -42,6 +42,8 @@ type DisplayComment = TaskComment & {
   failed?: boolean;
   errorMessage?: string;
   serverCommentId?: string;
+  deleted?: boolean;
+  deletedAuthor?: { name?: string | null; email?: string | null; profile_picture_url?: string | null };
 };
 
 const TIMESTAMP_THRESHOLD_MS = 30 * 60 * 1000;
@@ -62,6 +64,7 @@ export default function TaskComments() {
   const isNearBottomRef = useRef(true);
   const hasLoadedRef = useRef(false);
   const scrollPendingRef = useRef(false);
+  const scrollOpacity = useRef(new Animated.Value(0)).current;
 
   const [comments, setComments] = useState<DisplayComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
@@ -124,6 +127,13 @@ export default function TaskComments() {
     return prepared.map((p) => p.upload_token);
   };
 
+  const resolveCommentId = (event: TaskEvent): string | undefined => {
+    const comment = event.comment as Record<string, unknown> | null;
+    const before = event.before_json as Record<string, unknown> | null;
+    const after = event.after_json as Record<string, unknown> | null;
+    return (comment?.comment_id ?? event.comment_id ?? before?.comment_id ?? after?.comment_id) as string | undefined;
+  };
+
   const fetchComments = useCallback(async (silent = false) => {
     if (!taskId) {
       setFetchError("Ugyldigt opgave-id");
@@ -135,10 +145,44 @@ export default function TaskComments() {
         setIsLoading(true);
         setFetchError(null);
       }
-      const [data, taskData] = await Promise.all([getTaskComments(taskId), getTask(taskId)]);
+      const [taskData, events] = await Promise.all([getTask(taskId), getTaskEvents(taskId)]);
       const archived = taskData.status === TaskStatus.ARCHIVED;
       setIsArchived(archived);
       setTaskTitle(taskData.title);
+
+      // Mirror FE timeline logic: render the original COMMENT_CREATED entry and
+      // attach the matching COMMENT_DELETED event to it.
+      const deletedEventMap = new Map<string, TaskEvent>();
+      for (const e of events) {
+        if (e.type === "COMMENT_DELETED") {
+          const id = resolveCommentId(e);
+          if (id) deletedEventMap.set(id, e);
+        }
+      }
+
+      const data: DisplayComment[] = events
+        .filter((e) => e.type === "COMMENT_CREATED")
+        .reduce<DisplayComment[]>((acc, e) => {
+          const c = e.comment as Record<string, unknown> | null;
+          const a = e.after_json as Record<string, unknown> | null;
+          const commentId = resolveCommentId(e);
+          if (!commentId) return acc;
+          const deletedEvent = deletedEventMap.get(commentId);
+          acc.push({
+            comment_id: commentId,
+            task_id: taskId,
+            user_id: (c?.user_id ?? a?.user_id ?? e.actor_id) as string,
+            message: (c?.message ?? a?.message) as string | undefined,
+            created_at: (c?.created_at ?? a?.created_at ?? e.created_at) as string,
+            updated_at: (c?.updated_at ?? a?.updated_at ?? e.created_at) as string,
+            attachments: deletedEvent ? [] : ((c?.attachments ?? []) as TaskComment['attachments']),
+            deleted: !!deletedEvent,
+            deletedAuthor: e.actor ?? undefined,
+          });
+          return acc;
+        }, [])
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
       setComments(data);
       setFetchError(null);
       const assigneeIds = (taskData.assignment_users ?? []).map((u) => u.user_id);
@@ -158,6 +202,7 @@ export default function TaskComments() {
   }, [taskId]);
 
   useFocusEffect(useCallback(() => {
+    if (!hasLoadedRef.current) scrollOpacity.setValue(0); // hide until scroll lands on first load
     fetchComments(hasLoadedRef.current);
     hasLoadedRef.current = true;
   }, [fetchComments]));
@@ -397,7 +442,13 @@ export default function TaskComments() {
     }
     try {
       await deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c.comment_id !== commentId && c.serverCommentId !== commentId));
+      setComments((prev) => prev.map((c) =>
+        (c.comment_id === commentId || c.serverCommentId === commentId)
+          ? { ...c, deleted: true, deletedAuthor: commentAuthors[c.user_id] ?? (c.user_id === currentUser?.user_id ? currentUser : undefined) }
+          : c,
+      ));
+      // fetchComments will rebuild the list with the COMMENT_DELETED event on next focus,
+      // but immediately mark as deleted in local state for instant feedback
     } catch {
       Alert.alert("Fejl", "Kunne ikke slette kommentar");
     }
@@ -405,6 +456,7 @@ export default function TaskComments() {
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuParams, setMenuParams] = useState<MenuParams | null>(null);
+  const [focusedCommentId, setFocusedCommentId] = useState<string | null>(null);
 
   const canSend = input.trim().length > 0 || pendingAttachments.length > 0;
 
@@ -439,10 +491,14 @@ export default function TaskComments() {
               </View>
             </View>
           ) : (
+            <Animated.View style={{ flex: 1, opacity: scrollOpacity }}>
             <ScrollView
               ref={scrollRef}
               keyboardShouldPersistTaps="handled"
-              onLayout={() => { if (isNearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false }); }}
+              onLayout={() => {
+                if (isNearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false });
+                scrollOpacity.setValue(1);
+              }}
               onContentSizeChange={() => {
                 if (scrollPendingRef.current) {
                   scrollPendingRef.current = false;
@@ -458,7 +514,7 @@ export default function TaskComments() {
                 if (nearBottom === showScrollDown) setShowScrollDown(!nearBottom);
               }}
               scrollEventThrottle={100}
-              contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
+              contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 10 }}
               showsVerticalScrollIndicator={false}
             >
               <View style={{ flex: 1, minHeight: headerHeight + 16 }} />
@@ -481,8 +537,8 @@ export default function TaskComments() {
                   return (
                     <View key={item.data.comment_id} style={{ marginBottom: item.isLastInGroup ? 8 : 2 }}>
                       {currentUser?.user_id === item.data.user_id
-                        ? <CommentBubble comment={item.data} isOwn isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); }} />
-                        : <CommentBubble comment={item.data} isOwn={false} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); }} />}
+                        ? <CommentBubble comment={item.data} isOwn deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id] ?? (item.data.user_id === currentUser?.user_id ? currentUser : undefined)} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} hidden={focusedCommentId === item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />
+                        : <CommentBubble comment={item.data} isOwn={false} deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} hidden={focusedCommentId === item.data.comment_id} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />}
                     </View>
                   );
                 })
@@ -490,6 +546,7 @@ export default function TaskComments() {
 
               <Reanimated.View style={scrollSpacerStyle} />
             </ScrollView>
+            </Animated.View>
           )}
           {!isLoading && !fetchError && (
             <Reanimated.View
@@ -534,6 +591,8 @@ export default function TaskComments() {
         visible={menuVisible}
         params={menuParams}
         onClose={() => setMenuVisible(false)}
+        onDismissed={() => setFocusedCommentId(null)}
+        minTop={headerHeight + 16}
       />
     </View>
   );
