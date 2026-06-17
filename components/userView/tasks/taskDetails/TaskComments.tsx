@@ -21,6 +21,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useAuth } from "@/hooks/useAuth";
 import { getTaskEvents, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs, type TaskEvent } from "@/lib/api";
+import { File as FSFile } from "expo-file-system";
 import { formatGroupTimestamp } from "@/helpers/helpers";
 import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { TaskComment } from "@/types/comment";
@@ -107,16 +108,19 @@ export default function TaskComments() {
     const processed = await Promise.all(
       attachments.map(async ({ uri, fileName, mimeType, fileSize }) => {
         const isHeicLike = mimeType === "image/heic" || mimeType === "image/heif" || /\.(heic|heif)$/i.test(fileName);
+        let effectiveUri = uri;
+        let effectiveMime = mimeType;
+        let effectiveName = fileName;
         if (isHeicLike) {
           const converted = await ImageManipulator.manipulateAsync(uri, [], { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG });
-          return {
-            uri: converted.uri,
-            fileName: fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg"),
-            mimeType: "image/jpeg",
-            fileSize: fileSize ?? 0,
-          };
+          effectiveUri = converted.uri;
+          effectiveMime = "image/jpeg";
+          effectiveName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
         }
-        return { uri, fileName, mimeType, fileSize: fileSize ?? 0 };
+        const realSize = fileSize ?? new FSFile(effectiveUri).size;
+        const maxBytes = MAX_FILE_SIZE[effectiveMime] ?? 10 * 1024 * 1024;
+        if (realSize > maxBytes) throw new Error(`${effectiveName} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+        return { uri: effectiveUri, fileName: effectiveName, mimeType: effectiveMime, fileSize: realSize };
       }),
     );
     const prepared = await prepareAttachments(
@@ -412,7 +416,7 @@ export default function TaskComments() {
     try {
       const localAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://") || a.url.startsWith("content://"));
       const upload_tokens = localAttachments.length > 0
-        ? await uploadAttachments(localAttachments.map((a) => ({ uri: a.url, fileName: a.file_name ?? "file", mimeType: a.mime_type ?? "application/octet-stream" })))
+        ? await uploadAttachments(localAttachments.map((a) => ({ uri: a.url, fileName: a.file_name ?? "file", mimeType: a.mime_type ?? "application/octet-stream", fileSize: a.file_size ?? undefined })))
         : undefined;
 
       const newComment = await createComment(taskId, {
