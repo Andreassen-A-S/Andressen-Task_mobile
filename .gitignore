@@ -42,3 +42,6 @@ yarn-error.*
 /android
 
 google-services.json
+
+# local agent notes
+CLAUDE.md

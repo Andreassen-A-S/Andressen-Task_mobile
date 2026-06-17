@@ -43,9 +43,9 @@ export default function PathHeader({ title, path, rightContent, modal = false, b
         borderBottomColor: colors.border,
       }}
     >
-      {Platform.OS === "ios" ? (
+      {Platform.OS === "ios" && (
         <MaskedView
-          className="absolute inset-0"
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
           maskElement={
             <LinearGradient
               colors={["black", "black", "transparent"]}
@@ -56,13 +56,12 @@ export default function PathHeader({ title, path, rightContent, modal = false, b
         >
           <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} />
         </MaskedView>
-      ) : (
-        <LinearGradient
-          colors={[colors.eggWhite, `${colors.eggWhite}00`]}
-          locations={[0.6, 1]}
-          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-        />
       )}
+      <LinearGradient
+        colors={[`${colors.eggWhite}CC`, `${colors.eggWhite}00`]}
+        locations={[0, 1]}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+      />
 
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, height: 56, marginTop: topSpacing }} >
         <GlassIconButton icon={ChevronLeft} onPress={() => router.back()} size="lg" />

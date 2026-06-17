@@ -1,6 +1,25 @@
 import { API_URL } from "@/constants/api";
 import { apiFetch } from "./apiClient";
 import { CreateCommentRequest, TaskComment } from "@/types/comment";
+
+export interface TaskEvent {
+  event_id: string;
+  type: string;
+  actor_id: string | null;
+  comment_id?: string | null;
+  before_json?: unknown;
+  after_json?: unknown;
+  created_at: string;
+  comment?: Record<string, unknown> | null;
+  actor?: { user_id: string; name?: string | null; email: string; profile_picture_url?: string | null } | null;
+}
+
+export async function getTaskEvents(taskId: string): Promise<TaskEvent[]> {
+  const response = await apiFetch(`${API_URL}/task-events/${taskId}`);
+  if (!response.ok) throw new Error("Failed to fetch task events");
+  const result = await response.json();
+  return result.data ?? result;
+}
 import { applyAttachmentUrlCache } from "./attachmentUrlCache";
 
 export async function getTaskComments(taskId: string): Promise<TaskComment[]> {

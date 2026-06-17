@@ -2,6 +2,7 @@ import { API_URL } from "@/constants/api";
 import { apiFetch } from "./apiClient";
 import { TaskAttachment } from "@/types/comment";
 import { applyAttachmentUrlCache, bustAttachmentUrl } from "./attachmentUrlCache";
+import { File as FSFile, UploadType } from "expo-file-system";
 
 export interface PreparedAttachment {
   upload_token: string;
@@ -26,16 +27,18 @@ export async function prepareAttachments(
 
 export async function uploadToGcs(
   upload_url: string,
-  blob: Blob,
+  fileUri: string,
   mime_type: string,
 ): Promise<void> {
-  // Direct GCS upload — intentionally uses raw fetch, not apiFetch (not our API)
-  const uploadRes = await fetch(upload_url, {
-    method: "PUT",
-    body: blob,
+  const file = new FSFile(fileUri);
+  const result = await file.upload(upload_url, {
+    httpMethod: "PUT",
+    uploadType: UploadType.BINARY_CONTENT,
     headers: { "Content-Type": mime_type },
   });
-  if (!uploadRes.ok) throw new Error(`GCS upload failed (${uploadRes.status})`);
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(`GCS upload failed (${result.status})`);
+  }
 }
 
 export async function getTaskAttachments(taskId: string): Promise<TaskAttachment[]> {

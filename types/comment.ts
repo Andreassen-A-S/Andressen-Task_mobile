@@ -8,6 +8,7 @@ export interface TaskAttachment {
   url: string;
   file_name: string | null;
   mime_type: string | null;
+  file_size?: number | null;
   created_at: string;
 }
 

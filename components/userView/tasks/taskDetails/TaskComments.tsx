@@ -1,8 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { ArrowDown, Lock } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-import MaskedView from "@react-native-masked-view/masked-view";
 import {
   View,
   Text,
@@ -12,66 +9,68 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Platform,
 } from "react-native";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import Reanimated, { useAnimatedStyle } from "react-native-reanimated";
+import { KeyboardAvoidingView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { attachmentPickerStore } from "@/lib/attachmentPickerStore";
 import { showToast } from "@/lib/toast";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import { useAuth } from "@/hooks/useAuth";
-import { getTaskComments, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs } from "@/lib/api";
+import { getTaskEvents, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs, type TaskEvent } from "@/lib/api";
+import { File as FSFile } from "expo-file-system";
 import { formatGroupTimestamp } from "@/helpers/helpers";
 import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { TaskComment } from "@/types/comment";
 import { TaskStatus } from "@/types/task";
 import { User } from "@/types/users";
 import { colors } from "@/constants/colors";
-import ModalScreen, { useModalHeaderHeight } from "@/components/userView/common/ModalScreen";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
-import KeyboardSafeAreaSpacer from "@/components/userView/common/KeyboardSafeAreaSpacer";
-import PendingAttachmentCard from "@/components/userView/common/PendingAttachmentCard";
-import KeyboardInputBarAction from "@/components/userView/common/KeyboardInputBarAction";
+import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
+import AvatarCluster from "@/components/userView/common/label/AvatarCluster";
+import { PendingAttachmentPreview } from "@/components/userView/common/PendingAttachmentStrip";
 import CommentBubble from "./CommentBubble";
+import CommentComposer, { INPUT_BAR_OVERLAP, ATTACHMENT_LIST_EXTRA_HEIGHT } from "./CommentComposer";
+import CommentContextMenu, { type MenuParams } from "./CommentContextMenu";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
-type PendingAttachment = {
-  localUri: string;
-  fileName: string;
-  mimeType: string;
-};
+export type PendingAttachment = PendingAttachmentPreview;
 
 type DisplayComment = TaskComment & {
   sending?: boolean;
   failed?: boolean;
   errorMessage?: string;
   serverCommentId?: string;
+  deleted?: boolean;
+  deletedAuthor?: { name?: string | null; email?: string | null; profile_picture_url?: string | null };
 };
 
-const INPUT_BAR_OVERLAP = 120;
 const TIMESTAMP_THRESHOLD_MS = 30 * 60 * 1000;
 
-type ListItem = { type: "comment"; data: DisplayComment } | { type: "timestamp"; key: string; label: string };
+type ListItem =
+  | { type: "comment"; data: DisplayComment; isFirstInGroup: boolean; isLastInGroup: boolean }
+  | { type: "timestamp"; key: string; label: string };
 
 export default function TaskComments() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
+  const insets = useSafeAreaInsets();
   const [isArchived, setIsArchived] = useState(false);
   const router = useRouter();
-  const headerHeight = useModalHeaderHeight();
-  const insets = useSafeAreaInsets();
+  const headerHeight = usePathHeaderHeight();
   const { user: currentUser } = useAuth();
   const inputRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const isNearBottomRef = useRef(true);
   const hasLoadedRef = useRef(false);
-  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollPendingRef = useRef(false);
+  const scrollOpacity = useRef(new Animated.Value(0)).current;
 
   const [comments, setComments] = useState<DisplayComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
+  const [assignees, setAssignees] = useState<User[]>([]);
+  const [taskTitle, setTaskTitle] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -79,44 +78,64 @@ export default function TaskComments() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
   const scrollDownAnim = useRef(new Animated.Value(0)).current;
+  const pendingAttachmentIdRef = useRef(0);
+
+  const { progress } = useReanimatedKeyboardAnimation();
+  const composerHeight = INPUT_BAR_OVERLAP + (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0);
+  const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: composerHeight - progress.value * insets.bottom + 8 }));
+  const scrollSpacerStyle = useAnimatedStyle(() => ({ height: isArchived ? 16 : composerHeight - progress.value * insets.bottom }));
 
   const listData = useMemo<ListItem[]>(() => {
     const result: ListItem[] = [];
     for (let i = 0; i < comments.length; i++) {
       const comment = comments[i];
       const prev = comments[i - 1];
-      const showTimestamp = !prev || new Date(comment.created_at).getTime() - new Date(prev.created_at).getTime() > TIMESTAMP_THRESHOLD_MS;
-      if (showTimestamp) result.push({ type: "timestamp", key: `ts-${comment.comment_id}`, label: formatGroupTimestamp(comment.created_at) });
-      result.push({ type: "comment", data: comment });
+      const next = comments[i + 1];
+      const prevGap = !prev || new Date(comment.created_at).getTime() - new Date(prev.created_at).getTime() > TIMESTAMP_THRESHOLD_MS;
+      const nextGap = !next || new Date(next.created_at).getTime() - new Date(comment.created_at).getTime() > TIMESTAMP_THRESHOLD_MS;
+      if (prevGap) result.push({ type: "timestamp", key: `ts-${comment.comment_id}`, label: formatGroupTimestamp(comment.created_at) });
+      result.push({
+        type: "comment",
+        data: comment,
+        isFirstInGroup: prevGap || !prev || prev.user_id !== comment.user_id,
+        isLastInGroup: nextGap || !next || next.user_id !== comment.user_id,
+      });
     }
     return result;
   }, [comments]);
 
-  const uploadAttachments = async (attachments: { uri: string; fileName: string; mimeType: string }[]): Promise<string[]> => {
-    const blobsWithMeta = await Promise.all(
-      attachments.map(async ({ uri, fileName, mimeType }) => {
+  const uploadAttachments = async (attachments: { uri: string; fileName: string; mimeType: string; fileSize?: number }[]): Promise<string[]> => {
+    const processed = await Promise.all(
+      attachments.map(async ({ uri, fileName, mimeType, fileSize }) => {
+        const isHeicLike = mimeType === "image/heic" || mimeType === "image/heif" || /\.(heic|heif)$/i.test(fileName);
         let effectiveUri = uri;
         let effectiveMime = mimeType;
-        let effectiveFileName = fileName;
-        const isHeicLike = mimeType === "image/heic" || mimeType === "image/heif" || /\.(heic|heif)$/i.test(fileName);
+        let effectiveName = fileName;
         if (isHeicLike) {
           const converted = await ImageManipulator.manipulateAsync(uri, [], { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG });
           effectiveUri = converted.uri;
           effectiveMime = "image/jpeg";
-          effectiveFileName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
+          effectiveName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
         }
-        const blob = await fetch(effectiveUri).then((r) => r.blob());
+        const realSize = fileSize ?? new FSFile(effectiveUri).size;
         const maxBytes = MAX_FILE_SIZE[effectiveMime] ?? 10 * 1024 * 1024;
-        if (blob.size > maxBytes) throw new Error(`${effectiveFileName} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
-        return { blob, fileName: effectiveFileName, mimeType: effectiveMime };
+        if (realSize > maxBytes) throw new Error(`${effectiveName} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
+        return { uri: effectiveUri, fileName: effectiveName, mimeType: effectiveMime, fileSize: realSize };
       }),
     );
     const prepared = await prepareAttachments(
       taskId,
-      blobsWithMeta.map(({ blob, fileName, mimeType }) => ({ file_name: fileName, mime_type: mimeType, file_size: blob.size })),
+      processed.map(({ fileName, mimeType, fileSize }) => ({ file_name: fileName, mime_type: mimeType, file_size: fileSize })),
     );
-    await Promise.all(prepared.map((p, i) => uploadToGcs(p.upload_url, blobsWithMeta[i].blob, blobsWithMeta[i].mimeType)));
+    await Promise.all(prepared.map((p, i) => uploadToGcs(p.upload_url, processed[i].uri, processed[i].mimeType)));
     return prepared.map((p) => p.upload_token);
+  };
+
+  const resolveCommentId = (event: TaskEvent): string | undefined => {
+    const comment = event.comment as Record<string, unknown> | null;
+    const before = event.before_json as Record<string, unknown> | null;
+    const after = event.after_json as Record<string, unknown> | null;
+    return (comment?.comment_id ?? event.comment_id ?? before?.comment_id ?? after?.comment_id) as string | undefined;
   };
 
   const fetchComments = useCallback(async (silent = false) => {
@@ -130,21 +149,55 @@ export default function TaskComments() {
         setIsLoading(true);
         setFetchError(null);
       }
-      const [data, taskData] = await Promise.all([getTaskComments(taskId), getTask(taskId)]);
+      const [taskData, events] = await Promise.all([getTask(taskId), getTaskEvents(taskId)]);
       const archived = taskData.status === TaskStatus.ARCHIVED;
       setIsArchived(archived);
-      setComments(data);
-      if (!archived && !silent) {
-        if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
-        focusTimerRef.current = setTimeout(() => inputRef.current?.focus(), 600);
+      setTaskTitle(taskData.title);
+
+      // Mirror FE timeline logic: render the original COMMENT_CREATED entry and
+      // attach the matching COMMENT_DELETED event to it.
+      const deletedEventMap = new Map<string, TaskEvent>();
+      for (const e of events) {
+        if (e.type === "COMMENT_DELETED") {
+          const id = resolveCommentId(e);
+          if (id) deletedEventMap.set(id, e);
+        }
       }
+
+      const data: DisplayComment[] = events
+        .filter((e) => e.type === "COMMENT_CREATED")
+        .reduce<DisplayComment[]>((acc, e) => {
+          const c = e.comment as Record<string, unknown> | null;
+          const a = e.after_json as Record<string, unknown> | null;
+          const commentId = resolveCommentId(e);
+          if (!commentId) return acc;
+          const deletedEvent = deletedEventMap.get(commentId);
+          acc.push({
+            comment_id: commentId,
+            task_id: taskId,
+            user_id: (c?.user_id ?? a?.user_id ?? e.actor_id) as string,
+            message: (c?.message ?? a?.message) as string | undefined,
+            created_at: (c?.created_at ?? a?.created_at ?? e.created_at) as string,
+            updated_at: (c?.updated_at ?? a?.updated_at ?? e.created_at) as string,
+            attachments: deletedEvent ? [] : ((c?.attachments ?? []) as TaskComment['attachments']),
+            deleted: !!deletedEvent,
+            deletedAuthor: e.actor ?? undefined,
+          });
+          return acc;
+        }, [])
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+      setComments(data);
       setFetchError(null);
-      const uniqueIds = [...new Set(data.map((c) => c.user_id))];
-      const authors: Record<string, User> = {};
+      const assigneeIds = (taskData.assignment_users ?? []).map((u) => u.user_id);
+      const commentIds = data.map((c) => c.user_id);
+      const uniqueIds = [...new Set([...assigneeIds, ...commentIds])];
+      const userMap: Record<string, User> = {};
       await Promise.all(uniqueIds.map(async (id) => {
-        try { authors[id] = await getUser(id); } catch { }
+        try { userMap[id] = await getUser(id); } catch { }
       }));
-      setCommentAuthors(authors);
+      setCommentAuthors(userMap);
+      setAssignees(assigneeIds.flatMap((id) => userMap[id] ? [userMap[id]] : []));
     } catch {
       if (!silent) setFetchError("Kunne ikke hente kommentarer");
     } finally {
@@ -153,11 +206,9 @@ export default function TaskComments() {
   }, [taskId]);
 
   useFocusEffect(useCallback(() => {
+    if (!hasLoadedRef.current) scrollOpacity.setValue(0); // hide until scroll lands on first load
     fetchComments(hasLoadedRef.current);
     hasLoadedRef.current = true;
-    return () => {
-      if (focusTimerRef.current) clearTimeout(focusTimerRef.current);
-    };
   }, [fetchComments]));
 
   useEffect(() => () => attachmentPickerStore.clear(), []);
@@ -170,24 +221,40 @@ export default function TaskComments() {
     }).start();
   }, [showScrollDown]);
 
-  const addPickedAssets = (assets: ImagePicker.ImagePickerAsset[]) => {
+  const addPickedAssets = async (assets: ImagePicker.ImagePickerAsset[]) => {
     const ts = Date.now();
     const newAttachments: PendingAttachment[] = [];
     const oversized: string[] = [];
 
-    assets.forEach((asset, i) => {
+    for (let i = 0; i < assets.length; i++) {
+      const asset = assets[i];
       const assetFileName = asset.fileName ?? "";
       const isHeicLike = asset.mimeType === "image/heic" || asset.mimeType === "image/heif" || /\.(heic|heif)$/i.test(assetFileName);
-      const mime = asset.mimeType ?? (isHeicLike ? "image/heic" : "image/jpeg");
-      const ext = isHeicLike ? "heic" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
-      const fileName = asset.fileName ?? `photo_${ts}_${i}.${ext}`;
+      let localUri = asset.uri;
+      let mime = asset.mimeType ?? (isHeicLike ? "image/heic" : "image/jpeg");
+      let ext = isHeicLike ? "heic" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+      let fileName = asset.fileName ?? `photo_${ts}_${i}.${ext}`;
       const maxBytes = MAX_FILE_SIZE[mime] ?? 10 * 1024 * 1024;
       if (asset.fileSize != null && asset.fileSize > maxBytes) {
         oversized.push(fileName);
       } else {
-        newAttachments.push({ localUri: asset.uri, fileName, mimeType: mime });
+        if (isHeicLike) {
+          try {
+            const converted = await ImageManipulator.manipulateAsync(asset.uri, [], { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG });
+            localUri = converted.uri;
+            mime = "image/jpeg";
+            fileName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
+          } catch { }
+        }
+        newAttachments.push({
+          id: `pending-image-${ts}-${pendingAttachmentIdRef.current++}`,
+          localUri,
+          fileName,
+          mimeType: mime,
+          fileSize: asset.fileSize ?? undefined,
+        });
       }
-    });
+    }
 
     if (oversized.length > 0) {
       showToast({
@@ -224,7 +291,13 @@ export default function TaskComments() {
             if (asset.size != null && asset.size > maxBytes) {
               oversized.push(name);
             } else {
-              newFiles.push({ localUri: asset.uri, fileName: name, mimeType });
+              newFiles.push({
+                id: `pending-file-${Date.now()}-${pendingAttachmentIdRef.current++}`,
+                localUri: asset.uri,
+                fileName: name,
+                mimeType,
+                fileSize: asset.size ?? undefined,
+              });
             }
           }
           if (oversized.length > 0) {
@@ -244,8 +317,8 @@ export default function TaskComments() {
           Alert.alert("Tilladelse krævet", "Kameraadgang er nødvendig for at tage billeder.");
           return false;
         }
-        const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
-        if (!result.canceled) { addPickedAssets(result.assets); return true; }
+        const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8 });
+        if (!result.canceled) { await addPickedAssets(result.assets); return true; }
       } else {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== "granted") {
@@ -253,15 +326,15 @@ export default function TaskComments() {
           return false;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ["images"],
           allowsMultipleSelection: true,
           selectionLimit: 20,
         });
-        if (!result.canceled) { addPickedAssets(result.assets); return true; }
+        if (!result.canceled) { await addPickedAssets(result.assets); return true; }
       }
       return false;
     });
-    router.push("./add-attachment");
+    router.push(`/comments/${taskId}/add-attachment`);
   };
 
   const handleSubmit = async () => {
@@ -301,7 +374,7 @@ export default function TaskComments() {
 
     try {
       const upload_tokens = pendingAttachments.length > 0
-        ? await uploadAttachments(pendingAttachments.map((a) => ({ uri: a.localUri, fileName: a.fileName, mimeType: a.mimeType })))
+        ? await uploadAttachments(pendingAttachments.map((a) => ({ uri: a.localUri, fileName: a.fileName, mimeType: a.mimeType, fileSize: a.fileSize })))
         : undefined;
 
       const newComment = await createComment(taskId, {
@@ -343,7 +416,7 @@ export default function TaskComments() {
     try {
       const localAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://") || a.url.startsWith("content://"));
       const upload_tokens = localAttachments.length > 0
-        ? await uploadAttachments(localAttachments.map((a) => ({ uri: a.url, fileName: a.file_name ?? "file", mimeType: a.mime_type ?? "application/octet-stream" })))
+        ? await uploadAttachments(localAttachments.map((a) => ({ uri: a.url, fileName: a.file_name ?? "file", mimeType: a.mime_type ?? "application/octet-stream", fileSize: a.file_size ?? undefined })))
         : undefined;
 
       const newComment = await createComment(taskId, {
@@ -373,17 +446,40 @@ export default function TaskComments() {
     }
     try {
       await deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c.comment_id !== commentId && c.serverCommentId !== commentId));
+      setComments((prev) => prev.map((c) =>
+        (c.comment_id === commentId || c.serverCommentId === commentId)
+          ? { ...c, deleted: true, deletedAuthor: commentAuthors[c.user_id] ?? (c.user_id === currentUser?.user_id ? currentUser : undefined) }
+          : c,
+      ));
+      // fetchComments will rebuild the list with the COMMENT_DELETED event on next focus,
+      // but immediately mark as deleted in local state for instant feedback
     } catch {
       Alert.alert("Fejl", "Kunne ikke slette kommentar");
     }
   };
 
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuParams, setMenuParams] = useState<MenuParams | null>(null);
+  const [focusedCommentId, setFocusedCommentId] = useState<string | null>(null);
+
   const canSend = input.trim().length > 0 || pendingAttachments.length > 0;
 
   return (
-    <ModalScreen title="Kommentarer">
-      <KeyboardAvoidingView behavior="padding" className="flex-1" keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}>
+    <View className="flex-1 bg-background">
+      <PathHeader
+        title="Kommentarer"
+        path={taskTitle}
+        centered
+        rightContent={
+          assignees.length > 0
+            ? <AvatarCluster
+              users={assignees.map((u) => ({ name: u.name || u.email || "?", imageUrl: u.profile_picture_url }))}
+              onPress={() => router.push(`/comments/${taskId}/assignees`)}
+            />
+            : undefined
+        }
+      />
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
         <View className="flex-1">
           {isLoading ? (
             <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: headerHeight }}>
@@ -399,10 +495,14 @@ export default function TaskComments() {
               </View>
             </View>
           ) : (
+            <Animated.View style={{ flex: 1, opacity: scrollOpacity }}>
             <ScrollView
               ref={scrollRef}
               keyboardShouldPersistTaps="handled"
-              onLayout={() => { if (isNearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false }); }}
+              onLayout={() => {
+                if (isNearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false });
+                scrollOpacity.setValue(1);
+              }}
               onContentSizeChange={() => {
                 if (scrollPendingRef.current) {
                   scrollPendingRef.current = false;
@@ -418,7 +518,7 @@ export default function TaskComments() {
                 if (nearBottom === showScrollDown) setShowScrollDown(!nearBottom);
               }}
               scrollEventThrottle={100}
-              contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
+              contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 10 }}
               showsVerticalScrollIndicator={false}
             >
               <View style={{ flex: 1, minHeight: headerHeight + 16 }} />
@@ -439,35 +539,36 @@ export default function TaskComments() {
                     );
                   }
                   return (
-                    <View key={item.data.comment_id} className="mb-2">
+                    <View key={item.data.comment_id} style={{ marginBottom: item.isLastInGroup ? 8 : 2 }}>
                       {currentUser?.user_id === item.data.user_id
-                        ? <CommentBubble comment={item.data} isOwn sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} />
-                        : <CommentBubble comment={item.data} isOwn={false} author={commentAuthors[item.data.user_id]} />}
+                        ? <CommentBubble comment={item.data} isOwn deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id] ?? (item.data.user_id === currentUser?.user_id ? currentUser : undefined)} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} hidden={focusedCommentId === item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />
+                        : <CommentBubble comment={item.data} isOwn={false} deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} hidden={focusedCommentId === item.data.comment_id} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />}
                     </View>
                   );
                 })
               )}
 
-              <View style={{ height: isArchived ? 16 : INPUT_BAR_OVERLAP }} />
+              <Reanimated.View style={scrollSpacerStyle} />
             </ScrollView>
+            </Animated.View>
           )}
           {!isLoading && !fetchError && (
-            <Animated.View
+            <Reanimated.View
               pointerEvents={showScrollDown ? "box-none" : "none"}
-              style={{
-                position: "absolute",
-                bottom: isArchived ? 8 : INPUT_BAR_OVERLAP + 8,
-                alignSelf: "center",
-                opacity: scrollDownAnim,
-                transform: [{ translateY: scrollDownAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
-              }}
+              style={[{ position: "absolute", alignSelf: "center" }, isArchived ? { bottom: 8 } : arrowBottomStyle]}
             >
-              <GlassIconButton
-                icon={ArrowDown}
-                onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
-                size="lg"
-              />
-            </Animated.View>
+              <Animated.View
+                style={{
+                  opacity: scrollDownAnim,
+                  transform: [{ translateY: scrollDownAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+                }}
+              >
+                <GlassIconButton
+                  icon={ArrowDown}
+                  onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+                />
+              </Animated.View>
+            </Reanimated.View>
           )}
         </View>
 
@@ -477,53 +578,26 @@ export default function TaskComments() {
             <Text className="label-sm text-muted">Arkiveret — kun visning</Text>
           </View>
         ) : (
-          <View style={{ marginTop: -INPUT_BAR_OVERLAP, zIndex: 1 }}>
-            <MaskedView
-              style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
-              pointerEvents="none"
-              maskElement={
-                <LinearGradient
-                  colors={["transparent", "black", "black"]}
-                  locations={[0, 0.7, 1]}
-                  style={{ flex: 1 }}
-                />
-              }
-            >
-              <BlurView intensity={7.5} tint="light" style={{ flex: 1 }} pointerEvents="none" />
-            </MaskedView>
-            <LinearGradient
-              colors={[`${colors.eggWhite}00`, `${colors.eggWhite}CC`]}
-              style={{ position: "absolute", top: 0, left: 0, right: 0, height: INPUT_BAR_OVERLAP }}
-              pointerEvents="none"
-            />
-            <KeyboardInputBar
-              inputRef={inputRef}
-              value={input}
-              onChangeText={setInput}
-              onSubmit={handleSubmit}
-              canSubmit={canSend && !isSubmitting}
-              isSubmitting={isSubmitting}
-              leftActions={
-                <KeyboardInputBarAction icon="add" onPress={pickAttachments} iconSize={26} disabled={isSubmitting} />
-              }
-              attachments={pendingAttachments.length > 0 ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginBottom: 8, marginHorizontal: -8 }} contentContainerStyle={{ gap: 8, paddingHorizontal: 8 }}>
-                  {pendingAttachments.map((attachment) => (
-                    <PendingAttachmentCard
-                      key={attachment.localUri}
-                      uri={attachment.localUri}
-                      mimeType={attachment.mimeType}
-                      fileName={attachment.fileName}
-                      onRemove={() => setPendingAttachments((prev) => prev.filter((a) => a.localUri !== attachment.localUri))}
-                    />
-                  ))}
-                </ScrollView>
-              ) : undefined}
-            />
-          </View>
+          <CommentComposer
+            inputRef={inputRef}
+            value={input}
+            onChangeText={setInput}
+            onSubmit={handleSubmit}
+            canSubmit={canSend && !isSubmitting}
+            isSubmitting={isSubmitting}
+            pendingAttachments={pendingAttachments}
+            onPickAttachments={pickAttachments}
+            onRemoveAttachment={(id) => setPendingAttachments((prev) => prev.filter((a) => a.id !== id))}
+          />
         )}
       </KeyboardAvoidingView>
-      <KeyboardSafeAreaSpacer bottomInset={insets.bottom} />
-    </ModalScreen>
+      <CommentContextMenu
+        visible={menuVisible}
+        params={menuParams}
+        onClose={() => setMenuVisible(false)}
+        onDismissed={() => setFocusedCommentId(null)}
+        minTop={headerHeight + 16}
+      />
+    </View>
   );
 }
