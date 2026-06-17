@@ -14,7 +14,7 @@ import LinkedText from "../../common/LinkedText";
 import { showToast } from "@/lib/toast";
 import { type BubbleLayout, type MenuParams } from "./CommentContextMenu";
 
-type StatusState = "sending" | "afsendt" | "failed" | "idle";
+type StatusState = "sender" | "leveret" | "fejl" | "idle";
 
 interface Props {
   comment: TaskComment;
@@ -35,25 +35,48 @@ interface Props {
 }
 
 export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, hidden, onDelete, onRetry, onMenuOpen }: Props) {
-  const opacity = useRef(new Animated.Value(1)).current;
-  const [status, setStatus] = useState<StatusState>(sending ? "sending" : failed ? "failed" : "idle");
+  const pulseOpacity = useRef(new Animated.Value(1)).current;
+  const leveretOpacity = useRef(new Animated.Value(0)).current;
+  const [status, setStatus] = useState<StatusState>(sending ? "sender" : failed ? "fejl" : "idle");
   const bubbleRef = useRef<View>(null);
   const textBubbleRef = useRef<any>(null);
   const attachmentsRef = useRef<View>(null);
+  const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  useEffect(() => {
+    if (status !== "sender") return;
+    pulseOpacity.setValue(1);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseOpacity, { toValue: 0.3, duration: 500, useNativeDriver: true }),
+        Animated.timing(pulseOpacity, { toValue: 1, duration: 500, useNativeDriver: true }),
+      ])
+    );
+    pulseLoopRef.current = loop;
+    loop.start();
+    return () => loop.stop();
+  }, [status]);
+
+  useEffect(() => {
+    if (!isOwn || status !== "leveret" || isLastInGroup) return;
+    Animated.timing(leveretOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
+      setStatus("idle");
+    });
+  }, [isLastInGroup]);
 
   useEffect(() => {
     if (!isOwn) return;
     if (sending) {
-      setStatus("sending");
+      setStatus("sender");
     } else if (failed) {
-      setStatus("failed");
-    } else if (status === "sending") {
-      setStatus("afsendt");
-      opacity.setValue(1);
-      Animated.sequence([
-        Animated.delay(800),
-        Animated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
-      ]).start(() => setStatus("idle"));
+      setStatus("fejl");
+    } else if (status === "sender") {
+      pulseLoopRef.current?.stop();
+      Animated.timing(pulseOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+        leveretOpacity.setValue(0);
+        setStatus("leveret");
+        Animated.timing(leveretOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      });
     }
   }, [sending, failed, isOwn]);
 
@@ -114,7 +137,7 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
     });
 
   const handleLongPress = async () => {
-    const canDelete = isOwn && !!onDelete && status === "idle";
+    const canDelete = isOwn && !!onDelete && (status === "idle" || status === "leveret");
     const canCopy = !!comment.message;
     const canSave = (comment.attachments ?? []).some((a) => isRemoteUri(a.url));
     if (!canDelete && !canCopy && !canSave) return;
@@ -193,7 +216,7 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
           ? <SingleAvatar name={author?.name || "?"} imageUrl={author?.profile_picture_url} size="xs" />
           : <View style={{ width: 24 }} />
         }
-        <View ref={bubbleRef} style={{ flex: 1, gap: 4 }}>
+        <View ref={bubbleRef} collapsable={false} style={{ flex: 1, gap: 4 }}>
           {isFirstInGroup && (
             <Text className="label-sm text-muted">{author?.name || author?.email || "Ukendt bruger"}</Text>
           )}
@@ -225,19 +248,19 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
   }
 
   return (
-    <View ref={bubbleRef} className="gap-1 self-end" style={hidden ? { opacity: 0 } : undefined}>
+    <View ref={bubbleRef} collapsable={false} className="gap-1 self-end" style={hidden ? { opacity: 0 } : undefined}>
       <View ref={attachmentsRef} collapsable={false}>
         <CommentAttachments
           attachments={comment.attachments ?? []}
           align="flex-end"
-          onLongPress={status === "idle" ? handleLongPress : undefined}
+          onLongPress={status === "idle" || status === "leveret" ? handleLongPress : undefined}
         />
       </View>
       {comment.message ? (
         <TouchableOpacity
           ref={textBubbleRef}
           activeOpacity={0.8}
-          onLongPress={status === "idle" ? handleLongPress : undefined}
+          onLongPress={status === "idle" || status === "leveret" ? handleLongPress : undefined}
           delayLongPress={350}
           className="max-w-[85%] rounded-2xl px-3 py-2 self-end bg-accent"
         >
@@ -251,13 +274,13 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
 
       {status !== "idle" && (
         <View className="min-h-4 justify-center items-end">
-          {status === "sending" && (
-            <Text className="body-xs text-muted">Sender</Text>
+          {status === "sender" && (
+            <Animated.Text className="body-xs text-muted" style={{ opacity: pulseOpacity }}>Sender</Animated.Text>
           )}
-          {status === "afsendt" && (
-            <Animated.Text className="body-xs text-muted" style={{ opacity }}>Afsendt</Animated.Text>
+          {status === "leveret" && (
+            <Animated.Text className="body-xs text-muted" style={{ opacity: leveretOpacity }}>Leveret</Animated.Text>
           )}
-          {status === "failed" && (
+          {status === "fejl" && (
             <TouchableOpacity onPress={() => onRetry?.(comment.comment_id)} className="flex-row items-center gap-1">
               <Text className="body-xs text-danger">{errorMessage ?? "Kunne ikke sende"}</Text>
               <RotateCw size={12} color={colors.red} strokeWidth={2.2} />

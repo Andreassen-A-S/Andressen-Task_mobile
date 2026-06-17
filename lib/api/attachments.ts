@@ -2,6 +2,7 @@ import { API_URL } from "@/constants/api";
 import { apiFetch } from "./apiClient";
 import { TaskAttachment } from "@/types/comment";
 import { applyAttachmentUrlCache, bustAttachmentUrl } from "./attachmentUrlCache";
+import { File as FSFile, UploadType } from "expo-file-system";
 
 export interface PreparedAttachment {
   upload_token: string;
@@ -29,18 +30,15 @@ export async function uploadToGcs(
   fileUri: string,
   mime_type: string,
 ): Promise<void> {
-  // Direct GCS upload via XHR — fetch(localUri).blob() is unsupported in RN new arch
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("PUT", upload_url);
-    xhr.setRequestHeader("Content-Type", mime_type);
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else reject(new Error(`GCS upload failed (${xhr.status})`));
-    };
-    xhr.onerror = () => reject(new Error("Network error during GCS upload"));
-    xhr.send({ uri: fileUri, type: mime_type, name: "file" } as unknown as Document);
+  const file = new FSFile(fileUri);
+  const result = await file.upload(upload_url, {
+    httpMethod: "PUT",
+    uploadType: UploadType.BINARY_CONTENT,
+    headers: { "Content-Type": mime_type },
   });
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(`GCS upload failed (${result.status})`);
+  }
 }
 
 export async function getTaskAttachments(taskId: string): Promise<TaskAttachment[]> {

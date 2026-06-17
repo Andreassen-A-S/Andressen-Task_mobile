@@ -125,7 +125,7 @@ function ImageGrid({ images, align, onLongPress }: {
                         alignItems: "center",
                         justifyContent: "center",
                       }}>
-                        <Text style={{ color: "#fff", fontSize: 20, fontWeight: "600" }}>+{overflow + 1}</Text>
+                        <Text style={{ color: "#fff", fontSize: 20, fontWeight: "600" }}>+{overflow}</Text>
                       </View>
                     )}
                   </View>
@@ -160,6 +160,17 @@ export default function CommentAttachments({ attachments, align = "flex-start", 
         const isLocal = file.url.startsWith("file://") || file.url.startsWith("content://") || file.url.startsWith("ph://");
         const FileIcon = getFileIconComponent(file.mime_type);
         const ext = file.file_name?.split(".").pop()?.toUpperCase() ?? "FIL";
+        const size = file.file_size ? `${(file.file_size / 1024).toFixed(1)} KB` : ext;
+        const extColor = (() => {
+          switch (ext) {
+            case "PDF": return colors.red;
+            case "DOC":
+            case "DOCX": return colors.blue;
+            case "XLS":
+            case "XLSX": return colors.green;
+            default: return colors.textSecondary;
+          }
+        })();
         return (
           <TouchableOpacity
             key={file.attachment_id}
@@ -169,9 +180,9 @@ export default function CommentAttachments({ attachments, align = "flex-start", 
             activeOpacity={0.75}
             style={{
               flexDirection: "row",
-              alignItems: "center",
+              alignItems: "flex-start",
               gap: 10,
-              backgroundColor: colors.muted,
+              backgroundColor: colors.surface,
               borderRadius: 16,
               paddingVertical: 10,
               paddingHorizontal: 12,
@@ -179,12 +190,13 @@ export default function CommentAttachments({ attachments, align = "flex-start", 
               alignSelf: align,
             }}
           >
-            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.blue, alignItems: "center", justifyContent: "center" }}>
-              <FileIcon size={22} color="#fff" strokeWidth={2} />
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: extColor, opacity: 0.85, alignItems: "center", justifyContent: "center" }}>
+              <FileIcon size={20} color={extColor} fill={colors.white} strokeWidth={2} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text className="body-sm font-semibold" numberOfLines={1}>{file.file_name ?? "Fil"}</Text>
-              <Text className="body-xs text-muted">{ext}</Text>
+              <Text className="body-sm font-semibold" numberOfLines={2}>{file.file_name ?? "Fil"}</Text>
+              <Text className="body-xs text-muted">{size}</Text>
+
             </View>
           </TouchableOpacity>
         );
