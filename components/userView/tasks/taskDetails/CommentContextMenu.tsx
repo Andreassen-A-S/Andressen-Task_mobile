@@ -102,23 +102,23 @@ export default function CommentContextMenu({ visible, params, onClose, onDismiss
         const attLayout = params.attachmentsLayout;
         const attTargetLeft = isOwn ? SCREEN_W - 16 - attLayout.width : 16;
         return (
-        <Animated.View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: attLayout.pageY,
-            left: attTargetLeft,
-            transform: [
-              { translateX: moveAnim.interpolate({ inputRange: [0, 1], outputRange: [attLayout.pageX - attTargetLeft, 0] }) },
-              { translateY: moveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, verticalShift] }) },
-            ],
-          }}
-        >
-          <Image
-            source={{ uri: params.attachmentsSnapshot }}
-            style={{ width: attLayout.width, height: attLayout.height }}
-          />
-        </Animated.View>
+          <Animated.View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: attLayout.pageY,
+              left: attTargetLeft,
+              transform: [
+                { translateX: moveAnim.interpolate({ inputRange: [0, 1], outputRange: [attLayout.pageX - attTargetLeft, 0] }) },
+                { translateY: moveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, verticalShift] }) },
+              ],
+            }}
+          >
+            <Image
+              source={{ uri: params.attachmentsSnapshot }}
+              style={{ width: attLayout.width, height: attLayout.height }}
+            />
+          </Animated.View>
         );
       })()}
 
@@ -126,27 +126,27 @@ export default function CommentContextMenu({ visible, params, onClose, onDismiss
       {message ? (() => {
         const bubbleTargetLeft = isOwn ? SCREEN_W - 16 - snap.width : 16;
         return (
-        <Animated.View
-          style={{
-            position: "absolute",
-            top: snap.pageY,
-            left: bubbleTargetLeft,
-            width: snap.width,
-            transform: [
-              { translateX: moveAnim.interpolate({ inputRange: [0, 1], outputRange: [snap.pageX - bubbleTargetLeft, 0] }) },
-              { translateY: moveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, verticalShift] }) },
-            ],
-          }}
-        >
-          <Pressable
-            onPress={onClose}
-            className={`rounded-2xl px-3 py-2 ${isOwn ? "self-end bg-accent" : "self-start bg-surface"}`}
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: snap.pageY,
+              left: bubbleTargetLeft,
+              width: snap.width,
+              transform: [
+                { translateX: moveAnim.interpolate({ inputRange: [0, 1], outputRange: [snap.pageX - bubbleTargetLeft, 0] }) },
+                { translateY: moveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, verticalShift] }) },
+              ],
+            }}
           >
-            <Text className={isOwn ? "body-md !text-white" : "body-md !text-secondary"}>
-              {message}
-            </Text>
-          </Pressable>
-        </Animated.View>
+            <Pressable
+              onPress={onClose}
+              className={`rounded-2xl px-3 py-2 ${isOwn ? "self-end bg-accent" : "self-start bg-surface"}`}
+            >
+              <Text className={isOwn ? "body-md !text-white" : "body-md !text-secondary"}>
+                {message}
+              </Text>
+            </Pressable>
+          </Animated.View>
         );
       })() : null}
 
