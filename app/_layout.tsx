@@ -3,8 +3,8 @@ import "../global.css";
 import { Toaster } from "sonner-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useRef } from "react";
-import { ActivityIndicator, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useDeepLinkNavigation } from "@/hooks/useDeepLinkNavigation";
@@ -21,29 +21,52 @@ import {
   IBMPlexMono_400Regular,
   IBMPlexMono_500Medium,
 } from "@expo-google-fonts/ibm-plex-mono";
-import { colors } from "@/constants/colors";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { CancelableNavigationTask, runAfterNavigationFrame } from "@/lib/navigationTiming";
 
-function RootGuard() {
+SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({
+  duration: 200,
+  fade: true,
+});
+
+function SplashScreenController({ fontsReady }: { fontsReady: boolean }) {
   const { isAuthenticated, isInitializing } = useAuth();
   const segments = useSegments();
+  const hasHiddenSplash = useRef(false);
+  const rootSegment = segments[0];
+  const isDestinationReady = isAuthenticated
+    ? rootSegment === "(tabs)" || rootSegment === "comments"
+    : rootSegment === "login";
+
+  useEffect(() => {
+    if (
+      hasHiddenSplash.current ||
+      !fontsReady ||
+      isInitializing ||
+      !isDestinationReady
+    ) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      hasHiddenSplash.current = true;
+      SplashScreen.hide();
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [fontsReady, isDestinationReady, isInitializing]);
+
+  return null;
+}
+
+function RootNavigator() {
+  const { isAuthenticated, isInitializing } = useAuth();
   const router = useRouter();
   const lastNotificationResponse = useLastNotificationResponse();
   const handledNotificationIdRef = useRef<string | null>(null);
   useDeepLinkNavigation({ isAuthenticated, isInitializing });
-
-  useEffect(() => {
-    if (isInitializing) return;
-    const inTabs = segments[0] === "(tabs)";
-    const inComments = segments[0] === "comments";
-    if (!isAuthenticated && (inTabs || inComments)) {
-      router.replace("/login");
-    } else if (isAuthenticated && !inTabs && !inComments) {
-      router.replace("/(tabs)/tasks");
-    }
-  }, [isAuthenticated, isInitializing, segments[0]]);
 
   useEffect(() => {
     if (!isAuthenticated || isInitializing) return;
@@ -86,26 +109,26 @@ function RootGuard() {
     }
   }, [lastNotificationResponse, isAuthenticated, isInitializing, router]);
 
-  if (isInitializing) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator size="large" color={colors.green} />
-      </View>
-    );
-  }
+  // Do not mount a provisional route while the stored session is unresolved.
+  // The native splash remains visible until the correct route tree is mounted.
+  if (isInitializing) return null;
 
   return (
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={isAuthenticated}>
+        <Stack.Screen name="(tabs)" options={{ animation: "none" }} />
         <Stack.Screen name="comments/[taskId]" options={{ headerShown: false }} />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="index" />
-      </Stack>
-    );
+        <Stack.Screen name="index" options={{ animation: "none" }} />
+      </Stack.Protected>
+      <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Screen name="login" options={{ animation: "none" }} />
+      </Stack.Protected>
+    </Stack>
+  );
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Outfit_300Light,
     Outfit_400Regular,
     Outfit_500Medium,
@@ -115,20 +138,19 @@ export default function RootLayout() {
     IBMPlexMono_500Medium,
   });
 
-  if (!fontsLoaded) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator size="large" color={colors.green} />
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (fontError) console.warn("Unable to load app fonts", fontError);
+  }, [fontError]);
+
+  const fontsReady = fontsLoaded || !!fontError;
 
   return (
-    <GestureHandlerRootView className="flex-1 bg-charcoal">
+    <GestureHandlerRootView className="flex-1 bg-white">
       <KeyboardProvider>
         <StatusBar style="light" />
         <AuthProvider>
-          <RootGuard />
+          <SplashScreenController fontsReady={fontsReady} />
+          <RootNavigator />
         </AuthProvider>
         <Toaster
           position="top-center"

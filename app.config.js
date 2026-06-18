@@ -19,11 +19,6 @@ module.exports = {
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
-    splash: {
-      image: "./assets/splash-icon.png",
-      resizeMode: "contain",
-      backgroundColor: "#ffffff",
-    },
     ios: {
       deploymentTarget: "16.4",
       icon: "./assets/mesterPlan_final.icon",
@@ -67,6 +62,15 @@ module.exports = {
     },
     plugins: [
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          image: "./assets/splash-icon.png",
+          imageWidth: 200,
+          resizeMode: "contain",
+          backgroundColor: "#ffffff",
+        },
+      ],
       "expo-font",
       "@react-native-community/datetimepicker",
       [
