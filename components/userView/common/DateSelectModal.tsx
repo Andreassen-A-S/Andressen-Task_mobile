@@ -107,7 +107,7 @@ export default function DateSelectModal({ title, value, onConfirm, onClose }: Pr
           <View style={{ width: pageWidth }} className="flex-row px-2 mb-1">
             {DAY_LABELS.map(d => (
               <View key={d} className="flex-1 items-center">
-                <Text className="body-xs text-muted">{d}</Text>
+                <Text className="body-xs text-muted-foreground">{d}</Text>
               </View>
             ))}
           </View>

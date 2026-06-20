@@ -59,7 +59,7 @@ export default function AttachmentPicker() {
               key={opt.key}
               onPress={() => select(opt.key)}
               activeOpacity={0.7}
-              className="flex-1 bg-white rounded-2xl border border-muted py-5 items-center gap-2.5"
+              className="flex-1 bg-white rounded-2xl border border-border py-5 items-center gap-2.5"
             >
               <Icon size={28} color={colors.textPrimary} strokeWidth={2.2} />
               <Text className="body-md">{opt.label}</Text>

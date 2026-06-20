@@ -48,7 +48,7 @@ function EditRow({ label, onEdit, isSaving, children }: EditRowProps) {
   return (
     <View className="bg-background">
       <View className="flex-row justify-between items-center px-4 pt-3 pb-2.5">
-        <Text className="overline text-muted">{label}</Text>
+        <Text className="overline text-muted-foreground">{label}</Text>
         <TouchableOpacity onPress={onEdit} disabled={isSaving} hitSlop={8}>
           <Text className="body-sm text-link">Rediger</Text>
         </TouchableOpacity>
@@ -212,7 +212,7 @@ export default function EditTaskModal() {
                 ))}
               </View>
             ) : (
-              <Text className="body-sm text-muted">Ingen tildelte</Text>
+              <Text className="body-sm text-muted-foreground">Ingen tildelte</Text>
             )}
           </EditRow>
 
@@ -243,7 +243,7 @@ export default function EditTaskModal() {
                 <Text className="body-sm">{task.project.name}</Text>
               </View>
             ) : (
-              <Text className="body-sm text-muted">Intet projekt</Text>
+              <Text className="body-sm text-muted-foreground">Intet projekt</Text>
             )}
           </EditRow>
 

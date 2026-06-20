@@ -8,6 +8,8 @@ export type PendingAttachmentPreview = {
   fileName: string;
   mimeType: string;
   fileSize?: number;
+  width?: number;
+  height?: number;
 };
 
 interface Props {

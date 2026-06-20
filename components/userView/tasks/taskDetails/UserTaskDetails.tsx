@@ -26,11 +26,10 @@ import TaskProgressCard from "./TaskProgressCard";
 import { CancelableNavigationTask, runAfterNavigationFrame } from "@/lib/navigationTiming";
 
 export default function UserTaskDetails() {
-  const { taskId, openComments: shouldOpenComments, openCommentsRequestId, commentId } = useLocalSearchParams<{
+  const { taskId, openComments: shouldOpenComments, openCommentsRequestId } = useLocalSearchParams<{
     taskId: string;
     openComments?: string;
     openCommentsRequestId?: string;
-    commentId?: string;
   }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -78,7 +77,7 @@ export default function UserTaskDetails() {
   useFocusEffect(
     useCallback(() => {
       if (!taskId || shouldOpenComments !== "1") return;
-      const requestKey = openCommentsRequestId ?? `${taskId}:${commentId ?? ""}`;
+      const requestKey = openCommentsRequestId ?? taskId;
       if (consumedOpenCommentsRef.current === requestKey) return;
       consumedOpenCommentsRef.current = requestKey;
 
@@ -91,8 +90,7 @@ export default function UserTaskDetails() {
         if (didOpen) return;
         didOpen = true;
         navigationTask = runAfterNavigationFrame(() => {
-          const commentQuery = commentId ? `?commentId=${encodeURIComponent(commentId)}` : "";
-          router.push(`/comments/${taskId}${commentQuery}`);
+          router.push(`/comments/${taskId}`);
         });
       };
 
@@ -114,7 +112,7 @@ export default function UserTaskDetails() {
         if (transitionTimer) clearTimeout(transitionTimer);
         navigationTask?.cancel();
       };
-    }, [commentId, navigation, openCommentsRequestId, pathname, router, shouldOpenComments, taskId])
+    }, [navigation, openCommentsRequestId, pathname, router, shouldOpenComments, taskId])
   );
 
   const handleOpenComments = () => {

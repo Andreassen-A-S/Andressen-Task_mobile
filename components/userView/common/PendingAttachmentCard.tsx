@@ -39,7 +39,7 @@ export default function PendingAttachmentCard({ uri, mimeType, fileName, onRemov
         >
           <FileIcon size={28} color={colors.textPrimary} strokeWidth={2.1} />
           {fileName ? (
-            <Text className="body-xs text-muted text-center" numberOfLines={2}>
+            <Text className="body-xs text-muted-foreground text-center" numberOfLines={2}>
               {fileName}
             </Text>
           ) : null}

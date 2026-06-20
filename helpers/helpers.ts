@@ -169,9 +169,9 @@ export const getStatusColors = (status: TaskStatus): string => {
     [TaskStatus.IN_PROGRESS]:
       "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900",
     [TaskStatus.ARCHIVED]:
-      "bg-surface-hover text-muted border-border dark:bg-surface-subtle dark:text-muted dark:border-border",
+      "bg-surface-hover text-muted-foreground border-border dark:bg-surface-subtle dark:text-muted dark:border-border",
   };
-  return map[status] ?? "bg-surface-hover text-muted border-border";
+  return map[status] ?? "bg-surface-hover text-muted-foreground border-border";
 };
 
 export const getPriorityBarColor = (priority: TaskPriority): string => {

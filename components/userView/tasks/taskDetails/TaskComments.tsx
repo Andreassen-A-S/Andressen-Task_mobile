@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect, type ReactNode } from "react";
 import { ArrowDown, Lock } from "lucide-react-native";
 import {
   View,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  type LayoutChangeEvent,
 } from "react-native";
 import Reanimated, { useAnimatedStyle } from "react-native-reanimated";
 import { KeyboardAvoidingView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
@@ -24,7 +25,7 @@ import { getTaskEvents, createComment, deleteComment, getUser, getTask, prepareA
 import { File as FSFile } from "expo-file-system";
 import { formatGroupTimestamp } from "@/helpers/helpers";
 import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
-import { TaskComment } from "@/types/comment";
+import { CommentReplyTarget, TaskComment } from "@/types/comment";
 import { TaskStatus } from "@/types/task";
 import { User } from "@/types/users";
 import { colors } from "@/constants/colors";
@@ -32,7 +33,7 @@ import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/Pa
 import AvatarCluster from "@/components/userView/common/label/AvatarCluster";
 import { PendingAttachmentPreview } from "@/components/userView/common/PendingAttachmentStrip";
 import CommentBubble from "./CommentBubble";
-import CommentComposer, { INPUT_BAR_OVERLAP, ATTACHMENT_LIST_EXTRA_HEIGHT } from "./CommentComposer";
+import CommentComposer, { INPUT_BAR_OVERLAP, ATTACHMENT_LIST_EXTRA_HEIGHT, REPLY_PREVIEW_EXTRA_HEIGHT } from "./CommentComposer";
 import CommentContextMenu, { type MenuParams } from "./CommentContextMenu";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
@@ -53,6 +54,39 @@ type ListItem =
   | { type: "comment"; data: DisplayComment; isFirstInGroup: boolean; isLastInGroup: boolean }
   | { type: "timestamp"; key: string; label: string };
 
+function CommentRow({
+  children,
+  marginBottom,
+  highlightPulse,
+  onLayout,
+}: {
+  children: ReactNode;
+  marginBottom: number;
+  highlightPulse: number;
+  onLayout: (event: LayoutChangeEvent) => void;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (highlightPulse === 0) return;
+    scale.stopAnimation();
+    scale.setValue(1);
+    Animated.sequence([
+      Animated.timing(scale, { toValue: 1.045, duration: 110, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1, duration: 160, useNativeDriver: true }),
+    ]).start();
+  }, [highlightPulse, scale]);
+
+  return (
+    <Animated.View
+      onLayout={onLayout}
+      style={{ marginBottom, transform: [{ scale }] }}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
 export default function TaskComments() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const insets = useSafeAreaInsets();
@@ -66,6 +100,8 @@ export default function TaskComments() {
   const hasLoadedRef = useRef(false);
   const scrollPendingRef = useRef(false);
   const scrollOpacity = useRef(new Animated.Value(0)).current;
+  const commentLayoutsRef = useRef(new Map<string, number>());
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [comments, setComments] = useState<DisplayComment[]>([]);
   const [commentAuthors, setCommentAuthors] = useState<Record<string, User>>({});
@@ -75,13 +111,18 @@ export default function TaskComments() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
+  const [replyingTo, setReplyingTo] = useState<CommentReplyTarget | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const [highlightRequest, setHighlightRequest] = useState({ commentId: "", pulse: 0 });
   const scrollDownAnim = useRef(new Animated.Value(0)).current;
   const pendingAttachmentIdRef = useRef(0);
 
   const { progress } = useReanimatedKeyboardAnimation();
-  const composerHeight = INPUT_BAR_OVERLAP + (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0);
+  const composerHeight =
+    INPUT_BAR_OVERLAP +
+    (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0) +
+    (replyingTo ? REPLY_PREVIEW_EXTRA_HEIGHT : 0);
   const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: composerHeight - progress.value * insets.bottom + 8 }));
   const scrollSpacerStyle = useAnimatedStyle(() => ({ height: isArchived ? 16 : composerHeight - progress.value * insets.bottom }));
 
@@ -104,28 +145,51 @@ export default function TaskComments() {
     return result;
   }, [comments]);
 
-  const uploadAttachments = async (attachments: { uri: string; fileName: string; mimeType: string; fileSize?: number }[]): Promise<string[]> => {
+  const uploadAttachments = async (attachments: {
+    uri: string;
+    fileName: string;
+    mimeType: string;
+    fileSize?: number;
+    width?: number;
+    height?: number;
+  }[]): Promise<string[]> => {
     const processed = await Promise.all(
-      attachments.map(async ({ uri, fileName, mimeType, fileSize }) => {
+      attachments.map(async ({ uri, fileName, mimeType, fileSize, width, height }) => {
         const isHeicLike = mimeType === "image/heic" || mimeType === "image/heif" || /\.(heic|heif)$/i.test(fileName);
         let effectiveUri = uri;
         let effectiveMime = mimeType;
         let effectiveName = fileName;
+        let effectiveWidth = width;
+        let effectiveHeight = height;
         if (isHeicLike) {
           const converted = await ImageManipulator.manipulateAsync(uri, [], { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG });
           effectiveUri = converted.uri;
           effectiveMime = "image/jpeg";
           effectiveName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
+          effectiveWidth = converted.width;
+          effectiveHeight = converted.height;
         }
         const realSize = fileSize ?? new FSFile(effectiveUri).size;
         const maxBytes = MAX_FILE_SIZE[effectiveMime] ?? 10 * 1024 * 1024;
         if (realSize > maxBytes) throw new Error(`${effectiveName} er for stor (max ${maxBytes / (1024 * 1024)} MB)`);
-        return { uri: effectiveUri, fileName: effectiveName, mimeType: effectiveMime, fileSize: realSize };
+        return {
+          uri: effectiveUri,
+          fileName: effectiveName,
+          mimeType: effectiveMime,
+          fileSize: realSize,
+          width: effectiveWidth ? Math.round(effectiveWidth) : undefined,
+          height: effectiveHeight ? Math.round(effectiveHeight) : undefined,
+        };
       }),
     );
     const prepared = await prepareAttachments(
       taskId,
-      processed.map(({ fileName, mimeType, fileSize }) => ({ file_name: fileName, mime_type: mimeType, file_size: fileSize })),
+      processed.map(({ fileName, mimeType, fileSize, width, height }) => ({
+        file_name: fileName,
+        mime_type: mimeType,
+        file_size: fileSize,
+        ...(width && height ? { width, height } : {}),
+      })),
     );
     await Promise.all(prepared.map((p, i) => uploadToGcs(p.upload_url, processed[i].uri, processed[i].mimeType)));
     return prepared.map((p) => p.upload_token);
@@ -180,6 +244,10 @@ export default function TaskComments() {
             created_at: (c?.created_at ?? a?.created_at ?? e.created_at) as string,
             updated_at: (c?.updated_at ?? a?.updated_at ?? e.created_at) as string,
             attachments: deletedEvent ? [] : ((c?.attachments ?? []) as TaskComment['attachments']),
+            reply_to_comment_id: (c != null ? c.reply_to_comment_id : (a?.reply_to_comment_id ?? null)) as string | null,
+            reply_preview: (c?.reply_preview ?? a?.reply_preview ?? null) as string | null,
+            reply_author_id: (c?.reply_author_id ?? a?.reply_author_id ?? null) as string | null,
+            reply_author_name: (c?.reply_author_name ?? a?.reply_author_name ?? null) as string | null,
             deleted: !!deletedEvent,
             deletedAuthor: e.actor ?? undefined,
           });
@@ -187,7 +255,17 @@ export default function TaskComments() {
         }, [])
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-      setComments(data);
+      const commentsById = new Map(data.map((comment) => [comment.comment_id, comment]));
+      for (const comment of data) {
+        if (!comment.reply_to_comment_id) continue;
+        const original = commentsById.get(comment.reply_to_comment_id);
+        if (original?.message?.trim()) continue;
+        const replyImage = original?.attachments.find((attachment) => attachment.type === "IMAGE");
+        comment.reply_attachment_url = replyImage?.url ?? null;
+        comment.reply_attachment_width = replyImage?.width ?? null;
+        comment.reply_attachment_height = replyImage?.height ?? null;
+      }
+      setComments([...data]);
       setFetchError(null);
       const assigneeIds = (taskData.assignment_users ?? []).map((u) => u.user_id);
       const commentIds = data.map((c) => c.user_id);
@@ -211,7 +289,10 @@ export default function TaskComments() {
     hasLoadedRef.current = true;
   }, [fetchComments]));
 
-  useEffect(() => () => attachmentPickerStore.clear(), []);
+  useEffect(() => () => {
+    attachmentPickerStore.clear();
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+  }, []);
 
   useEffect(() => {
     Animated.spring(scrollDownAnim, {
@@ -232,6 +313,8 @@ export default function TaskComments() {
       const isHeicLike = asset.mimeType === "image/heic" || asset.mimeType === "image/heif" || /\.(heic|heif)$/i.test(assetFileName);
       let localUri = asset.uri;
       let mime = asset.mimeType ?? (isHeicLike ? "image/heic" : "image/jpeg");
+      let width = asset.width;
+      let height = asset.height;
       let ext = isHeicLike ? "heic" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
       let fileName = asset.fileName ?? `photo_${ts}_${i}.${ext}`;
       const maxBytes = MAX_FILE_SIZE[mime] ?? 10 * 1024 * 1024;
@@ -244,6 +327,8 @@ export default function TaskComments() {
             localUri = converted.uri;
             mime = "image/jpeg";
             fileName = fileName.replace(/\.[^.]+$/, ".jpg").replace(/^([^.]+)$/, "$1.jpg");
+            width = converted.width;
+            height = converted.height;
           } catch { }
         }
         newAttachments.push({
@@ -252,6 +337,8 @@ export default function TaskComments() {
           fileName,
           mimeType: mime,
           fileSize: asset.fileSize ?? undefined,
+          width,
+          height,
         });
       }
     }
@@ -337,12 +424,36 @@ export default function TaskComments() {
     router.push(`/comments/${taskId}/add-attachment`);
   };
 
+  const startReply = (comment: DisplayComment) => {
+    const commentId = comment.serverCommentId ?? comment.comment_id;
+    if (!commentId || (commentId.startsWith("local-") && !comment.serverCommentId)) return;
+    const author = commentAuthors[comment.user_id] ?? (comment.user_id === currentUser?.user_id ? currentUser : undefined);
+    const authorName = author?.name || author?.email || "Ukendt bruger";
+    const preview = comment.message?.trim()
+      || ((comment.attachments?.length ?? 0) > 0 ? "Vedhæftning" : "Kommentar");
+    const firstImage = !comment.message?.trim()
+      ? comment.attachments?.find((attachment) => attachment.type === "IMAGE")
+      : undefined;
+    setReplyingTo({
+      commentId,
+      authorId: comment.user_id,
+      authorName,
+      isOwn: comment.user_id === currentUser?.user_id,
+      preview: preview.slice(0, 180),
+      attachmentUrl: firstImage?.url,
+      attachmentWidth: firstImage?.width ?? undefined,
+      attachmentHeight: firstImage?.height ?? undefined,
+    });
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
   const handleSubmit = async () => {
     if (!taskId || !currentUser) return;
     if (isArchived) return;
     if (!input.trim() && pendingAttachments.length === 0) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
+    const replyTarget = replyingTo;
 
     const localId = `local-${Date.now()}`;
     const optimistic: DisplayComment = {
@@ -362,8 +473,18 @@ export default function TaskComments() {
         url: a.localUri,
         file_name: a.fileName,
         mime_type: a.mimeType,
+        file_size: a.fileSize ?? null,
+        width: a.width ?? null,
+        height: a.height ?? null,
         created_at: new Date().toISOString(),
       })),
+      reply_to_comment_id: replyTarget?.commentId ?? null,
+      reply_preview: replyTarget?.preview ?? null,
+      reply_author_id: replyTarget?.authorId ?? null,
+      reply_author_name: replyTarget?.authorName ?? null,
+      reply_attachment_url: replyTarget?.attachmentUrl ?? null,
+      reply_attachment_width: replyTarget?.attachmentWidth ?? null,
+      reply_attachment_height: replyTarget?.attachmentHeight ?? null,
       sending: true,
     };
 
@@ -371,15 +492,24 @@ export default function TaskComments() {
     setComments((prev) => [...prev, optimistic]);
     setInput("");
     setPendingAttachments([]);
+    setReplyingTo(null);
 
     try {
       const upload_tokens = pendingAttachments.length > 0
-        ? await uploadAttachments(pendingAttachments.map((a) => ({ uri: a.localUri, fileName: a.fileName, mimeType: a.mimeType, fileSize: a.fileSize })))
+        ? await uploadAttachments(pendingAttachments.map((a) => ({
+          uri: a.localUri,
+          fileName: a.fileName,
+          mimeType: a.mimeType,
+          fileSize: a.fileSize,
+          width: a.width,
+          height: a.height,
+        })))
         : undefined;
 
       const newComment = await createComment(taskId, {
         ...(optimistic.message && { message: optimistic.message }),
         upload_tokens,
+        ...(replyTarget ? { reply_to_comment_id: replyTarget.commentId } : {}),
       });
 
       if (!commentAuthors[newComment.user_id]) {
@@ -391,7 +521,15 @@ export default function TaskComments() {
 
       setComments((prev) => prev.map((c) =>
         c.comment_id === localId
-          ? { ...newComment, comment_id: localId, serverCommentId: newComment.comment_id, sending: false }
+          ? {
+            ...newComment,
+            comment_id: localId,
+            serverCommentId: newComment.comment_id,
+            reply_attachment_url: c.reply_attachment_url,
+            reply_attachment_width: c.reply_attachment_width,
+            reply_attachment_height: c.reply_attachment_height,
+            sending: false,
+          }
           : c,
       ));
     } catch (err) {
@@ -416,17 +554,33 @@ export default function TaskComments() {
     try {
       const localAttachments = comment.attachments.filter((a) => a.url.startsWith("file://") || a.url.startsWith("ph://") || a.url.startsWith("content://"));
       const upload_tokens = localAttachments.length > 0
-        ? await uploadAttachments(localAttachments.map((a) => ({ uri: a.url, fileName: a.file_name ?? "file", mimeType: a.mime_type ?? "application/octet-stream", fileSize: a.file_size ?? undefined })))
+        ? await uploadAttachments(localAttachments.map((a) => ({
+          uri: a.url,
+          fileName: a.file_name ?? "file",
+          mimeType: a.mime_type ?? "application/octet-stream",
+          fileSize: a.file_size ?? undefined,
+          width: a.width ?? undefined,
+          height: a.height ?? undefined,
+        })))
         : undefined;
 
       const newComment = await createComment(taskId, {
         ...(comment.message && { message: comment.message }),
         upload_tokens,
+        ...(comment.reply_to_comment_id ? { reply_to_comment_id: comment.reply_to_comment_id } : {}),
       });
 
       setComments((prev) => prev.map((c) =>
         c.comment_id === commentId
-          ? { ...newComment, comment_id: commentId, serverCommentId: newComment.comment_id, sending: false }
+          ? {
+            ...newComment,
+            comment_id: commentId,
+            serverCommentId: newComment.comment_id,
+            reply_attachment_url: c.reply_attachment_url,
+            reply_attachment_width: c.reply_attachment_width,
+            reply_attachment_height: c.reply_attachment_height,
+            sending: false,
+          }
           : c,
       ));
     } catch (err) {
@@ -446,13 +600,7 @@ export default function TaskComments() {
     }
     try {
       await deleteComment(commentId);
-      setComments((prev) => prev.map((c) =>
-        (c.comment_id === commentId || c.serverCommentId === commentId)
-          ? { ...c, deleted: true, deletedAuthor: commentAuthors[c.user_id] ?? (c.user_id === currentUser?.user_id ? currentUser : undefined) }
-          : c,
-      ));
-      // fetchComments will rebuild the list with the COMMENT_DELETED event on next focus,
-      // but immediately mark as deleted in local state for instant feedback
+      await fetchComments(true);
     } catch {
       Alert.alert("Fejl", "Kunne ikke slette kommentar");
     }
@@ -463,6 +611,32 @@ export default function TaskComments() {
   const [focusedCommentId, setFocusedCommentId] = useState<string | null>(null);
 
   const canSend = input.trim().length > 0 || pendingAttachments.length > 0;
+
+  const scrollToQuotedComment = (replyingComment: DisplayComment) => {
+    const originalId = replyingComment.reply_to_comment_id;
+    if (!originalId) return;
+
+    const original = comments.find((comment) =>
+      (comment.comment_id === originalId || comment.serverCommentId === originalId) && !comment.deleted
+    );
+    if (!original) return;
+
+    const y = commentLayoutsRef.current.get(original.comment_id);
+    if (y == null) return;
+
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, y - headerHeight - 24),
+      animated: true,
+    });
+
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    highlightTimerRef.current = setTimeout(() => {
+      setHighlightRequest((current) => ({
+        commentId: original.comment_id,
+        pulse: current.pulse + 1,
+      }));
+    }, 300);
+  };
 
   return (
     <View className="flex-1 bg-background">
@@ -525,7 +699,7 @@ export default function TaskComments() {
 
               {listData.length === 0 ? (
                 <View className="items-center">
-                  <Text className="body-sm text-muted text-center">
+                  <Text className="body-sm text-muted-foreground text-center">
                     Ingen kommentarer endnu.{"\n"}Skriv den første!
                   </Text>
                 </View>
@@ -533,17 +707,24 @@ export default function TaskComments() {
                 listData.map((item) => {
                   if (item.type === "timestamp") {
                     return (
-                      <Text key={item.key} className="mono-xs text-muted text-center my-1">
+                      <Text key={item.key} className="mono-xs text-muted-foreground text-center my-1">
                         {item.label}
                       </Text>
                     );
                   }
                   return (
-                    <View key={item.data.comment_id} style={{ marginBottom: item.isLastInGroup ? 8 : 2 }}>
+                    <CommentRow
+                      key={item.data.comment_id}
+                      marginBottom={item.isLastInGroup ? 8 : 2}
+                      highlightPulse={highlightRequest.commentId === item.data.comment_id ? highlightRequest.pulse : 0}
+                      onLayout={(event) => {
+                        commentLayoutsRef.current.set(item.data.comment_id, event.nativeEvent.layout.y);
+                      }}
+                    >
                       {currentUser?.user_id === item.data.user_id
-                        ? <CommentBubble comment={item.data} isOwn deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id] ?? (item.data.user_id === currentUser?.user_id ? currentUser : undefined)} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} hidden={focusedCommentId === item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />
-                        : <CommentBubble comment={item.data} isOwn={false} deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} hidden={focusedCommentId === item.data.comment_id} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />}
-                    </View>
+                        ? <CommentBubble comment={item.data} isOwn deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id] ?? (item.data.user_id === currentUser?.user_id ? currentUser : undefined)} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} hidden={focusedCommentId === item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />
+                        : <CommentBubble comment={item.data} isOwn={false} deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} hidden={focusedCommentId === item.data.comment_id} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />}
+                    </CommentRow>
                   );
                 })
               )}
@@ -575,7 +756,7 @@ export default function TaskComments() {
         {isLoading ? null : isArchived ? (
           <View className="flex-row items-center justify-center gap-1.5 py-3 px-4 bg-surface-subtle border-t border-border">
             <Lock size={13} color={colors.textMuted} strokeWidth={2.2} />
-            <Text className="label-sm text-muted">Arkiveret — kun visning</Text>
+            <Text className="label-sm text-muted-foreground">Arkiveret — kun visning</Text>
           </View>
         ) : (
           <CommentComposer
@@ -586,8 +767,10 @@ export default function TaskComments() {
             canSubmit={canSend && !isSubmitting}
             isSubmitting={isSubmitting}
             pendingAttachments={pendingAttachments}
+            replyingTo={replyingTo}
             onPickAttachments={pickAttachments}
             onRemoveAttachment={(id) => setPendingAttachments((prev) => prev.filter((a) => a.id !== id))}
+            onCancelReply={() => setReplyingTo(null)}
           />
         )}
       </KeyboardAvoidingView>

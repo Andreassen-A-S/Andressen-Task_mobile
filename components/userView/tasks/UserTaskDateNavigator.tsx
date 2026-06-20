@@ -33,7 +33,7 @@ export default function UserTaskDateNavigator({ selectedDate, onDateChange }: Pr
         <Text className="body-md">
           {formatRelativeDate(selectedDate)}
         </Text>
-        <Text className="body-sm text-muted">
+        <Text className="body-sm text-muted-foreground">
           {formatLocalDate(selectedDate, "da-DK", {
             weekday: "long",
             day: "numeric",

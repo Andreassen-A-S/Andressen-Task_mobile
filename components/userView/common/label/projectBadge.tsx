@@ -19,7 +19,7 @@ export default function ProjectBadge({ name, size = "md" }: ProjectBadgeProps) {
   return (
     <View className={containerClass[size]}>
       <MapPinned size={iconSize[size]} color={colors.textMuted} />
-      <Text className="badge-md text-muted" numberOfLines={1}>
+      <Text className="badge-md text-muted-foreground" numberOfLines={1}>
         {name}
       </Text>
     </View>

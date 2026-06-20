@@ -3,15 +3,19 @@ import { View, TextInput } from "react-native";
 import ComposerChrome, {
   COMPOSER_ATTACHMENT_EXTRA_HEIGHT,
   COMPOSER_INPUT_OVERLAP,
+  COMPOSER_REPLY_EXTRA_HEIGHT,
 } from "@/components/userView/common/ComposerChrome";
 import ComposerSurface from "@/components/userView/common/ComposerSurface";
 import KeyboardInputBar from "@/components/userView/common/KeyboardInputBar";
 import ComposerButton from "@/components/userView/common/ComposerButton";
 import PendingAttachmentStrip from "@/components/userView/common/PendingAttachmentStrip";
 import { PendingAttachment } from "./TaskComments";
+import { CommentReplyTarget } from "@/types/comment";
+import CommentReplyBanner from "./CommentReplyBanner";
 
 export const INPUT_BAR_OVERLAP = COMPOSER_INPUT_OVERLAP;
 export const ATTACHMENT_LIST_EXTRA_HEIGHT = COMPOSER_ATTACHMENT_EXTRA_HEIGHT;
+export const REPLY_PREVIEW_EXTRA_HEIGHT = COMPOSER_REPLY_EXTRA_HEIGHT;
 
 interface Props {
   inputRef: RefObject<TextInput | null>;
@@ -21,8 +25,10 @@ interface Props {
   canSubmit: boolean;
   isSubmitting: boolean;
   pendingAttachments: PendingAttachment[];
+  replyingTo: CommentReplyTarget | null;
   onPickAttachments: () => void;
   onRemoveAttachment: (id: string) => void;
+  onCancelReply: () => void;
 }
 
 export default function CommentComposer({
@@ -33,14 +39,22 @@ export default function CommentComposer({
   canSubmit,
   isSubmitting,
   pendingAttachments,
+  replyingTo,
   onPickAttachments,
   onRemoveAttachment,
+  onCancelReply,
 }: Props) {
   const hasAttachments = pendingAttachments.length > 0;
+  const hasReply = !!replyingTo;
 
   return (
-    <ComposerChrome hasAttachments={hasAttachments}>
+    <ComposerChrome hasAttachments={hasAttachments} hasReply={hasReply}>
       <View className="px-3 pt-3 pb-1" style={{ zIndex: 2 }}>
+        {replyingTo ? (
+          <View className="mb-2">
+            <CommentReplyBanner reply={replyingTo} onCancel={onCancelReply} />
+          </View>
+        ) : null}
         <ComposerSurface>
           <PendingAttachmentStrip
             attachments={pendingAttachments}
