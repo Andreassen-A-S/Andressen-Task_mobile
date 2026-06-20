@@ -88,7 +88,7 @@ function CommentRow({
 }
 
 export default function TaskComments() {
-  const { taskId, commentId: deepLinkCommentId } = useLocalSearchParams<{ taskId: string; commentId?: string }>();
+  const { taskId } = useLocalSearchParams<{ taskId: string }>();
   const insets = useSafeAreaInsets();
   const [isArchived, setIsArchived] = useState(false);
   const router = useRouter();
@@ -117,20 +117,6 @@ export default function TaskComments() {
   const [highlightRequest, setHighlightRequest] = useState({ commentId: "", pulse: 0 });
   const scrollDownAnim = useRef(new Animated.Value(0)).current;
   const pendingAttachmentIdRef = useRef(0);
-  const pendingDeepLinkRef = useRef<string | null>(typeof deepLinkCommentId === "string" ? deepLinkCommentId : null);
-
-  useEffect(() => {
-    const target = pendingDeepLinkRef.current;
-    if (!target || comments.length === 0) return;
-    const y = commentLayoutsRef.current.get(target);
-    if (y == null) return;
-    pendingDeepLinkRef.current = null;
-    scrollRef.current?.scrollTo({ y: Math.max(0, y - headerHeight - 24), animated: false });
-    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
-    highlightTimerRef.current = setTimeout(() => {
-      setHighlightRequest((current) => ({ commentId: target, pulse: current.pulse + 1 }));
-    }, 300);
-  }, [comments, headerHeight]);
 
   const { progress } = useReanimatedKeyboardAnimation();
   const composerHeight =
@@ -688,16 +674,14 @@ export default function TaskComments() {
               ref={scrollRef}
               keyboardShouldPersistTaps="handled"
               onLayout={() => {
-                if (!pendingDeepLinkRef.current && isNearBottomRef.current) {
-                  scrollRef.current?.scrollToEnd({ animated: false });
-                }
+                if (isNearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false });
                 scrollOpacity.setValue(1);
               }}
               onContentSizeChange={() => {
                 if (scrollPendingRef.current) {
                   scrollPendingRef.current = false;
                   scrollRef.current?.scrollToEnd({ animated: true });
-                } else if (!pendingDeepLinkRef.current && isNearBottomRef.current) {
+                } else if (isNearBottomRef.current) {
                   scrollRef.current?.scrollToEnd({ animated: false });
                 }
               }}
