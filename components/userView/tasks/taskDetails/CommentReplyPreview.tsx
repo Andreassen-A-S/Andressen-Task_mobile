@@ -103,31 +103,44 @@ export default function CommentReplyPreview({
             {replyLabel}
           </Text>
         </View>
-        {isImageOnly && !deleted ? (
+        {deleted ? (
+          <View
+            style={{
+              maxWidth: "100%",
+              borderRadius: 18,
+              borderBottomRightRadius: isOwnMessage ? 7 : 18,
+              borderBottomLeftRadius: isOwnMessage ? 18 : 7,
+              borderWidth: 1,
+              borderColor: colors.border,
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+            }}
+          >
+            <Text className="body-md !text-muted-foreground" >Kommentar slettet</Text>
+          </View>
+        ) : isImageOnly ? (
           <ReplyImage uri={attachmentUrl} width={attachmentWidth} height={attachmentHeight} />
         ) : (
-        <View
-          className="bg-surface-hover px-3 py-2"
-          style={{
-            maxWidth: "100%",
-            borderRadius: 18,
-            borderBottomRightRadius: isOwnMessage ? 7 : 18,
-            borderBottomLeftRadius: isOwnMessage ? 18 : 7,
-          }}
-        >
-          {isAttachmentOnly && !deleted ? (
-            <View className="flex-row items-center gap-1">
-              <Paperclip size={14} color={colors.textSecondary} strokeWidth={2} />
-              <Text className="body-xs !text-secondary" style={{ fontStyle: "italic" }}>
-                {attachmentLabel}
-              </Text>
-            </View>
-          ) : (
-            <Text className="body-md !text-secondary" numberOfLines={3}>
-              {deleted ? "Kommentar slettet" : preview}
-            </Text>
-          )}
-        </View>
+          <View
+            className="bg-surface-hover px-3 py-2"
+            style={{
+              maxWidth: "100%",
+              borderRadius: 18,
+              borderBottomRightRadius: isOwnMessage ? 7 : 18,
+              borderBottomLeftRadius: isOwnMessage ? 18 : 7,
+            }}
+          >
+            {isAttachmentOnly ? (
+              <View className="flex-row items-center gap-1">
+                <Paperclip size={14} color={colors.textSecondary} strokeWidth={2} />
+                <Text className="body-xs !text-secondary" >
+                  {attachmentLabel}
+                </Text>
+              </View>
+            ) : (
+              <Text className="body-md !text-secondary" numberOfLines={3}>{preview}</Text>
+            )}
+          </View>
         )}
       </View>
     );
@@ -140,17 +153,17 @@ export default function CommentReplyPreview({
           {isOwn ? "Svarer dig selv" : `Svarer ${authorName}`}
         </Text>
         {!isImageOnly || deleted ? (
-          isAttachmentOnly && !deleted ? (
+          deleted ? (
+            <Text className="body-sm !text-muted-foreground mt-1"  numberOfLines={1}>Kommentar slettet</Text>
+          ) : isAttachmentOnly ? (
             <View className="flex-row items-center gap-1 mt-1">
               <Paperclip size={13} color={colors.textSecondary} strokeWidth={2} />
-              <Text className="body-sm text-secondary" style={{ fontStyle: "italic" }}>
+              <Text className="body-sm text-secondary" >
                 {attachmentLabel}
               </Text>
             </View>
           ) : (
-          <Text className="body-sm text-secondary mt-1" numberOfLines={1}>
-            {deleted ? "Kommentar slettet" : preview}
-          </Text>
+            <Text className="body-sm text-secondary mt-1" numberOfLines={1}>{preview}</Text>
           )
         ) : null}
       </View>
