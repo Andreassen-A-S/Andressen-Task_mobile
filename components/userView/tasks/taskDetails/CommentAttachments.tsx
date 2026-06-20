@@ -34,7 +34,12 @@ function SingleImage({ image, onLongPress, allImages, index }: {
   allImages: TaskAttachment[];
   index: number;
 }) {
-  const [size, setSize] = useState({ w: MAX_W, h: Math.round(MAX_W * 0.75) });
+  const hasStoredDimensions = !!image.width && !!image.height;
+  const [size, setSize] = useState(() =>
+    hasStoredDimensions
+      ? clampToAspect(image.width!, image.height!)
+      : { w: MAX_W, h: Math.round(MAX_W * 0.75) }
+  );
   const [viewerVisible, setViewerVisible] = useState(false);
   const imageUris = allImages.map((img) => ({ uri: img.url }));
 
@@ -52,7 +57,7 @@ function SingleImage({ image, onLongPress, allImages, index }: {
           style={{ width: size.w, height: size.h, borderRadius: 10, backgroundColor: colors.border }}
           contentFit="cover"
           transition={200}
-          onLoad={(e) => setSize(clampToAspect(e.source.width, e.source.height))}
+          onLoad={hasStoredDimensions ? undefined : (e) => setSize(clampToAspect(e.source.width, e.source.height))}
         />
       </TouchableOpacity>
       <ImageView
@@ -195,7 +200,7 @@ export default function CommentAttachments({ attachments, align = "flex-start", 
             </View>
             <View style={{ flex: 1 }}>
               <Text className="body-sm font-semibold" numberOfLines={2}>{file.file_name ?? "Fil"}</Text>
-              <Text className="body-xs text-muted">{size}</Text>
+              <Text className="body-xs text-muted-foreground">{size}</Text>
 
             </View>
           </TouchableOpacity>

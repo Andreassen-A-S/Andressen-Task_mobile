@@ -48,7 +48,7 @@ export default function TaskProgressCard({ progressPct, unitLabel, currentQuanti
               {formatNumber(clampedPct)}%
             </Text>
             {unitLabel && unitLabel !== "%" && (
-              <Text className="mono-xs text-muted">
+              <Text className="mono-xs text-muted-foreground">
                 {formatNumber(currentQuantity)} / {formatNumber(targetQuantity)} {unitLabel}
               </Text>
             )}

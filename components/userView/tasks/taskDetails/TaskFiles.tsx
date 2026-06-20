@@ -72,7 +72,7 @@ export default function TaskFiles() {
             </View>
           ) : files.length === 0 ? (
             <View className="flex-1 items-center justify-center">
-              <Text className="body-sm text-muted">
+              <Text className="body-sm text-muted-foreground">
                 Ingen filer endnu.{"\n"}Send filer i kommentarerne.
               </Text>
             </View>
@@ -89,13 +89,13 @@ export default function TaskFiles() {
                     <TouchableOpacity
                       onPress={() => WebBrowser.openBrowserAsync(item.url)}
                       activeOpacity={0.7}
-                      className="flex-row items-center gap-3 bg-white rounded-xl border border-muted py-3 px-4"
+                      className="flex-row items-center gap-3 bg-white rounded-xl border border-border py-3 px-4"
                     >
                       <FileIcon size={22} color={colors.textPrimary} strokeWidth={2.1} />
                       <View className="flex-1">
                         <Text className="body-sm" numberOfLines={1}>{item.file_name ?? "Fil"}</Text>
                         {item.created_at && (
-                          <Text className="body-xs text-muted mt-0.5">
+                          <Text className="body-xs text-muted-foreground mt-0.5">
                             {new Date(item.created_at).toLocaleDateString("da-DK", { day: "numeric", month: "short", year: "numeric" })}
                           </Text>
                         )}

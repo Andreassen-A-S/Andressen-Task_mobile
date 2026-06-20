@@ -65,7 +65,7 @@ export default function ListPicker() {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
               <View className="px-4 py-3.5 bg-surface">
-                <Text className="body-sm text-muted">Ingen resultater</Text>
+                <Text className="body-sm text-muted-foreground">Ingen resultater</Text>
               </View>
             )}
             ItemSeparatorComponent={() => (

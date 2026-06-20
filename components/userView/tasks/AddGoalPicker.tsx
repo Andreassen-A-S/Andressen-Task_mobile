@@ -169,7 +169,7 @@ export default function AddGoalPicker() {
                   editable={!isPercentageUnit}
                   placeholder={isPercentageUnit ? formatNumber(PERCENT_TARGET) : "Angiv mål"}
                   placeholderTextColor={colors.textMuted}
-                  className={`body-md text-center bg-background rounded-xl px-3 ${isPercentageUnit ? "!text-muted" : ""}`}
+                  className={`body-md text-center bg-background rounded-xl px-3 ${isPercentageUnit ? "!text-muted-foreground" : ""}`}
                   style={{ height: 44, lineHeight: undefined, paddingVertical: 0 }}
                 />
               </View>

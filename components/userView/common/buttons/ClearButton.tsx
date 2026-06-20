@@ -13,7 +13,7 @@ export default function ClearButton({ label, onPress, className, disabled }: Pro
       className={`flex px-5 py-4 rounded-2xl ${className ?? ""}`}
       onPress={disabled ? undefined : onPress}
     >
-      <Text className={`ease-in body-md ${disabled ? "!text-muted" : "!text-danger"}`}>{label}</Text>
+      <Text className={`ease-in body-md ${disabled ? "!text-muted-foreground" : "!text-danger"}`}>{label}</Text>
     </Pressable>
   );
 }

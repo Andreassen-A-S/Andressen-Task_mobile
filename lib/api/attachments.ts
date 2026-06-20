@@ -11,7 +11,13 @@ export interface PreparedAttachment {
 
 export async function prepareAttachments(
   task_id: string,
-  files: { file_name: string; mime_type: string; file_size: number }[],
+  files: {
+    file_name: string;
+    mime_type: string;
+    file_size: number;
+    width?: number;
+    height?: number;
+  }[],
 ): Promise<PreparedAttachment[]> {
   const res = await apiFetch(`${API_URL}/attachments/prepare`, {
     method: "POST",

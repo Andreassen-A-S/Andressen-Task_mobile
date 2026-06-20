@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, Image, TouchableOpacity, Pressable, Animated, Dimensions, Easing } from "react-native";
 import { BlurView } from "expo-blur";
-import { Trash2, Copy, Download } from "lucide-react-native";
+import { Trash2, Copy, Download, Reply } from "lucide-react-native";
 import { colors } from "@/constants/colors";
 
 const SCREEN_H = Dimensions.get("window").height;
@@ -18,16 +18,29 @@ export interface BubbleLayout {
 export interface MenuParams {
   layout: BubbleLayout;
   snapshotLayout?: BubbleLayout;
+  bubbleSnapshot?: string;
   attachmentsLayout?: BubbleLayout;
   attachmentsSnapshot?: string;
   message?: string;
+  reply?: {
+    authorName: string;
+    preview: string;
+    deleted: boolean;
+    attachmentUrl?: string;
+    attachmentWidth?: number;
+    attachmentHeight?: number;
+    replyingAuthorName?: string;
+    replyingToSelf: boolean;
+  };
   isOwn: boolean;
   canDelete: boolean;
   canCopy: boolean;
   canSave: boolean;
+  canReply: boolean;
   onDelete: () => void;
   onCopy: () => void;
   onSave: () => void;
+  onReply: () => void;
 }
 
 interface Props {
@@ -64,10 +77,11 @@ export default function CommentContextMenu({ visible, params, onClose, onDismiss
 
   if (!showing || !params) return null;
 
-  const { layout, snapshotLayout, message, isOwn, canDelete, canCopy, canSave, onDelete, onCopy, onSave } = params;
+  const { layout, snapshotLayout, bubbleSnapshot, isOwn, canDelete, canCopy, canSave, canReply, onDelete, onCopy, onSave, onReply } = params;
   const snap = snapshotLayout ?? layout;
 
   const actions = [
+    ...(canReply ? [{ label: "Svar", icon: <Reply size={18} color={colors.textPrimary} strokeWidth={2} />, onPress: () => { onReply(); onClose(); }, destructive: false }] : []),
     ...(canSave ? [{ label: "Gem", icon: <Download size={18} color={colors.textPrimary} strokeWidth={2} />, onPress: () => { onSave(); onClose(); }, destructive: false }] : []),
     ...(canCopy ? [{ label: "Kopiér", icon: <Copy size={18} color={colors.textPrimary} strokeWidth={2} />, onPress: () => { onCopy(); onClose(); }, destructive: false }] : []),
     ...(canDelete ? [{ label: "Slet", icon: <Trash2 size={18} color={colors.red} strokeWidth={2} />, onPress: () => { onDelete(); onClose(); }, destructive: true }] : []),
@@ -88,7 +102,7 @@ export default function CommentContextMenu({ visible, params, onClose, onDismiss
       {/* Static blur + dark tint faded via native-driver opacity — eliminates JS-thread animation */}
       <Animated.View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: anim }}>
         <BlurView intensity={60} tint="light" style={{ flex: 1 }} />
-        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.35)" }} />
+        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.15)" }} />
       </Animated.View>
 
       {/* Tap backdrop to close */}
@@ -122,8 +136,8 @@ export default function CommentContextMenu({ visible, params, onClose, onDismiss
         );
       })()}
 
-      {/* Bubble snapshot — full opacity from frame 0 so it covers the original immediately */}
-      {message ? (() => {
+      {/* Message/reply snapshot — same captured-view pattern as attachments */}
+      {bubbleSnapshot && (() => {
         const bubbleTargetLeft = isOwn ? SCREEN_W - 16 - snap.width : 16;
         return (
           <Animated.View
@@ -140,15 +154,17 @@ export default function CommentContextMenu({ visible, params, onClose, onDismiss
           >
             <Pressable
               onPress={onClose}
-              className={`rounded-2xl px-3 py-2 ${isOwn ? "self-end bg-accent" : "self-start bg-surface"}`}
+              style={{ alignItems: isOwn ? "flex-end" : "flex-start" }}
             >
-              <Text className={isOwn ? "body-md !text-white" : "body-md !text-secondary"}>
-                {message}
-              </Text>
+              <Image
+                source={{ uri: bubbleSnapshot }}
+                style={{ width: snap.width, height: snap.height }}
+                fadeDuration={0}
+              />
             </Pressable>
           </Animated.View>
         );
-      })() : null}
+      })()}
 
       {/* Action list */}
       {actions.length > 0 && (

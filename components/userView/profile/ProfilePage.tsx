@@ -141,7 +141,7 @@ export default function ProfilePage() {
                 <Moon size={16} color={colors.textSecondary} strokeWidth={2.2} />
               </View>
               <Text className="body-md flex-1">Tema</Text>
-              <Text className="body-md !text-muted mr-2">Lyst</Text>
+              <Text className="body-md !text-muted-foreground mr-2">Lyst</Text>
               <ChevronRight size={20} color={colors.textMuted} strokeWidth={2.2} />
             </TouchableOpacity>
             <View className="h-px bg-border mx-4" />
@@ -152,7 +152,7 @@ export default function ProfilePage() {
               <View className="w-8 h-8 rounded-2xl items-center justify-center mr-3 bg-surface-subtle">
                 <UserRound size={16} color={colors.textSecondary} strokeWidth={2.2} />
               </View>
-              <Text className="body-md flex-1 text-muted" numberOfLines={1}>
+              <Text className="body-md flex-1 text-muted-foreground" numberOfLines={1}>
                 Konto
               </Text>
               <ChevronRight size={20} color={colors.textMuted} strokeWidth={2.2} />

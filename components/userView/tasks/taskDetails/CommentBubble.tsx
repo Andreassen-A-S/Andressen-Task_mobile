@@ -13,6 +13,7 @@ import CommentAttachments from "./CommentAttachments";
 import LinkedText from "../../common/LinkedText";
 import { showToast } from "@/lib/toast";
 import { type BubbleLayout, type MenuParams } from "./CommentContextMenu";
+import CommentReplyPreview from "./CommentReplyPreview";
 
 type StatusState = "sender" | "leveret" | "fejl" | "idle";
 
@@ -31,10 +32,12 @@ interface Props {
   hidden?: boolean;
   onDelete?: (commentId: string) => void;
   onRetry?: (commentId: string) => void;
+  onReply?: () => void;
+  onQuotedCommentPress?: () => void;
   onMenuOpen?: (params: MenuParams) => void;
 }
 
-export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, hidden, onDelete, onRetry, onMenuOpen }: Props) {
+export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, hidden, onDelete, onRetry, onReply, onQuotedCommentPress, onMenuOpen }: Props) {
   const pulseOpacity = useRef(new Animated.Value(1)).current;
   const leveretOpacity = useRef(new Animated.Value(0)).current;
   const [status, setStatus] = useState<StatusState>(sending ? "sender" : failed ? "fejl" : "idle");
@@ -42,6 +45,12 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
   const textBubbleRef = useRef<any>(null);
   const attachmentsRef = useRef<View>(null);
   const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+  const replyingToSelf = comment.reply_author_id
+    ? comment.reply_author_id === comment.user_id
+    : !!comment.reply_author_name && (
+      comment.reply_author_name === author?.name ||
+      comment.reply_author_name === author?.email
+    );
 
   useEffect(() => {
     if (status !== "sender") return;
@@ -140,15 +149,33 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
     const canDelete = isOwn && !!onDelete && (status === "idle" || status === "leveret");
     const canCopy = !!comment.message;
     const canSave = (comment.attachments ?? []).some((a) => isRemoteUri(a.url));
-    if (!canDelete && !canCopy && !canSave) return;
+    const canReply = !!onReply && (status === "idle" || status === "leveret");
+    if (!canDelete && !canCopy && !canSave && !canReply) return;
     if (!bubbleRef.current) return;
 
     const hasAttachments = (comment.attachments?.length ?? 0) > 0;
+    const reply = comment.reply_author_name && comment.reply_preview
+      ? {
+        authorName: comment.reply_author_name,
+        preview: comment.reply_preview,
+        deleted: !comment.reply_to_comment_id,
+        attachmentUrl: comment.reply_attachment_url ?? undefined,
+        attachmentWidth: comment.reply_attachment_width ?? undefined,
+        attachmentHeight: comment.reply_attachment_height ?? undefined,
+        replyingAuthorName: author?.name || author?.email,
+        replyingToSelf,
+      }
+      : undefined;
 
     const outerLayout = await measureRef(bubbleRef);
-    const snapshotLayout = comment.message && textBubbleRef.current
-      ? await measureRef(textBubbleRef)
-      : undefined;
+    let snapshotLayout: BubbleLayout | undefined;
+    let bubbleSnapshot: string | undefined;
+    if ((comment.message || reply) && textBubbleRef.current) {
+      [snapshotLayout, bubbleSnapshot] = await Promise.all([
+        measureRef(textBubbleRef),
+        captureRef(textBubbleRef, { format: "png" }),
+      ]);
+    }
 
     let attachmentsSnapshot: string | undefined;
     let attachmentsLayout: BubbleLayout | undefined;
@@ -162,16 +189,20 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
     onMenuOpen?.({
       layout: outerLayout,
       snapshotLayout,
+      bubbleSnapshot,
       attachmentsLayout,
       attachmentsSnapshot,
       message: comment.message || undefined,
+      reply,
       isOwn,
       canDelete,
       canCopy,
       canSave,
+      canReply,
       onDelete: () => onDelete?.(deleteId ?? comment.comment_id),
       onCopy: handleCopy,
       onSave: handleSave,
+      onReply: () => onReply?.(),
     });
   };
 
@@ -182,9 +213,9 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
       return (
         <View className="self-end" style={hidden ? { opacity: 0 } : undefined}>
           <View
-            style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 8 }}
+            style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 18, paddingHorizontal: 10, paddingVertical: 5 }}
           >
-            <Text className="body-md !text-muted" style={{ fontStyle: "italic" }}>Kommentar slettet</Text>
+            <Text className="body-md !text-muted-foreground" style={{ fontStyle: "italic" }}>Kommentar slettet</Text>
           </View>
         </View>
       );
@@ -198,11 +229,11 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
           size="xs"
         />
         <View className="items-start gap-1">
-          <Text className="label-sm text-muted">{authorName}</Text>
+          <Text className="label-sm text-muted-foreground">{authorName}</Text>
           <View
-            style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 8 }}
+            style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 18, paddingHorizontal: 10, paddingVertical: 5 }}
           >
-            <Text className="body-md text-muted" style={{ fontStyle: "italic" }}>(Kommentar slettet)</Text>
+            <Text className="body-md !text-muted-foreground" style={{ fontStyle: "italic" }}>Kommentar slettet</Text>
           </View>
         </View>
       </View>
@@ -218,7 +249,7 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
         }
         <View ref={bubbleRef} collapsable={false} style={{ flex: 1, gap: 4 }}>
           {isFirstInGroup && (
-            <Text className="label-sm text-muted">{author?.name || author?.email || "Ukendt bruger"}</Text>
+            <Text className="label-sm text-muted-foreground">{author?.name || author?.email || "Ukendt bruger"}</Text>
           )}
           <View ref={attachmentsRef} collapsable={false}>
             <CommentAttachments
@@ -227,20 +258,44 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
               onLongPress={handleLongPress}
             />
           </View>
-          {comment.message ? (
-            <TouchableOpacity
-              ref={textBubbleRef}
-              activeOpacity={0.8}
-              onLongPress={handleLongPress}
-              delayLongPress={350}
-              className="max-w-[85%] rounded-2xl px-3 py-2 self-start bg-surface"
-            >
-              <LinkedText
-                text={comment.message}
-                className="body-md !text-secondary"
-                linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
-              />
-            </TouchableOpacity>
+          {(comment.message || (comment.reply_author_name && comment.reply_preview)) ? (
+            <View ref={textBubbleRef} collapsable={false} className="max-w-[85%] self-start">
+              {comment.reply_author_name && comment.reply_preview ? (
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onPress={onQuotedCommentPress}
+                  onLongPress={handleLongPress}
+                  delayLongPress={350}
+                >
+                  <CommentReplyPreview
+                    authorName={comment.reply_author_name}
+                    preview={comment.reply_preview}
+                    attachmentUrl={comment.reply_attachment_url ?? undefined}
+                    attachmentWidth={comment.reply_attachment_width ?? undefined}
+                    attachmentHeight={comment.reply_attachment_height ?? undefined}
+                    deleted={!comment.reply_to_comment_id}
+                    variant="other"
+                    replyingAuthorName={author?.name || author?.email}
+                    replyingToSelf={replyingToSelf}
+                  />
+                </TouchableOpacity>
+              ) : null}
+              {comment.message ? (
+                <TouchableOpacity
+                  activeOpacity={1}
+                  onLongPress={handleLongPress}
+                  delayLongPress={350}
+                  className="rounded-2xl px-3 py-2 self-start bg-surface"
+                  style={comment.reply_author_name ? { marginTop: -5 } : undefined}
+                >
+                  <LinkedText
+                    text={comment.message}
+                    className="body-md !text-secondary"
+                    linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
+                  />
+                </TouchableOpacity>
+              ) : null}
+            </View>
           ) : null}
         </View>
       </View>
@@ -256,29 +311,52 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
           onLongPress={status === "idle" || status === "leveret" ? handleLongPress : undefined}
         />
       </View>
-      {comment.message ? (
-        <TouchableOpacity
-          ref={textBubbleRef}
-          activeOpacity={0.8}
-          onLongPress={status === "idle" || status === "leveret" ? handleLongPress : undefined}
-          delayLongPress={350}
-          className="max-w-[85%] rounded-2xl px-3 py-2 self-end bg-accent"
-        >
-          <LinkedText
-            text={comment.message}
-            className="body-md !text-white"
-            linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
-          />
-        </TouchableOpacity>
+      {(comment.message || (comment.reply_author_name && comment.reply_preview)) ? (
+        <View ref={textBubbleRef} collapsable={false} className="max-w-[85%] self-end items-end">
+          {comment.reply_author_name && comment.reply_preview ? (
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={onQuotedCommentPress}
+              onLongPress={status === "idle" || status === "leveret" ? handleLongPress : undefined}
+              delayLongPress={350}
+            >
+              <CommentReplyPreview
+                authorName={comment.reply_author_name}
+                preview={comment.reply_preview}
+                attachmentUrl={comment.reply_attachment_url ?? undefined}
+                attachmentWidth={comment.reply_attachment_width ?? undefined}
+                attachmentHeight={comment.reply_attachment_height ?? undefined}
+                deleted={!comment.reply_to_comment_id}
+                variant="own"
+                replyingToSelf={replyingToSelf}
+              />
+            </TouchableOpacity>
+          ) : null}
+          {comment.message ? (
+            <TouchableOpacity
+              activeOpacity={1}
+              onLongPress={status === "idle" || status === "leveret" ? handleLongPress : undefined}
+              delayLongPress={350}
+              className="rounded-2xl px-3 py-2 self-end bg-accent"
+              style={comment.reply_author_name ? { marginTop: -5 } : undefined}
+            >
+              <LinkedText
+                text={comment.message}
+                className="body-md !text-white"
+                linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
+              />
+            </TouchableOpacity>
+          ) : null}
+        </View>
       ) : null}
 
       {status !== "idle" && (
         <View className="min-h-4 justify-center items-end">
           {status === "sender" && (
-            <Animated.Text className="body-xs text-muted" style={{ opacity: pulseOpacity }}>Sender</Animated.Text>
+            <Animated.Text className="body-xs text-muted-foreground" style={{ opacity: pulseOpacity }}>Sender</Animated.Text>
           )}
           {status === "leveret" && (
-            <Animated.Text className="body-xs text-muted" style={{ opacity: leveretOpacity }}>Leveret</Animated.Text>
+            <Animated.Text className="body-xs text-muted-foreground" style={{ opacity: leveretOpacity }}>Leveret</Animated.Text>
           )}
           {status === "fejl" && (
             <TouchableOpacity onPress={() => onRetry?.(comment.comment_id)} className="flex-row items-center gap-1">

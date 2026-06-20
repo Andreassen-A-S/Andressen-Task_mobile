@@ -9,16 +9,21 @@ import { colors } from "@/constants/colors";
 
 export const COMPOSER_INPUT_OVERLAP = 135;
 export const COMPOSER_ATTACHMENT_EXTRA_HEIGHT = 104;
+export const COMPOSER_REPLY_EXTRA_HEIGHT = 64;
 
 interface Props {
   children: ReactNode;
   hasAttachments?: boolean;
+  hasReply?: boolean;
 }
 
-export default function ComposerChrome({ children, hasAttachments = false }: Props) {
+export default function ComposerChrome({ children, hasAttachments = false, hasReply = false }: Props) {
   const insets = useSafeAreaInsets();
   const { progress } = useReanimatedKeyboardAnimation();
-  const composerHeight = COMPOSER_INPUT_OVERLAP + (hasAttachments ? COMPOSER_ATTACHMENT_EXTRA_HEIGHT : 0);
+  const composerHeight =
+    COMPOSER_INPUT_OVERLAP +
+    (hasAttachments ? COMPOSER_ATTACHMENT_EXTRA_HEIGHT : 0) +
+    (hasReply ? COMPOSER_REPLY_EXTRA_HEIGHT : 0);
   const composerMarginStyle = useAnimatedStyle(() => ({ marginTop: -(composerHeight - progress.value * insets.bottom) }));
   const safeAreaStyle = useAnimatedStyle(() => ({ height: (1 - progress.value) * insets.bottom }));
 

@@ -76,7 +76,7 @@ export default function LoginForm() {
                   <View className="flex-1">
                     {!email && (
                       <Text
-                        className="label-lg-gray text-muted"
+                        className="label-lg-gray text-muted-foreground"
                         style={{ position: "absolute", lineHeight: undefined }}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
@@ -116,7 +116,7 @@ export default function LoginForm() {
                   <View className="flex-1">
                     {!password && (
                       <Text
-                        className="label-lg-gray text-muted"
+                        className="label-lg-gray text-muted-foreground"
                         style={{ position: "absolute", lineHeight: undefined }}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
@@ -172,7 +172,7 @@ export default function LoginForm() {
             </TouchableOpacity>
           </View>
 
-          <Text className="body-sm text-muted text-center mt-6">
+          <Text className="body-sm text-muted-foreground text-center mt-6">
             Har du glemt dine loginoplysninger eller mangler du en konto?{"\n"}Kontakt din administrator.
           </Text>
         </ScrollView>

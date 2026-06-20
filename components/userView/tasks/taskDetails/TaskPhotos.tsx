@@ -60,7 +60,7 @@ export default function TaskPhotos() {
           </View>
         ) : images.length === 0 ? (
           <View className="flex-1 items-center justify-center" style={{ paddingTop: headerHeight }}>
-            <Text className="body-sm text-muted">
+            <Text className="body-sm text-muted-foreground">
               Ingen billeder endnu.{"\n"}Send billeder i kommentarerne.
             </Text>
           </View>

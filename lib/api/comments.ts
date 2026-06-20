@@ -1,6 +1,7 @@
 import { API_URL } from "@/constants/api";
 import { apiFetch } from "./apiClient";
 import { CreateCommentRequest, TaskComment } from "@/types/comment";
+import { applyAttachmentUrlCache } from "./attachmentUrlCache";
 
 export interface TaskEvent {
   event_id: string;
@@ -20,7 +21,6 @@ export async function getTaskEvents(taskId: string): Promise<TaskEvent[]> {
   const result = await response.json();
   return result.data ?? result;
 }
-import { applyAttachmentUrlCache } from "./attachmentUrlCache";
 
 export async function getTaskComments(taskId: string): Promise<TaskComment[]> {
   const response = await apiFetch(`${API_URL}/comments/task/${taskId}`);

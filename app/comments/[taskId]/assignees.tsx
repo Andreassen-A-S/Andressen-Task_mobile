@@ -40,14 +40,14 @@ export default function AssigneesSheet() {
       {isLoading ? (
         <ActivityIndicator color={colors.green} style={{ marginTop: 16 }} />
       ) : assignees.length === 0 ? (
-        <Text className="body-sm text-muted px-4">Ingen tildelte</Text>
+        <Text className="body-sm text-muted-foreground px-4">Ingen tildelte</Text>
       ) : (
         assignees.map((u) => (
           <View key={u.user_id} className="flex-row items-center gap-3 px-4 py-3">
             <SingleAvatar name={u.name || u.email || "?"} imageUrl={u.profile_picture_url} size="md" />
             <View className="flex-1">
               <Text className="body-md">{u.name || u.email}</Text>
-              {u.position?.name ? <Text className="body-xs text-muted">{u.position.name}</Text> : null}
+              {u.position?.name ? <Text className="body-xs text-muted-foreground">{u.position.name}</Text> : null}
             </View>
           </View>
         ))
