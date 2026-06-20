@@ -81,7 +81,6 @@ function RootNavigator() {
       const hadOpenModal = router.canDismiss();
       if (hadOpenModal) router.dismissAll();
       const openComments = data?.screen === "comments";
-      const commentId = typeof data?.commentId === "string" ? data.commentId : undefined;
       let navigationTask: CancelableNavigationTask | null = null;
       let pushTimer: ReturnType<typeof setTimeout> | null = null;
       const navigationTimer = setTimeout(() => {
@@ -93,7 +92,6 @@ function RootNavigator() {
               params: {
                 taskId,
                 ...(openComments ? { openComments: "1", openCommentsRequestId: notifId } : {}),
-                ...(commentId ? { commentId } : {}),
               },
             });
           });

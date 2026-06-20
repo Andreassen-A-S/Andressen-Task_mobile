@@ -26,11 +26,10 @@ import TaskProgressCard from "./TaskProgressCard";
 import { CancelableNavigationTask, runAfterNavigationFrame } from "@/lib/navigationTiming";
 
 export default function UserTaskDetails() {
-  const { taskId, openComments: shouldOpenComments, openCommentsRequestId, commentId } = useLocalSearchParams<{
+  const { taskId, openComments: shouldOpenComments, openCommentsRequestId } = useLocalSearchParams<{
     taskId: string;
     openComments?: string;
     openCommentsRequestId?: string;
-    commentId?: string;
   }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -91,8 +90,7 @@ export default function UserTaskDetails() {
         if (didOpen) return;
         didOpen = true;
         navigationTask = runAfterNavigationFrame(() => {
-          const commentQuery = commentId ? `?commentId=${encodeURIComponent(commentId)}` : "";
-          router.push(`/comments/${taskId}${commentQuery}`);
+          router.push(`/comments/${taskId}`);
         });
       };
 
