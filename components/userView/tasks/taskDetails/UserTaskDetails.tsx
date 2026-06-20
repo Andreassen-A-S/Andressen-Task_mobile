@@ -77,7 +77,7 @@ export default function UserTaskDetails() {
   useFocusEffect(
     useCallback(() => {
       if (!taskId || shouldOpenComments !== "1") return;
-      const requestKey = openCommentsRequestId ?? `${taskId}:${commentId ?? ""}`;
+      const requestKey = openCommentsRequestId ?? taskId;
       if (consumedOpenCommentsRef.current === requestKey) return;
       consumedOpenCommentsRef.current = requestKey;
 
@@ -112,7 +112,7 @@ export default function UserTaskDetails() {
         if (transitionTimer) clearTimeout(transitionTimer);
         navigationTask?.cancel();
       };
-    }, [commentId, navigation, openCommentsRequestId, pathname, router, shouldOpenComments, taskId])
+    }, [navigation, openCommentsRequestId, pathname, router, shouldOpenComments, taskId])
   );
 
   const handleOpenComments = () => {
