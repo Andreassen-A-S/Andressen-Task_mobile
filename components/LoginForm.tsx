@@ -77,7 +77,7 @@ export default function LoginForm() {
                   <View className="flex-1">
                     {!email && (
                       <Text
-                        className="label-lg-gray text-muted-foreground"
+                        className="label-lg !text-muted-foreground"
                         style={{ position: "absolute", lineHeight: undefined }}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
@@ -117,7 +117,7 @@ export default function LoginForm() {
                   <View className="flex-1">
                     {!password && (
                       <Text
-                        className="label-lg-gray text-muted-foreground"
+                        className="label-lg !text-muted-foreground"
                         style={{ position: "absolute", lineHeight: undefined }}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
