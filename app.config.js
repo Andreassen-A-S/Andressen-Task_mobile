@@ -57,9 +57,7 @@ module.exports = {
       usesCleartextTraffic: IS_LOCAL_DEV,
       googleServicesFile: "./google-services.json",
     },
-    web: {
-      favicon: "./assets/favicon.png",
-    },
+    platforms: ["ios", "android"],
     plugins: [
       "expo-router",
       [
@@ -68,7 +66,7 @@ module.exports = {
           image: "./assets/splash-icon.png",
           imageWidth: 200,
           resizeMode: "contain",
-          backgroundColor: "#ffffff",
+          backgroundColor: "#f6f5f1",
         },
       ],
       "expo-font",
