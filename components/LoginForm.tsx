@@ -2,17 +2,18 @@ import { useState } from "react";
 import {
   View,
   Text,
-  Image,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
 } from "react-native";
+import { Image } from "expo-image";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
 import { colors } from "@/constants/colors";
+import Constants from "expo-constants";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -55,11 +56,11 @@ export default function LoginForm() {
           {/* Logo */}
           <View className="items-center mb-10">
             <Image
-              source={require("@/assets/logo.png")}
-              className="mb-2 h-20 w-[150]"
-              resizeMode="contain"
+              source={require("@/assets/mesterPlan_final.icon/Assets/fat-logo.svg")}
+              style={{ width: 100, height: 48, marginBottom: 8 }}
+              contentFit="contain"
             />
-            <Text className="h2">Andreassen TMS</Text>
+            <Text className="h2">MesterPlan</Text>
             <Text className="mt-1 body-sm">Log ind for at fortsætte</Text>
           </View>
 
@@ -76,7 +77,7 @@ export default function LoginForm() {
                   <View className="flex-1">
                     {!email && (
                       <Text
-                        className="label-lg-gray text-muted-foreground"
+                        className="label-lg !text-muted-foreground"
                         style={{ position: "absolute", lineHeight: undefined }}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
@@ -116,7 +117,7 @@ export default function LoginForm() {
                   <View className="flex-1">
                     {!password && (
                       <Text
-                        className="label-lg-gray text-muted-foreground"
+                        className="label-lg !text-muted-foreground"
                         style={{ position: "absolute", lineHeight: undefined }}
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
@@ -177,6 +178,7 @@ export default function LoginForm() {
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
+      <Text className="mono-xs text-muted-foreground text-center pb-2">v{Constants.expoConfig?.version}</Text>
     </SafeAreaView>
   );
 }

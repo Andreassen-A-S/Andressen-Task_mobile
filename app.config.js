@@ -14,7 +14,7 @@ module.exports = {
     name: "MesterPlan",
     slug: "andreassentask-mobile",
     scheme: "mesterplan",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -57,9 +57,7 @@ module.exports = {
       usesCleartextTraffic: IS_LOCAL_DEV,
       googleServicesFile: "./google-services.json",
     },
-    web: {
-      favicon: "./assets/favicon.png",
-    },
+    platforms: ["ios", "android"],
     plugins: [
       "expo-router",
       [
@@ -68,7 +66,7 @@ module.exports = {
           image: "./assets/splash-icon.png",
           imageWidth: 200,
           resizeMode: "contain",
-          backgroundColor: "#ffffff",
+          backgroundColor: "#f6f5f1",
         },
       ],
       "expo-font",
@@ -84,7 +82,7 @@ module.exports = {
       [
         "expo-notifications",
         {
-          icon: "./assets/icon.png",
+          icon: "./assets/notification-icon.png",
           color: "#0f6e56",
         },
       ],
