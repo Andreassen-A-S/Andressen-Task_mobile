@@ -11,9 +11,9 @@ interface BadgeProps {
 }
 
 const containerSize = {
-  sm: "rounded-lg border h-5 px-2 items-center justify-center",
-  md: "rounded-lg border h-6 px-2.5 items-center justify-center",
-  lg: "rounded-lg border h-7 px-3 items-center justify-center",
+  sm: "rounded-full border h-5 px-1.5 items-center justify-center",
+  md: "rounded-full border h-6 px-2 items-center justify-center",
+  lg: "rounded-full border h-7 px-2.5 items-center justify-center",
 };
 
 const textSize = {
@@ -32,7 +32,7 @@ export default function Badge({ variant, value, size = "md" }: BadgeProps) {
 
   return (
     <View className={`${containerSize[size]} ${colorClass}`}>
-      <Text className={`${textSize[size]} ${colorClass}`}>{label}</Text>
+      <Text className={textSize[size]}>{label}</Text>
     </View>
   );
 }
