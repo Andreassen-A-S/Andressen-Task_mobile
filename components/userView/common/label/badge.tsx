@@ -32,7 +32,7 @@ export default function Badge({ variant, value, size = "md" }: BadgeProps) {
 
   return (
     <View className={`${containerSize[size]} ${colorClass}`}>
-      <Text className={textSize[size]}>{label}</Text>
+      <Text className={`${textSize[size]} ${colorClass}`}>{label}</Text>
     </View>
   );
 }
