@@ -29,6 +29,7 @@ interface Props {
   failed?: boolean;
   errorMessage?: string;
   deleteId?: string;
+  mentionNames?: string[];
   hidden?: boolean;
   onDelete?: (commentId: string) => void;
   onRetry?: (commentId: string) => void;
@@ -37,7 +38,7 @@ interface Props {
   onMenuOpen?: (params: MenuParams) => void;
 }
 
-export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, hidden, onDelete, onRetry, onReply, onQuotedCommentPress, onMenuOpen }: Props) {
+export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, mentionNames, hidden, onDelete, onRetry, onReply, onQuotedCommentPress, onMenuOpen }: Props) {
   const pulseOpacity = useRef(new Animated.Value(1)).current;
   const leveretOpacity = useRef(new Animated.Value(0)).current;
   const [status, setStatus] = useState<StatusState>(sending ? "sender" : failed ? "fejl" : "idle");
@@ -292,6 +293,7 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
                     text={comment.message}
                     className="body-md !text-secondary"
                     linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
+                    mentionNames={mentionNames}
                   />
                 </TouchableOpacity>
               ) : null}
@@ -344,6 +346,7 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
                 text={comment.message}
                 className="body-md !text-white"
                 linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
+                mentionNames={mentionNames}
               />
             </TouchableOpacity>
           ) : null}

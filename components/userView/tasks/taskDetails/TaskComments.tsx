@@ -137,6 +137,15 @@ export default function TaskComments() {
     return [...map.values()];
   }, [assignees, commentAuthors, currentUser]);
 
+  const mentionNames = useMemo(() => {
+    const names = new Set<string>();
+    for (const u of [...assignees, ...Object.values(commentAuthors), ...(currentUser ? [currentUser] : [])]) {
+      const name = u.name || u.email;
+      if (name) names.add(name);
+    }
+    return [...names];
+  }, [assignees, commentAuthors, currentUser]);
+
   const visibleMentionCandidates = useMemo(() => {
     if (mentionQuery === null) return [];
     if (mentionQuery === "") return mentionCandidates;
@@ -485,6 +494,10 @@ export default function TaskComments() {
     setIsSubmitting(true);
     const replyTarget = replyingTo;
 
+    const mentionUserIds = pendingMentions
+      .filter((m) => input.includes(`@${m.name}`))
+      .map((m) => m.userId);
+
     const localId = `local-${Date.now()}`;
     const optimistic: DisplayComment = {
       comment_id: localId,
@@ -518,9 +531,6 @@ export default function TaskComments() {
       sending: true,
     };
 
-    const mentionUserIds = pendingMentions
-      .filter((m) => optimistic.message?.includes(`@${m.name}`))
-      .map((m) => m.userId);
     scrollPendingRef.current = true;
     setComments((prev) => [...prev, optimistic]);
     setInput("");
@@ -652,8 +662,6 @@ export default function TaskComments() {
   const handleInputChange = (text: string) => {
     inputValueRef.current = text;
     setInput(text);
-    // Detect active @mention on every keystroke (onSelectionChange is unreliable
-    // on multiline TextInput on iOS and cannot be used as the sole trigger).
     const lastAt = text.lastIndexOf("@");
     if (lastAt === -1) { setMentionQuery(null); return; }
     const afterAt = text.slice(lastAt + 1);
@@ -663,7 +671,6 @@ export default function TaskComments() {
   };
 
   const handleSelectionChange = (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
-    // Track cursor position precisely for mid-text mention insertion.
     cursorPosRef.current = e.nativeEvent.selection.end;
   };
 
@@ -796,8 +803,8 @@ export default function TaskComments() {
                       }}
                     >
                       {currentUser?.user_id === item.data.user_id
-                        ? <CommentBubble comment={item.data} isOwn deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id] ?? (item.data.user_id === currentUser?.user_id ? currentUser : undefined)} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} hidden={focusedCommentId === item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />
-                        : <CommentBubble comment={item.data} isOwn={false} deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} hidden={focusedCommentId === item.data.comment_id} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />}
+                        ? <CommentBubble comment={item.data} isOwn deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id] ?? (item.data.user_id === currentUser?.user_id ? currentUser : undefined)} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} mentionNames={mentionNames} hidden={focusedCommentId === item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />
+                        : <CommentBubble comment={item.data} isOwn={false} deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} mentionNames={mentionNames} hidden={focusedCommentId === item.data.comment_id} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />}
                     </CommentRow>
                   );
                 })
