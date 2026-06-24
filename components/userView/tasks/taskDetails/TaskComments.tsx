@@ -10,6 +10,8 @@ import {
   Alert,
   Animated,
   type LayoutChangeEvent,
+  type NativeSyntheticEvent,
+  type TextInputSelectionChangeEventData,
 } from "react-native";
 import Reanimated, { useAnimatedStyle } from "react-native-reanimated";
 import { KeyboardAvoidingView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
@@ -34,6 +36,7 @@ import AvatarCluster from "@/components/userView/common/label/AvatarCluster";
 import { PendingAttachmentPreview } from "@/components/userView/common/PendingAttachmentStrip";
 import CommentBubble from "./CommentBubble";
 import CommentComposer, { INPUT_BAR_OVERLAP, ATTACHMENT_LIST_EXTRA_HEIGHT, REPLY_PREVIEW_EXTRA_HEIGHT } from "./CommentComposer";
+import MentionSuggestions from "./MentionSuggestions";
 import CommentContextMenu, { type MenuParams } from "./CommentContextMenu";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
@@ -117,14 +120,41 @@ export default function TaskComments() {
   const [highlightRequest, setHighlightRequest] = useState({ commentId: "", pulse: 0 });
   const scrollDownAnim = useRef(new Animated.Value(0)).current;
   const pendingAttachmentIdRef = useRef(0);
+  const cursorPosRef = useRef(0);
+  const inputValueRef = useRef("");
 
-  const { progress } = useReanimatedKeyboardAnimation();
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [pendingMentions, setPendingMentions] = useState<{ name: string; userId: string }[]>([]);
+  const [inputSelection, setInputSelection] = useState<{ start: number; end: number } | undefined>(undefined);
+
+  const { progress, height: keyboardHeight } = useReanimatedKeyboardAnimation();
+
+  const mentionCandidates = useMemo(() => {
+    const map = new Map<string, User>();
+    for (const u of [...assignees, ...Object.values(commentAuthors)]) {
+      if (u.user_id !== currentUser?.user_id) map.set(u.user_id, u);
+    }
+    return [...map.values()];
+  }, [assignees, commentAuthors, currentUser]);
+
+  const visibleMentionCandidates = useMemo(() => {
+    if (mentionQuery === null) return [];
+    if (mentionQuery === "") return mentionCandidates;
+    const q = mentionQuery.toLowerCase();
+    return mentionCandidates.filter((u) =>
+      (u.name || u.email || "").toLowerCase().startsWith(q)
+    );
+  }, [mentionQuery, mentionCandidates]);
+
   const composerHeight =
     INPUT_BAR_OVERLAP +
     (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0) +
     (replyingTo ? REPLY_PREVIEW_EXTRA_HEIGHT : 0);
   const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: composerHeight - progress.value * insets.bottom + 8 }));
   const scrollSpacerStyle = useAnimatedStyle(() => ({ height: isArchived ? 16 : composerHeight - progress.value * insets.bottom }));
+  const mentionOverlayStyle = useAnimatedStyle(() => ({
+    bottom: -keyboardHeight.value + composerHeight - progress.value * insets.bottom + 8,
+  }));
 
   const listData = useMemo<ListItem[]>(() => {
     const result: ListItem[] = [];
@@ -488,11 +518,17 @@ export default function TaskComments() {
       sending: true,
     };
 
+    const mentionUserIds = pendingMentions
+      .filter((m) => optimistic.message?.includes(`@${m.name}`))
+      .map((m) => m.userId);
     scrollPendingRef.current = true;
     setComments((prev) => [...prev, optimistic]);
     setInput("");
+    inputValueRef.current = "";
     setPendingAttachments([]);
     setReplyingTo(null);
+    setPendingMentions([]);
+    setMentionQuery(null);
 
     try {
       const upload_tokens = pendingAttachments.length > 0
@@ -510,6 +546,7 @@ export default function TaskComments() {
         ...(optimistic.message && { message: optimistic.message }),
         upload_tokens,
         ...(replyTarget ? { reply_to_comment_id: replyTarget.commentId } : {}),
+        ...(mentionUserIds.length > 0 ? { mention_user_ids: mentionUserIds } : {}),
       });
 
       if (!commentAuthors[newComment.user_id]) {
@@ -611,6 +648,43 @@ export default function TaskComments() {
   const [focusedCommentId, setFocusedCommentId] = useState<string | null>(null);
 
   const canSend = input.trim().length > 0 || pendingAttachments.length > 0;
+
+  const handleInputChange = (text: string) => {
+    inputValueRef.current = text;
+    setInput(text);
+    // Detect active @mention on every keystroke (onSelectionChange is unreliable
+    // on multiline TextInput on iOS and cannot be used as the sole trigger).
+    const lastAt = text.lastIndexOf("@");
+    if (lastAt === -1) { setMentionQuery(null); return; }
+    const afterAt = text.slice(lastAt + 1);
+    if (/\s/.test(afterAt)) { setMentionQuery(null); return; }
+    setMentionQuery(afterAt);
+    cursorPosRef.current = text.length;
+  };
+
+  const handleSelectionChange = (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
+    // Track cursor position precisely for mid-text mention insertion.
+    cursorPosRef.current = e.nativeEvent.selection.end;
+  };
+
+  const handleMentionSelect = (user: User) => {
+    const displayName = user.name || user.email || "";
+    const cursor = cursorPosRef.current;
+    const before = inputValueRef.current.slice(0, cursor);
+    const lastAt = before.lastIndexOf("@");
+    const after = inputValueRef.current.slice(cursor);
+    const newText = inputValueRef.current.slice(0, lastAt) + `@${displayName} ` + after;
+    const newCursor = lastAt + displayName.length + 2;
+    inputValueRef.current = newText;
+    setInput(newText);
+    setMentionQuery(null);
+    setPendingMentions((prev) => {
+      if (prev.some((m) => m.userId === user.user_id)) return prev;
+      return [...prev, { name: displayName, userId: user.user_id }];
+    });
+    setInputSelection({ start: newCursor, end: newCursor });
+    requestAnimationFrame(() => setInputSelection(undefined));
+  };
 
   const scrollToQuotedComment = (replyingComment: DisplayComment) => {
     const originalId = replyingComment.reply_to_comment_id;
@@ -733,6 +807,13 @@ export default function TaskComments() {
             </ScrollView>
             </Animated.View>
           )}
+          {!isLoading && !isArchived && visibleMentionCandidates.length > 0 && (
+            <TouchableOpacity
+              style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+              activeOpacity={1}
+              onPress={() => setMentionQuery(null)}
+            />
+          )}
           {!isLoading && !fetchError && (
             <Reanimated.View
               pointerEvents={showScrollDown ? "box-none" : "none"}
@@ -762,7 +843,7 @@ export default function TaskComments() {
           <CommentComposer
             inputRef={inputRef}
             value={input}
-            onChangeText={setInput}
+            onChangeText={handleInputChange}
             onSubmit={handleSubmit}
             canSubmit={canSend && !isSubmitting}
             isSubmitting={isSubmitting}
@@ -771,9 +852,19 @@ export default function TaskComments() {
             onPickAttachments={pickAttachments}
             onRemoveAttachment={(id) => setPendingAttachments((prev) => prev.filter((a) => a.id !== id))}
             onCancelReply={() => setReplyingTo(null)}
+            onSelectionChange={handleSelectionChange}
+            selection={inputSelection}
           />
         )}
       </KeyboardAvoidingView>
+      {!isLoading && !isArchived && visibleMentionCandidates.length > 0 && (
+        <Reanimated.View
+          style={[{ position: "absolute", left: 12, right: 12 }, mentionOverlayStyle]}
+          pointerEvents="box-none"
+        >
+          <MentionSuggestions candidates={visibleMentionCandidates} onSelect={handleMentionSelect} />
+        </Reanimated.View>
+      )}
       <CommentContextMenu
         visible={menuVisible}
         params={menuParams}

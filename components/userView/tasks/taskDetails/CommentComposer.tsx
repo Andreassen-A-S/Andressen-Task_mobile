@@ -1,5 +1,5 @@
 import { RefObject } from "react";
-import { View, TextInput } from "react-native";
+import { View, TextInput, NativeSyntheticEvent, TextInputSelectionChangeEventData } from "react-native";
 import ComposerChrome, {
   COMPOSER_ATTACHMENT_EXTRA_HEIGHT,
   COMPOSER_INPUT_OVERLAP,
@@ -29,6 +29,8 @@ interface Props {
   onPickAttachments: () => void;
   onRemoveAttachment: (id: string) => void;
   onCancelReply: () => void;
+  onSelectionChange?: (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => void;
+  selection?: { start: number; end: number };
 }
 
 export default function CommentComposer({
@@ -43,6 +45,8 @@ export default function CommentComposer({
   onPickAttachments,
   onRemoveAttachment,
   onCancelReply,
+  onSelectionChange,
+  selection,
 }: Props) {
   const hasAttachments = pendingAttachments.length > 0;
   const hasReply = !!replyingTo;
@@ -71,6 +75,8 @@ export default function CommentComposer({
               <ComposerButton icon="add" onPress={onPickAttachments} disabled={isSubmitting} variant="secondary" />
             }
             surface="embedded"
+            onSelectionChange={onSelectionChange}
+            selection={selection}
           />
         </ComposerSurface>
       </View>

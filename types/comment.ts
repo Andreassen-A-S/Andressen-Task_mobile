@@ -35,6 +35,7 @@ export interface CreateCommentRequest {
   message?: string;
   upload_tokens?: string[];
   reply_to_comment_id?: string;
+  mention_user_ids?: string[];
 }
 
 export interface CommentReplyTarget {

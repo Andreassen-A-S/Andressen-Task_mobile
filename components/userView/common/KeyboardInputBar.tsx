@@ -1,5 +1,5 @@
 import { ReactNode, RefObject, useRef } from "react";
-import { View, TextInput, LayoutChangeEvent } from "react-native";
+import { View, TextInput, LayoutChangeEvent, NativeSyntheticEvent, TextInputSelectionChangeEventData } from "react-native";
 import { colors } from "@/constants/colors";
 import ComposerButton from "./ComposerButton";
 
@@ -14,6 +14,8 @@ interface Props {
   surface?: "standalone" | "embedded";
   inputRef?: RefObject<TextInput | null>;
   onLayout?: (e: LayoutChangeEvent) => void;
+  onSelectionChange?: (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => void;
+  selection?: { start: number; end: number };
 }
 
 export default function KeyboardInputBar({
@@ -27,6 +29,8 @@ export default function KeyboardInputBar({
   surface = "standalone",
   inputRef: externalInputRef,
   onLayout,
+  onSelectionChange,
+  selection,
 }: Props) {
   const internalRef = useRef<TextInput>(null);
   const inputRef = externalInputRef ?? internalRef;
@@ -48,6 +52,8 @@ export default function KeyboardInputBar({
           autoCorrect
           autoCapitalize="sentences"
           className="body-md max-h-[120] py-0 px-2.5"
+          onSelectionChange={onSelectionChange}
+          selection={selection}
         />
 
         {/* Action row */}
