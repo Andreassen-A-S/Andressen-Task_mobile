@@ -123,6 +123,7 @@ export default function TaskComments() {
   const pendingAttachmentIdRef = useRef(0);
   const cursorPosRef = useRef(0);
   const inputValueRef = useRef("");
+  const mentionStartRef = useRef(0);
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [pendingMentions, setPendingMentions] = useState<{ name: string; userId: string }[]>([]);
@@ -660,6 +661,7 @@ export default function TaskComments() {
     const afterAt = text.slice(lastAt + 1);
     if (/\s/.test(afterAt)) { setMentionQuery(null); cursorPosRef.current = text.length; return; }
     setMentionQuery(afterAt);
+    mentionStartRef.current = lastAt;
     cursorPosRef.current = text.length;
   };
 
@@ -669,12 +671,11 @@ export default function TaskComments() {
 
   const handleMentionSelect = (user: User) => {
     const displayName = user.name || user.email || "";
-    const cursor = cursorPosRef.current;
-    const before = inputValueRef.current.slice(0, cursor);
-    const lastAt = before.lastIndexOf("@");
-    const after = inputValueRef.current.slice(cursor);
-    const newText = inputValueRef.current.slice(0, lastAt) + `@${displayName} ` + after;
-    const newCursor = lastAt + displayName.length + 2;
+    const atIndex = mentionStartRef.current;
+    const queryLen = mentionQuery?.length ?? 0;
+    const text = inputValueRef.current;
+    const newText = text.slice(0, atIndex) + `@${displayName} ` + text.slice(atIndex + 1 + queryLen);
+    const newCursor = atIndex + displayName.length + 2;
     inputValueRef.current = newText;
     setInput(newText);
     setMentionQuery(null);
