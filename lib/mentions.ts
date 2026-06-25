@@ -67,3 +67,41 @@ export function parseTokenMentions(tokenText: string): { name: string; userId: s
     }
     return mentions;
 }
+
+export function prunePendingMentions(
+    pendingMentions: { name: string; userId: string }[],
+    displayText: string
+): { name: string; userId: string }[] {
+    if (pendingMentions.length === 0) return pendingMentions;
+
+    // Count visible @Name occurrences using the same boundary rules as buildTokenText
+    const names = [...new Set(pendingMentions.map(m => m.name))].sort((a, b) => b.length - a.length);
+    const counts = new Map<string, number>();
+    let i = 0;
+    while (i < displayText.length) {
+        const at = displayText.indexOf('@', i);
+        if (at === -1) break;
+        let matched = false;
+        for (const name of names) {
+            const end = at + 1 + name.length;
+            if (displayText.slice(at + 1, end) !== name) continue;
+            const next = displayText[end] ?? '';
+            if (next && !BOUNDARY.test(next)) continue;
+            counts.set(name, (counts.get(name) ?? 0) + 1);
+            i = end;
+            matched = true;
+            break;
+        }
+        if (!matched) i = at + 1;
+    }
+
+    // Keep at most N entries per name where N = visible count
+    const used = new Map<string, number>();
+    return pendingMentions.filter(m => {
+        const count = counts.get(m.name) ?? 0;
+        const seen = used.get(m.name) ?? 0;
+        if (seen >= count) return false;
+        used.set(m.name, seen + 1);
+        return true;
+    });
+}

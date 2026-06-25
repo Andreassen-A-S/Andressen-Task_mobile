@@ -26,7 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getTaskEvents, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs, type TaskEvent } from "@/lib/api";
 import { File as FSFile } from "expo-file-system";
 import { formatGroupTimestamp } from "@/helpers/helpers";
-import { buildTokenText, extractMentionUserIds, tokenToDisplayText } from "@/lib/mentions";
+import { buildTokenText, extractMentionUserIds, tokenToDisplayText, prunePendingMentions } from "@/lib/mentions";
 import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { CommentReplyTarget, TaskComment } from "@/types/comment";
 import { TaskStatus } from "@/types/task";
@@ -657,9 +657,9 @@ export default function TaskComments() {
     inputValueRef.current = text;
     setInput(text);
     const lastAt = text.lastIndexOf("@");
-    if (lastAt === -1) { setMentionQuery(null); cursorPosRef.current = text.length; return; }
+    if (lastAt === -1) { setMentionQuery(null); setPendingMentions(prev => prunePendingMentions(prev, text)); cursorPosRef.current = text.length; return; }
     const afterAt = text.slice(lastAt + 1);
-    if (/\s/.test(afterAt)) { setMentionQuery(null); cursorPosRef.current = text.length; return; }
+    if (/\s/.test(afterAt)) { setMentionQuery(null); setPendingMentions(prev => prunePendingMentions(prev, text)); cursorPosRef.current = text.length; return; }
     setMentionQuery(afterAt);
     mentionStartRef.current = lastAt;
     cursorPosRef.current = text.length;
