@@ -151,7 +151,7 @@ export default function TaskComments() {
     if (mentionQuery === "") return mentionCandidates;
     const q = mentionQuery.toLowerCase();
     return mentionCandidates.filter((u) =>
-      (u.name || u.email || "").toLowerCase().startsWith(q)
+      (u.name || u.email || "").toLowerCase().split(/\s+/).some((word) => word.startsWith(q))
     );
   }, [mentionQuery, mentionCandidates]);
 
