@@ -655,10 +655,9 @@ export default function TaskComments() {
   const handleInputChange = (text: string) => {
     inputValueRef.current = text;
     setInput(text);
-    const beforeCursor = text.slice(0, cursorPosRef.current);
-    const lastAt = beforeCursor.lastIndexOf("@");
+    const lastAt = text.lastIndexOf("@");
     if (lastAt === -1) { setMentionQuery(null); cursorPosRef.current = text.length; return; }
-    const afterAt = beforeCursor.slice(lastAt + 1);
+    const afterAt = text.slice(lastAt + 1);
     if (/\s/.test(afterAt)) { setMentionQuery(null); cursorPosRef.current = text.length; return; }
     setMentionQuery(afterAt);
     cursorPosRef.current = text.length;
