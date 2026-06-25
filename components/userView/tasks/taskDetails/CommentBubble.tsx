@@ -14,6 +14,7 @@ import LinkedText from "../../common/LinkedText";
 import { showToast } from "@/lib/toast";
 import { type BubbleLayout, type MenuParams } from "./CommentContextMenu";
 import CommentReplyPreview from "./CommentReplyPreview";
+import { tokenToDisplayText } from "@/lib/mentions";
 
 type StatusState = "sender" | "leveret" | "fejl" | "idle";
 
@@ -29,7 +30,6 @@ interface Props {
   failed?: boolean;
   errorMessage?: string;
   deleteId?: string;
-  mentionNames?: string[];
   hidden?: boolean;
   onDelete?: (commentId: string) => void;
   onRetry?: (commentId: string) => void;
@@ -38,7 +38,7 @@ interface Props {
   onMenuOpen?: (params: MenuParams) => void;
 }
 
-export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, mentionNames, hidden, onDelete, onRetry, onReply, onQuotedCommentPress, onMenuOpen }: Props) {
+export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, isFirstInGroup = true, isLastInGroup = true, author, sending, failed, errorMessage, deleteId, hidden, onDelete, onRetry, onReply, onQuotedCommentPress, onMenuOpen }: Props) {
   const pulseOpacity = useRef(new Animated.Value(1)).current;
   const leveretOpacity = useRef(new Animated.Value(0)).current;
   const [status, setStatus] = useState<StatusState>(sending ? "sender" : failed ? "fejl" : "idle");
@@ -95,7 +95,7 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
     try {
       // expo-clipboard: run `npx expo install expo-clipboard` + pod install to enable
       const Clipboard = require("expo-clipboard");
-      Clipboard.setStringAsync(comment.message).then(() => {
+      Clipboard.setStringAsync(tokenToDisplayText(comment.message)).then(() => {
         showToast({ title: "Kopieret", message: "" });
       });
     } catch {
@@ -293,7 +293,6 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
                     text={comment.message}
                     className="body-md !text-secondary"
                     linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
-                    mentionNames={mentionNames}
                   />
                 </TouchableOpacity>
               ) : null}
@@ -346,7 +345,6 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
                 text={comment.message}
                 className="body-md !text-white"
                 linkStyle={{ textDecorationLine: "underline", opacity: 0.8 }}
-                mentionNames={mentionNames}
               />
             </TouchableOpacity>
           ) : null}

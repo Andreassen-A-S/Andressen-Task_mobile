@@ -26,6 +26,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getTaskEvents, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs, type TaskEvent } from "@/lib/api";
 import { File as FSFile } from "expo-file-system";
 import { formatGroupTimestamp } from "@/helpers/helpers";
+import { buildTokenText, extractMentionUserIds, tokenToDisplayText } from "@/lib/mentions";
 import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { CommentReplyTarget, TaskComment } from "@/types/comment";
 import { TaskStatus } from "@/types/task";
@@ -135,15 +136,6 @@ export default function TaskComments() {
       if (u.user_id !== currentUser?.user_id) map.set(u.user_id, u);
     }
     return [...map.values()];
-  }, [assignees, commentAuthors, currentUser]);
-
-  const mentionNames = useMemo(() => {
-    const names = new Set<string>();
-    for (const u of [...assignees, ...Object.values(commentAuthors), ...(currentUser ? [currentUser] : [])]) {
-      const name = u.name || u.email;
-      if (name) names.add(name);
-    }
-    return [...names];
   }, [assignees, commentAuthors, currentUser]);
 
   const visibleMentionCandidates = useMemo(() => {
@@ -468,7 +460,7 @@ export default function TaskComments() {
     if (!commentId || (commentId.startsWith("local-") && !comment.serverCommentId)) return;
     const author = commentAuthors[comment.user_id] ?? (comment.user_id === currentUser?.user_id ? currentUser : undefined);
     const authorName = author?.name || author?.email || "Ukendt bruger";
-    const preview = comment.message?.trim()
+    const preview = (comment.message ? tokenToDisplayText(comment.message).trim() : "")
       || ((comment.attachments?.length ?? 0) > 0 ? "Vedhæftning" : "Kommentar");
     const firstImage = !comment.message?.trim()
       ? comment.attachments?.find((attachment) => attachment.type === "IMAGE")
@@ -494,16 +486,15 @@ export default function TaskComments() {
     setIsSubmitting(true);
     const replyTarget = replyingTo;
 
-    const mentionUserIds = pendingMentions
-      .filter((m) => input.includes(`@${m.name}`))
-      .map((m) => m.userId);
+    const tokenText = buildTokenText(input.trim(), pendingMentions);
+    const mentionUserIds = extractMentionUserIds(tokenText);
 
     const localId = `local-${Date.now()}`;
     const optimistic: DisplayComment = {
       comment_id: localId,
       task_id: taskId,
       user_id: currentUser!.user_id,
-      message: input.trim(),
+      message: tokenText,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       attachments: pendingAttachments.map((a, i) => ({
@@ -803,8 +794,8 @@ export default function TaskComments() {
                       }}
                     >
                       {currentUser?.user_id === item.data.user_id
-                        ? <CommentBubble comment={item.data} isOwn deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id] ?? (item.data.user_id === currentUser?.user_id ? currentUser : undefined)} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} mentionNames={mentionNames} hidden={focusedCommentId === item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />
-                        : <CommentBubble comment={item.data} isOwn={false} deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} mentionNames={mentionNames} hidden={focusedCommentId === item.data.comment_id} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />}
+                        ? <CommentBubble comment={item.data} isOwn deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id] ?? (item.data.user_id === currentUser?.user_id ? currentUser : undefined)} sending={item.data.sending} failed={item.data.failed} errorMessage={item.data.errorMessage} deleteId={item.data.serverCommentId ?? item.data.comment_id} hidden={focusedCommentId === item.data.comment_id} onDelete={isArchived ? undefined : handleDelete} onRetry={isArchived ? undefined : handleRetry} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />
+                        : <CommentBubble comment={item.data} isOwn={false} deleted={item.data.deleted} deletedAuthor={item.data.deletedAuthor} isFirstInGroup={item.isFirstInGroup} isLastInGroup={item.isLastInGroup} author={commentAuthors[item.data.user_id]} hidden={focusedCommentId === item.data.comment_id} onReply={isArchived || item.data.deleted ? undefined : () => startReply(item.data)} onQuotedCommentPress={item.data.reply_to_comment_id ? () => scrollToQuotedComment(item.data) : undefined} onMenuOpen={(p) => { setMenuParams(p); setMenuVisible(true); requestAnimationFrame(() => setFocusedCommentId(item.data.comment_id)); }} />}
                     </CommentRow>
                   );
                 })
