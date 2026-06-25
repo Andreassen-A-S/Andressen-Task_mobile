@@ -602,10 +602,12 @@ export default function TaskComments() {
         })))
         : undefined;
 
+      const retryMentionIds = comment.message ? extractMentionUserIds(comment.message) : [];
       const newComment = await createComment(taskId, {
         ...(comment.message && { message: comment.message }),
         upload_tokens,
         ...(comment.reply_to_comment_id ? { reply_to_comment_id: comment.reply_to_comment_id } : {}),
+        ...(retryMentionIds.length > 0 ? { mention_user_ids: retryMentionIds } : {}),
       });
 
       setComments((prev) => prev.map((c) =>
@@ -653,10 +655,11 @@ export default function TaskComments() {
   const handleInputChange = (text: string) => {
     inputValueRef.current = text;
     setInput(text);
-    const lastAt = text.lastIndexOf("@");
-    if (lastAt === -1) { setMentionQuery(null); return; }
-    const afterAt = text.slice(lastAt + 1);
-    if (/\s/.test(afterAt)) { setMentionQuery(null); return; }
+    const beforeCursor = text.slice(0, cursorPosRef.current);
+    const lastAt = beforeCursor.lastIndexOf("@");
+    if (lastAt === -1) { setMentionQuery(null); cursorPosRef.current = text.length; return; }
+    const afterAt = beforeCursor.slice(lastAt + 1);
+    if (/\s/.test(afterAt)) { setMentionQuery(null); cursorPosRef.current = text.length; return; }
     setMentionQuery(afterAt);
     cursorPosRef.current = text.length;
   };
