@@ -484,7 +484,7 @@ export default function TaskComments() {
     setIsSubmitting(true);
     const replyTarget = replyingTo;
 
-    const tokenText = buildTokenTextFromRanges(input.trim(), nativeMentionRangesRef.current);
+    const tokenText = buildTokenTextFromRanges(input, nativeMentionRangesRef.current).trim();
     const mentionUserIds = extractMentionUserIds(tokenText);
 
     const localId = `local-${Date.now()}`;

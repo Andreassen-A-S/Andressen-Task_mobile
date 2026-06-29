@@ -12,8 +12,6 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
-import android.widget.ProgressBar
-import android.widget.TextView
 import expo.modules.kotlin.AppContext
 import expo.modules.kotlin.viewevent.EventDispatcher
 import expo.modules.kotlin.views.ExpoView
@@ -33,8 +31,6 @@ class NativeMentionComposerView(
   appContext: AppContext
 ) : ExpoView(context, appContext) {
   val onComposerChange by EventDispatcher()
-  val onSubmit by EventDispatcher()
-  val onAddPress by EventDispatcher()
   val onMentionQueryChange by EventDispatcher()
   val onSelectionChange by EventDispatcher()
   val onHeightChange by EventDispatcher()
@@ -45,27 +41,11 @@ class NativeMentionComposerView(
       editText.hint = value
     }
 
-  var canSubmit: Boolean = false
-    set(value) {
-      field = value
-      updateButtons()
-    }
-
-  var isSubmitting: Boolean = false
-    set(value) {
-      field = value
-      updateButtons()
-    }
-
   private val editText = MentionEditText(context) {
     if (!applyingNativeChange) {
       emitSelectionAndQuery()
     }
   }
-  private val addButton = TextView(context)
-  private val sendButton = TextView(context)
-  private val spinner = ProgressBar(context)
-
   private var mentions: List<MentionRange> = emptyList()
   private var previousText = ""
   private var applyingNativeChange = false
@@ -74,15 +54,8 @@ class NativeMentionComposerView(
   private val textColor = Color.rgb(27, 29, 34)
   private val mutedColor = Color.rgb(157, 161, 180)
   private val mentionColor = Color.rgb(15, 110, 86)
-  private val buttonMuted = Color.rgb(243, 243, 240)
-  private val buttonSecondaryText = Color.rgb(107, 112, 132)
-  private val green = Color.rgb(15, 110, 86)
 
-  private val topPadding = dp(14)
   private val horizontalPadding = dp(10)
-  private val buttonTop = dp(12)
-  private val buttonSize = dp(40)
-  private val bottomPadding = dp(8)
   private val minTextHeight = dp(24)
   private val maxTextHeight = dp(120)
 
@@ -104,28 +77,7 @@ class NativeMentionComposerView(
     editText.setPadding(0, 0, 0, 0)
     editText.isVerticalScrollBarEnabled = false
 
-    addButton.text = "+"
-    addButton.textSize = 28f
-    addButton.gravity = Gravity.CENTER
-    addButton.setTextColor(buttonSecondaryText)
-    addButton.setBackgroundColor(buttonMuted)
-    addButton.setOnClickListener { onAddPress(emptyMap()) }
-
-    sendButton.text = "↑"
-    sendButton.textSize = 24f
-    sendButton.gravity = Gravity.CENTER
-    sendButton.setOnClickListener {
-      if (canSubmit && !isSubmitting) {
-        onSubmit(payload())
-      }
-    }
-
-    spinner.visibility = GONE
-
     addView(editText)
-    addView(addButton)
-    addView(sendButton)
-    addView(spinner)
 
     editText.addTextChangedListener(object : TextWatcher {
       override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
@@ -147,8 +99,6 @@ class NativeMentionComposerView(
         false
       }
     }
-
-    updateButtons()
   }
 
   fun focus() {
@@ -234,12 +184,7 @@ class NativeMentionComposerView(
     val width = right - left
     val textWidth = max(1, width - horizontalPadding * 2)
     val textHeight = measuredTextHeight(textWidth)
-    val buttonY = topPadding + textHeight + buttonTop
-
-    editText.layout(horizontalPadding, topPadding, horizontalPadding + textWidth, topPadding + textHeight)
-    addButton.layout(horizontalPadding - dp(2), buttonY, horizontalPadding - dp(2) + buttonSize, buttonY + buttonSize)
-    sendButton.layout(width - horizontalPadding - buttonSize + dp(2), buttonY, width - horizontalPadding + dp(2), buttonY + buttonSize)
-    spinner.layout(width - horizontalPadding - buttonSize + dp(2), buttonY, width - horizontalPadding + dp(2), buttonY + buttonSize)
+    editText.layout(horizontalPadding, 0, horizontalPadding + textWidth, textHeight)
     updateNativeSize()
   }
 
@@ -247,17 +192,11 @@ class NativeMentionComposerView(
     val width = MeasureSpec.getSize(widthMeasureSpec)
     val textWidth = max(1, width - horizontalPadding * 2)
     val textHeight = measuredTextHeight(textWidth)
-    val height = topPadding + textHeight + buttonTop + buttonSize + bottomPadding
-
     editText.measure(
       MeasureSpec.makeMeasureSpec(textWidth, MeasureSpec.EXACTLY),
       MeasureSpec.makeMeasureSpec(textHeight, MeasureSpec.EXACTLY)
     )
-    val buttonSpec = MeasureSpec.makeMeasureSpec(buttonSize, MeasureSpec.EXACTLY)
-    addButton.measure(buttonSpec, buttonSpec)
-    sendButton.measure(buttonSpec, buttonSpec)
-    spinner.measure(buttonSpec, buttonSpec)
-    setMeasuredDimension(width, height)
+    setMeasuredDimension(width, textHeight)
   }
 
   private fun handleBackspace(): Boolean {
@@ -309,17 +248,9 @@ class NativeMentionComposerView(
     onMentionQueryChange(mapOf("query" to queryOverride))
   }
 
-  private fun updateButtons() {
-    sendButton.isEnabled = canSubmit && !isSubmitting
-    sendButton.setBackgroundColor(if (canSubmit) green else buttonMuted)
-    sendButton.setTextColor(if (canSubmit) Color.WHITE else buttonSecondaryText)
-    sendButton.text = if (isSubmitting) "" else "↑"
-    spinner.visibility = if (isSubmitting) VISIBLE else GONE
-  }
-
   private fun updateNativeSize() {
     val width = max(1, width)
-    val height = topPadding + measuredTextHeight(max(1, width - horizontalPadding * 2)) + buttonTop + buttonSize + bottomPadding
+    val height = measuredTextHeight(max(1, width - horizontalPadding * 2))
     if (height != lastHeight) {
       lastHeight = height
       shadowNodeProxy.setViewSize(width.toDouble(), height.toDouble())
