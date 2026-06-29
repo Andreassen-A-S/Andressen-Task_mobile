@@ -50,6 +50,7 @@ function SingleImage({ image, onLongPress, allImages, index }: {
         onPress={() => setViewerVisible(true)}
         onLongPress={onLongPress}
         delayLongPress={400}
+        style={{ alignSelf: "flex-start" }}
       >
         <Image
           source={{ uri: image.url, cacheKey: image.attachment_id }}

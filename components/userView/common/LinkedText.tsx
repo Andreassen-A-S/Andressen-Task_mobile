@@ -2,11 +2,13 @@ import { Linking, Text, type StyleProp, type TextProps, type TextStyle } from "r
 
 const HTTP_URL_PATTERN = /https?:\/\/[^\s]+/gi;
 const TRAILING_PUNCTUATION = /[.,!?;:)\]}>"']+$/;
+const TOKEN_SRC = String.raw`@\[([^\]]+)\]\(([^)]+)\)`;
 
 interface LinkedTextProps extends Omit<TextProps, "children"> {
   text: string;
   style?: StyleProp<TextStyle>;
   linkStyle?: StyleProp<TextStyle>;
+  mentionStyle?: StyleProp<TextStyle>;
 }
 
 async function openLink(url: string) {
@@ -26,7 +28,23 @@ function splitTrailingPunctuation(value: string) {
   };
 }
 
-export default function LinkedText({ text, style, linkStyle, ...props }: LinkedTextProps) {
+type Segment = { type: "text"; value: string } | { type: "mention"; name: string };
+
+function splitMentionTokens(text: string): Segment[] {
+  const re = new RegExp(TOKEN_SRC, "g");
+  const parts: Segment[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push({ type: "text", value: text.slice(last, m.index) });
+    parts.push({ type: "mention", name: m[1] });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push({ type: "text", value: text.slice(last) });
+  return parts.length > 0 ? parts : [{ type: "text", value: text }];
+}
+
+export default function LinkedText({ text, style, linkStyle, mentionStyle, ...props }: LinkedTextProps) {
   const parts: { type: "text" | "link"; value: string }[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -54,19 +72,25 @@ export default function LinkedText({ text, style, linkStyle, ...props }: LinkedT
 
   return (
     <Text style={style} {...props}>
-      {parts.map((part, index) =>
-        part.type === "link" ? (
-          <Text
-            key={`${part.value}-${index}`}
-            style={linkStyle}
-            onPress={() => openLink(part.value)}
-          >
-            {part.value}
-          </Text>
-        ) : (
-          part.value
-        )
-      )}
+      {parts.map((part, index) => {
+        if (part.type === "link") {
+          return (
+            <Text key={`${part.value}-${index}`} style={linkStyle} onPress={() => openLink(part.value)}>
+              {part.value}
+            </Text>
+          );
+        }
+        return splitMentionTokens(part.value).map((seg, segIdx) => {
+          if (seg.type === "mention") {
+            return (
+              <Text key={`mention-${index}-${segIdx}`} style={[{ fontFamily: "Outfit_600SemiBold" }, mentionStyle]}>
+                {`@${seg.name}`}
+              </Text>
+            );
+          }
+          return seg.value;
+        });
+      })}
     </Text>
   );
 }

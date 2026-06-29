@@ -14,6 +14,7 @@ import LinkedText from "../../common/LinkedText";
 import { showToast } from "@/lib/toast";
 import { type BubbleLayout, type MenuParams } from "./CommentContextMenu";
 import CommentReplyPreview from "./CommentReplyPreview";
+import { tokenToDisplayText } from "@/lib/mentions";
 
 type StatusState = "sender" | "leveret" | "fejl" | "idle";
 
@@ -94,7 +95,7 @@ export default function CommentBubble({ comment, isOwn, deleted, deletedAuthor, 
     try {
       // expo-clipboard: run `npx expo install expo-clipboard` + pod install to enable
       const Clipboard = require("expo-clipboard");
-      Clipboard.setStringAsync(comment.message).then(() => {
+      Clipboard.setStringAsync(tokenToDisplayText(comment.message)).then(() => {
         showToast({ title: "Kopieret", message: "" });
       });
     } catch {

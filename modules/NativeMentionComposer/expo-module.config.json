@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["NativeMentionComposerModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.nativementioncomposer.NativeMentionComposerModule"]
+  }
+}

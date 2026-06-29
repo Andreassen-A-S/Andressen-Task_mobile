@@ -9,9 +9,10 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Keyboard,
   type LayoutChangeEvent,
 } from "react-native";
-import Reanimated, { useAnimatedStyle } from "react-native-reanimated";
+import Reanimated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { KeyboardAvoidingView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,6 +25,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getTaskEvents, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs, type TaskEvent } from "@/lib/api";
 import { File as FSFile } from "expo-file-system";
 import { formatGroupTimestamp } from "@/helpers/helpers";
+import { buildTokenTextFromRanges, extractMentionUserIds, tokenToDisplayText } from "@/lib/mentions";
 import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { CommentReplyTarget, TaskComment } from "@/types/comment";
 import { TaskStatus } from "@/types/task";
@@ -34,6 +36,8 @@ import AvatarCluster from "@/components/userView/common/label/AvatarCluster";
 import { PendingAttachmentPreview } from "@/components/userView/common/PendingAttachmentStrip";
 import CommentBubble from "./CommentBubble";
 import CommentComposer, { INPUT_BAR_OVERLAP, ATTACHMENT_LIST_EXTRA_HEIGHT, REPLY_PREVIEW_EXTRA_HEIGHT } from "./CommentComposer";
+import MentionSuggestions from "./MentionSuggestions";
+import { MentionRange, MentionTextInputRef } from "@/components/userView/common/NativeMentionComposer";
 import CommentContextMenu, { type MenuParams } from "./CommentContextMenu";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
@@ -94,7 +98,7 @@ export default function TaskComments() {
   const router = useRouter();
   const headerHeight = usePathHeaderHeight();
   const { user: currentUser } = useAuth();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInput | MentionTextInputRef | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const isNearBottomRef = useRef(true);
   const hasLoadedRef = useRef(false);
@@ -117,14 +121,39 @@ export default function TaskComments() {
   const [highlightRequest, setHighlightRequest] = useState({ commentId: "", pulse: 0 });
   const scrollDownAnim = useRef(new Animated.Value(0)).current;
   const pendingAttachmentIdRef = useRef(0);
+  const nativeMentionRangesRef = useRef<MentionRange[]>([]);
+  const textExtraHeight = useSharedValue(0);
 
-  const { progress } = useReanimatedKeyboardAnimation();
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+
+  const { progress, height: keyboardHeight } = useReanimatedKeyboardAnimation();
+
+  const mentionCandidates = useMemo(() => {
+    const map = new Map<string, User>();
+    for (const u of [...assignees, ...Object.values(commentAuthors)]) {
+      if (u.user_id !== currentUser?.user_id) map.set(u.user_id, u);
+    }
+    return [...map.values()];
+  }, [assignees, commentAuthors, currentUser]);
+
+  const visibleMentionCandidates = useMemo(() => {
+    if (mentionQuery === null) return [];
+    if (mentionQuery === "") return mentionCandidates;
+    const q = mentionQuery.toLowerCase();
+    return mentionCandidates.filter((u) =>
+      (u.name || u.email || "").toLowerCase().split(/\s+/).some((word) => word.startsWith(q))
+    );
+  }, [mentionQuery, mentionCandidates]);
+
   const composerHeight =
     INPUT_BAR_OVERLAP +
     (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0) +
     (replyingTo ? REPLY_PREVIEW_EXTRA_HEIGHT : 0);
-  const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: composerHeight - progress.value * insets.bottom + 8 }));
-  const scrollSpacerStyle = useAnimatedStyle(() => ({ height: isArchived ? 16 : composerHeight - progress.value * insets.bottom }));
+  const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: composerHeight + textExtraHeight.value - progress.value * insets.bottom + 8 }));
+  const scrollSpacerStyle = useAnimatedStyle(() => ({ height: isArchived ? 16 : composerHeight + textExtraHeight.value - progress.value * insets.bottom }));
+  const mentionOverlayStyle = useAnimatedStyle(() => ({
+    bottom: -keyboardHeight.value + composerHeight + textExtraHeight.value - progress.value * insets.bottom + 8,
+  }));
 
   const listData = useMemo<ListItem[]>(() => {
     const result: ListItem[] = [];
@@ -429,7 +458,7 @@ export default function TaskComments() {
     if (!commentId || (commentId.startsWith("local-") && !comment.serverCommentId)) return;
     const author = commentAuthors[comment.user_id] ?? (comment.user_id === currentUser?.user_id ? currentUser : undefined);
     const authorName = author?.name || author?.email || "Ukendt bruger";
-    const preview = comment.message?.trim()
+    const preview = (comment.message ? tokenToDisplayText(comment.message).trim() : "")
       || ((comment.attachments?.length ?? 0) > 0 ? "Vedhæftning" : "Kommentar");
     const firstImage = !comment.message?.trim()
       ? comment.attachments?.find((attachment) => attachment.type === "IMAGE")
@@ -455,12 +484,15 @@ export default function TaskComments() {
     setIsSubmitting(true);
     const replyTarget = replyingTo;
 
+    const tokenText = buildTokenTextFromRanges(input.trim(), nativeMentionRangesRef.current);
+    const mentionUserIds = extractMentionUserIds(tokenText);
+
     const localId = `local-${Date.now()}`;
     const optimistic: DisplayComment = {
       comment_id: localId,
       task_id: taskId,
       user_id: currentUser!.user_id,
-      message: input.trim(),
+      message: tokenText,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       attachments: pendingAttachments.map((a, i) => ({
@@ -491,8 +523,11 @@ export default function TaskComments() {
     scrollPendingRef.current = true;
     setComments((prev) => [...prev, optimistic]);
     setInput("");
+    inputRef.current?.clear();
+    nativeMentionRangesRef.current = [];
     setPendingAttachments([]);
     setReplyingTo(null);
+    setMentionQuery(null);
 
     try {
       const upload_tokens = pendingAttachments.length > 0
@@ -510,6 +545,7 @@ export default function TaskComments() {
         ...(optimistic.message && { message: optimistic.message }),
         upload_tokens,
         ...(replyTarget ? { reply_to_comment_id: replyTarget.commentId } : {}),
+        ...(mentionUserIds.length > 0 ? { mention_user_ids: mentionUserIds } : {}),
       });
 
       if (!commentAuthors[newComment.user_id]) {
@@ -564,10 +600,12 @@ export default function TaskComments() {
         })))
         : undefined;
 
+      const retryMentionIds = comment.message ? extractMentionUserIds(comment.message) : [];
       const newComment = await createComment(taskId, {
         ...(comment.message && { message: comment.message }),
         upload_tokens,
         ...(comment.reply_to_comment_id ? { reply_to_comment_id: comment.reply_to_comment_id } : {}),
+        ...(retryMentionIds.length > 0 ? { mention_user_ids: retryMentionIds } : {}),
       });
 
       setComments((prev) => prev.map((c) =>
@@ -611,6 +649,25 @@ export default function TaskComments() {
   const [focusedCommentId, setFocusedCommentId] = useState<string | null>(null);
 
   const canSend = input.trim().length > 0 || pendingAttachments.length > 0;
+
+  const handleInputChange = (text: string) => {
+    setInput(text);
+  };
+
+  const handleNativeMentionChange = (text: string, mentions: MentionRange[]) => {
+    setInput(text);
+    nativeMentionRangesRef.current = mentions;
+  };
+
+  const handleComposerHeightChange = (height: number) => {
+    textExtraHeight.value = Math.max(0, height - 24);
+  };
+
+  const handleMentionSelect = (user: User) => {
+    const displayName = user.name || user.email || "";
+    (inputRef.current as MentionTextInputRef | null)?.insertMention?.(user.user_id, displayName);
+    setMentionQuery(null);
+  };
 
   const scrollToQuotedComment = (replyingComment: DisplayComment) => {
     const originalId = replyingComment.reply_to_comment_id;
@@ -691,6 +748,8 @@ export default function TaskComments() {
                 isNearBottomRef.current = nearBottom;
                 if (nearBottom === showScrollDown) setShowScrollDown(!nearBottom);
               }}
+              keyboardDismissMode="on-drag"
+              onScrollBeginDrag={Keyboard.dismiss}
               scrollEventThrottle={100}
               contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 10 }}
               showsVerticalScrollIndicator={false}
@@ -733,6 +792,13 @@ export default function TaskComments() {
             </ScrollView>
             </Animated.View>
           )}
+          {!isLoading && !isArchived && visibleMentionCandidates.length > 0 && (
+            <TouchableOpacity
+              style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+              activeOpacity={1}
+              onPress={() => setMentionQuery(null)}
+            />
+          )}
           {!isLoading && !fetchError && (
             <Reanimated.View
               pointerEvents={showScrollDown ? "box-none" : "none"}
@@ -762,7 +828,7 @@ export default function TaskComments() {
           <CommentComposer
             inputRef={inputRef}
             value={input}
-            onChangeText={setInput}
+            onChangeText={handleInputChange}
             onSubmit={handleSubmit}
             canSubmit={canSend && !isSubmitting}
             isSubmitting={isSubmitting}
@@ -771,9 +837,20 @@ export default function TaskComments() {
             onPickAttachments={pickAttachments}
             onRemoveAttachment={(id) => setPendingAttachments((prev) => prev.filter((a) => a.id !== id))}
             onCancelReply={() => setReplyingTo(null)}
+            onMentionInputChange={handleNativeMentionChange}
+            onMentionQueryChange={setMentionQuery}
+            onComposerHeightChange={handleComposerHeightChange}
           />
         )}
       </KeyboardAvoidingView>
+      {!isLoading && !isArchived && visibleMentionCandidates.length > 0 && (
+        <Reanimated.View
+          style={[{ position: "absolute", left: 12, right: 12 }, mentionOverlayStyle]}
+          pointerEvents="box-none"
+        >
+          <MentionSuggestions candidates={visibleMentionCandidates} onSelect={handleMentionSelect} />
+        </Reanimated.View>
+      )}
       <CommentContextMenu
         visible={menuVisible}
         params={menuParams}
