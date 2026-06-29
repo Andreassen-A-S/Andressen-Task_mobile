@@ -1,5 +1,6 @@
 import { RefObject } from "react";
 import { View, TextInput, NativeSyntheticEvent, TextInputSelectionChangeEventData } from "react-native";
+import { MentionRange, MentionTextInputRef } from "@/components/userView/common/NativeMentionComposer";
 import ComposerChrome, {
   COMPOSER_ATTACHMENT_EXTRA_HEIGHT,
   COMPOSER_INPUT_OVERLAP,
@@ -18,7 +19,7 @@ export const ATTACHMENT_LIST_EXTRA_HEIGHT = COMPOSER_ATTACHMENT_EXTRA_HEIGHT;
 export const REPLY_PREVIEW_EXTRA_HEIGHT = COMPOSER_REPLY_EXTRA_HEIGHT;
 
 interface Props {
-  inputRef: RefObject<TextInput | null>;
+  inputRef: RefObject<TextInput | MentionTextInputRef | null>;
   value: string;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
@@ -31,6 +32,10 @@ interface Props {
   onCancelReply: () => void;
   onSelectionChange?: (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => void;
   selection?: { start: number; end: number };
+  onMentionInputChange?: (text: string, mentions: MentionRange[]) => void;
+  onMentionQueryChange?: (query: string | null) => void;
+  onMentionSelectionChange?: (selection: { start: number; end: number }) => void;
+  onComposerHeightChange?: (height: number) => void;
 }
 
 export default function CommentComposer({
@@ -47,6 +52,10 @@ export default function CommentComposer({
   onCancelReply,
   onSelectionChange,
   selection,
+  onMentionInputChange,
+  onMentionQueryChange,
+  onMentionSelectionChange,
+  onComposerHeightChange,
 }: Props) {
   const hasAttachments = pendingAttachments.length > 0;
   const hasReply = !!replyingTo;
@@ -77,6 +86,10 @@ export default function CommentComposer({
             surface="embedded"
             onSelectionChange={onSelectionChange}
             selection={selection}
+            onMentionInputChange={onMentionInputChange}
+            onMentionQueryChange={onMentionQueryChange}
+            onMentionSelectionChange={onMentionSelectionChange}
+            onMentionHeightChange={onComposerHeightChange}
           />
         </ComposerSurface>
       </View>

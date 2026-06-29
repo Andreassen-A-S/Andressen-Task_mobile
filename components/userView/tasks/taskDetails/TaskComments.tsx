@@ -9,11 +9,10 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Keyboard,
   type LayoutChangeEvent,
-  type NativeSyntheticEvent,
-  type TextInputSelectionChangeEventData,
 } from "react-native";
-import Reanimated, { useAnimatedStyle } from "react-native-reanimated";
+import Reanimated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { KeyboardAvoidingView, useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,7 +25,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getTaskEvents, createComment, deleteComment, getUser, getTask, prepareAttachments, uploadToGcs, type TaskEvent } from "@/lib/api";
 import { File as FSFile } from "expo-file-system";
 import { formatGroupTimestamp } from "@/helpers/helpers";
-import { buildTokenText, extractMentionUserIds, tokenToDisplayText, prunePendingMentions } from "@/lib/mentions";
+import { buildTokenTextFromRanges, extractMentionUserIds, tokenToDisplayText } from "@/lib/mentions";
 import { MAX_FILE_SIZE } from "@/helpers/attachmentHelpers";
 import { CommentReplyTarget, TaskComment } from "@/types/comment";
 import { TaskStatus } from "@/types/task";
@@ -38,6 +37,7 @@ import { PendingAttachmentPreview } from "@/components/userView/common/PendingAt
 import CommentBubble from "./CommentBubble";
 import CommentComposer, { INPUT_BAR_OVERLAP, ATTACHMENT_LIST_EXTRA_HEIGHT, REPLY_PREVIEW_EXTRA_HEIGHT } from "./CommentComposer";
 import MentionSuggestions from "./MentionSuggestions";
+import { MentionRange, MentionTextInputRef } from "@/components/userView/common/NativeMentionComposer";
 import CommentContextMenu, { type MenuParams } from "./CommentContextMenu";
 import GlassIconButton from "@/components/userView/common/buttons/GlassIconButton";
 
@@ -98,7 +98,7 @@ export default function TaskComments() {
   const router = useRouter();
   const headerHeight = usePathHeaderHeight();
   const { user: currentUser } = useAuth();
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInput | MentionTextInputRef | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const isNearBottomRef = useRef(true);
   const hasLoadedRef = useRef(false);
@@ -121,13 +121,10 @@ export default function TaskComments() {
   const [highlightRequest, setHighlightRequest] = useState({ commentId: "", pulse: 0 });
   const scrollDownAnim = useRef(new Animated.Value(0)).current;
   const pendingAttachmentIdRef = useRef(0);
-  const cursorPosRef = useRef(0);
-  const inputValueRef = useRef("");
-  const mentionStartRef = useRef(0);
+  const nativeMentionRangesRef = useRef<MentionRange[]>([]);
+  const textExtraHeight = useSharedValue(0);
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
-  const [pendingMentions, setPendingMentions] = useState<{ name: string; userId: string }[]>([]);
-  const [inputSelection, setInputSelection] = useState<{ start: number; end: number } | undefined>(undefined);
 
   const { progress, height: keyboardHeight } = useReanimatedKeyboardAnimation();
 
@@ -152,10 +149,10 @@ export default function TaskComments() {
     INPUT_BAR_OVERLAP +
     (pendingAttachments.length > 0 ? ATTACHMENT_LIST_EXTRA_HEIGHT : 0) +
     (replyingTo ? REPLY_PREVIEW_EXTRA_HEIGHT : 0);
-  const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: composerHeight - progress.value * insets.bottom + 8 }));
-  const scrollSpacerStyle = useAnimatedStyle(() => ({ height: isArchived ? 16 : composerHeight - progress.value * insets.bottom }));
+  const arrowBottomStyle = useAnimatedStyle(() => ({ bottom: composerHeight + textExtraHeight.value - progress.value * insets.bottom + 8 }));
+  const scrollSpacerStyle = useAnimatedStyle(() => ({ height: isArchived ? 16 : composerHeight + textExtraHeight.value - progress.value * insets.bottom }));
   const mentionOverlayStyle = useAnimatedStyle(() => ({
-    bottom: -keyboardHeight.value + composerHeight - progress.value * insets.bottom + 8,
+    bottom: -keyboardHeight.value + composerHeight + textExtraHeight.value - progress.value * insets.bottom + 8,
   }));
 
   const listData = useMemo<ListItem[]>(() => {
@@ -487,7 +484,7 @@ export default function TaskComments() {
     setIsSubmitting(true);
     const replyTarget = replyingTo;
 
-    const tokenText = buildTokenText(input.trim(), pendingMentions);
+    const tokenText = buildTokenTextFromRanges(input.trim(), nativeMentionRangesRef.current);
     const mentionUserIds = extractMentionUserIds(tokenText);
 
     const localId = `local-${Date.now()}`;
@@ -526,10 +523,10 @@ export default function TaskComments() {
     scrollPendingRef.current = true;
     setComments((prev) => [...prev, optimistic]);
     setInput("");
-    inputValueRef.current = "";
+    inputRef.current?.clear();
+    nativeMentionRangesRef.current = [];
     setPendingAttachments([]);
     setReplyingTo(null);
-    setPendingMentions([]);
     setMentionQuery(null);
 
     try {
@@ -654,37 +651,22 @@ export default function TaskComments() {
   const canSend = input.trim().length > 0 || pendingAttachments.length > 0;
 
   const handleInputChange = (text: string) => {
-    inputValueRef.current = text;
     setInput(text);
-    const lastAt = text.lastIndexOf("@");
-    if (lastAt === -1) { setMentionQuery(null); setPendingMentions(prev => prunePendingMentions(prev, text)); cursorPosRef.current = text.length; return; }
-    const afterAt = text.slice(lastAt + 1);
-    if (/\s/.test(afterAt)) { setMentionQuery(null); setPendingMentions(prev => prunePendingMentions(prev, text)); cursorPosRef.current = text.length; return; }
-    setMentionQuery(afterAt);
-    mentionStartRef.current = lastAt;
-    cursorPosRef.current = text.length;
   };
 
-  const handleSelectionChange = (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
-    cursorPosRef.current = e.nativeEvent.selection.end;
+  const handleNativeMentionChange = (text: string, mentions: MentionRange[]) => {
+    setInput(text);
+    nativeMentionRangesRef.current = mentions;
+  };
+
+  const handleComposerHeightChange = (height: number) => {
+    textExtraHeight.value = Math.max(0, height - 24);
   };
 
   const handleMentionSelect = (user: User) => {
     const displayName = user.name || user.email || "";
-    const atIndex = mentionStartRef.current;
-    const queryLen = mentionQuery?.length ?? 0;
-    const text = inputValueRef.current;
-    const newText = text.slice(0, atIndex) + `@${displayName} ` + text.slice(atIndex + 1 + queryLen);
-    const newCursor = atIndex + displayName.length + 2;
-    inputValueRef.current = newText;
-    setInput(newText);
+    (inputRef.current as MentionTextInputRef | null)?.insertMention?.(user.user_id, displayName);
     setMentionQuery(null);
-    setPendingMentions((prev) => {
-      if (prev.some((m) => m.userId === user.user_id)) return prev;
-      return [...prev, { name: displayName, userId: user.user_id }];
-    });
-    setInputSelection({ start: newCursor, end: newCursor });
-    requestAnimationFrame(() => setInputSelection(undefined));
   };
 
   const scrollToQuotedComment = (replyingComment: DisplayComment) => {
@@ -766,6 +748,8 @@ export default function TaskComments() {
                 isNearBottomRef.current = nearBottom;
                 if (nearBottom === showScrollDown) setShowScrollDown(!nearBottom);
               }}
+              keyboardDismissMode="on-drag"
+              onScrollBeginDrag={Keyboard.dismiss}
               scrollEventThrottle={100}
               contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 10 }}
               showsVerticalScrollIndicator={false}
@@ -853,8 +837,9 @@ export default function TaskComments() {
             onPickAttachments={pickAttachments}
             onRemoveAttachment={(id) => setPendingAttachments((prev) => prev.filter((a) => a.id !== id))}
             onCancelReply={() => setReplyingTo(null)}
-            onSelectionChange={handleSelectionChange}
-            selection={inputSelection}
+            onMentionInputChange={handleNativeMentionChange}
+            onMentionQueryChange={setMentionQuery}
+            onComposerHeightChange={handleComposerHeightChange}
           />
         )}
       </KeyboardAvoidingView>
