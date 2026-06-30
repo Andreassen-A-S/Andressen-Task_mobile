@@ -30,4 +30,3 @@ export function buildTokenTextFromRanges(
     result += text.slice(i);
     return result;
 }
-
