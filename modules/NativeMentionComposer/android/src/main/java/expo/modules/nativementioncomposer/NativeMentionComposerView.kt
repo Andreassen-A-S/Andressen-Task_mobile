@@ -253,8 +253,8 @@ class NativeMentionComposerView(
     val height = measuredTextHeight(max(1, width - horizontalPadding * 2))
     if (height != lastHeight) {
       lastHeight = height
-      shadowNodeProxy.setViewSize(width.toDouble(), height.toDouble())
       val density = resources.displayMetrics.density
+      shadowNodeProxy.setViewSize((width / density).toDouble(), (height / density).toDouble())
       onHeightChange(mapOf("height" to height / density))
       requestLayout()
     }
