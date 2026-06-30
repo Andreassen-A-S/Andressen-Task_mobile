@@ -172,7 +172,7 @@ class NativeMentionComposerView(
     emitAll(null)
   }
 
-  fun payload(): Map<String, Any?> {
+  fun payload(): Map<String, Any> {
     return mapOf(
       "text" to editText.text.toString(),
       "mentions" to mentionPayload()
@@ -245,7 +245,11 @@ class NativeMentionComposerView(
     val start = editText.selectionStart.coerceAtLeast(0)
     val end = editText.selectionEnd.coerceAtLeast(start)
     onSelectionChange(mapOf("start" to start, "end" to end))
-    onMentionQueryChange(mapOf("query" to queryOverride))
+    if (queryOverride != null) {
+      onMentionQueryChange(mapOf("query" to queryOverride))
+    } else {
+      onMentionQueryChange(emptyMap())
+    }
   }
 
   private fun updateNativeSize() {
@@ -268,10 +272,10 @@ class NativeMentionComposerView(
     return min(maxTextHeight, max(minTextHeight, ceil(editText.measuredHeight.toDouble()).toInt()))
   }
 
-  private fun mentionPayload(): List<Map<String, Any?>> {
+  private fun mentionPayload(): List<Map<String, Any>> {
     val text = editText.text.toString()
     return normalizeMentions(text, mentions).map {
-      mapOf("start" to it.start, "end" to it.end, "name" to it.name, "userId" to it.userId)
+      mapOf<String, Any>("start" to it.start, "end" to it.end, "name" to it.name, "userId" to it.userId)
     }
   }
 
