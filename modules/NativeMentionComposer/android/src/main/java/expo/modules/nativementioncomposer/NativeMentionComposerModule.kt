@@ -10,8 +10,6 @@ class NativeMentionComposerModule : Module() {
     View(NativeMentionComposerView::class) {
       Events(
         "onComposerChange",
-        "onSubmit",
-        "onAddPress",
         "onMentionQueryChange",
         "onSelectionChange",
         "onHeightChange"
@@ -23,14 +21,6 @@ class NativeMentionComposerModule : Module() {
 
       Prop("placeholder") { view: NativeMentionComposerView, value: String ->
         view.placeholder = value
-      }
-
-      Prop("canSubmit") { view: NativeMentionComposerView, value: Boolean ->
-        view.canSubmit = value
-      }
-
-      Prop("isSubmitting") { view: NativeMentionComposerView, value: Boolean ->
-        view.isSubmitting = value
       }
 
       Prop("mentions") { view: NativeMentionComposerView, value: List<Map<String, Any?>> ->
