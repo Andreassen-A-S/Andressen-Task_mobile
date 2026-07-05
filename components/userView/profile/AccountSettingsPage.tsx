@@ -5,13 +5,13 @@ import { getUser } from "@/lib/api";
 import { User } from "@/types/users";
 import { colors } from "@/constants/colors";
 import SingleAvatar from "@/components/userView/common/label/singleAvatar";
-import PathHeader, { usePathHeaderHeight } from "@/components/userView/common/PathHeader";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AccountSettingsPage() {
   const authContext = useContext(AuthContext);
   const currentUser = authContext?.user;
   const [userDetails, setUserDetails] = useState<User | null>(null);
-  const headerHeight = usePathHeaderHeight();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!currentUser?.user_id) return;
@@ -27,10 +27,9 @@ export default function AccountSettingsPage() {
 
   return (
     <View className="flex-1 bg-background">
-      <PathHeader title="Konto" centered />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: headerHeight + 16, paddingBottom: 32, paddingHorizontal: 16, gap: 24 }}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: insets.bottom + 24, paddingHorizontal: 16, gap: 24 }}
       >
         <View className="items-center gap-3">
           <SingleAvatar
