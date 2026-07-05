@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Check } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "expo-router/build/react-navigation/elements";
 import { colors } from "@/constants/colors";
 
 const OPTIONS = [
@@ -14,7 +13,7 @@ const CURRENT = "light";
 
 export default function ThemeSettingsPage() {
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
+  const headerHeight = insets.top + 56;
 
   return (
     <View className="flex-1 bg-background">

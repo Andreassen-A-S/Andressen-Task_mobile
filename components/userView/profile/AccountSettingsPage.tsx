@@ -5,7 +5,6 @@ import { getUser } from "@/lib/api";
 import { User } from "@/types/users";
 import { colors } from "@/constants/colors";
 import SingleAvatar from "@/components/userView/common/label/singleAvatar";
-import { useHeaderHeight } from "expo-router/build/react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AccountSettingsPage() {
@@ -13,7 +12,7 @@ export default function AccountSettingsPage() {
   const currentUser = authContext?.user;
   const [userDetails, setUserDetails] = useState<User | null>(null);
   const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
+  const headerHeight = insets.top + 56;
 
   useEffect(() => {
     if (!currentUser?.user_id) return;
