@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Check } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useHeaderHeight } from "expo-router/build/react-navigation/elements";
 import { colors } from "@/constants/colors";
 
 const OPTIONS = [
@@ -13,12 +14,13 @@ const CURRENT = "light";
 
 export default function ThemeSettingsPage() {
   const insets = useSafeAreaInsets();
+  const headerHeight = useHeaderHeight();
 
   return (
     <View className="flex-1 bg-background">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 16, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingTop: headerHeight + 16, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}
       >
         <View className="bg-surface rounded-2xl overflow-hidden">
           {OPTIONS.map((option, i) => (
