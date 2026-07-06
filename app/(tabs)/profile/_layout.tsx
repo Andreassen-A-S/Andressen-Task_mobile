@@ -1,5 +1,4 @@
 import { Stack } from "expo-router";
-import { colors } from "@/constants/colors";
 
 export default function ProfileLayout() {
   return (
@@ -11,7 +10,6 @@ export default function ProfileLayout() {
           fontSize: 18,
           fontWeight: "600",
         },
-        headerTintColor: colors.textPrimary,
       }}
     >
       <Stack.Screen name="index" />
