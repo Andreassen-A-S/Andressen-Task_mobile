@@ -29,12 +29,13 @@ React Native mobile app for the AndressenTask task management system, built with
 
 ## Useful Commands
 
-| Command                                          | Description                                      |
-| ------------------------------------------------ | ------------------------------------------------ |
-| `npx expo start`                                 | Start the dev server                             |
-| `npx expo start --clear`                         | Start with cleared Metro cache                   |
-| `npx expo start --tunnel`                        | Start with public tunnel URL (share with others) |
-| `npx expo start --ios`                           | Open in iOS simulator                            |
-| `npx expo start --android`                       | Open in Android emulator                         |
-| `eas build --platform android --profile preview` | Build Android APK for distribution               |
-| `eas submit --platform ios --profile production` | Submit iOS app for review                        |
+| Command                                             | Description                                      |
+| --------------------------------------------------- | ------------------------------------------------ |
+| `npx expo start`                                    | Start the dev server                             |
+| `npx expo start --clear`                            | Start with cleared Metro cache                   |
+| `npx expo start --tunnel`                           | Start with public tunnel URL (share with others) |
+| `npx expo start --ios`                              | Open in iOS simulator                            |
+| `npx expo start --android`                          | Open in Android emulator                         |
+| `eas build --platform android --profile production` | Build Android APK for distribution               |
+| `eas build --platform ios --profile production`     | Build iOS IPA for distribution                   |
+| `eas submit --platform ios --profile production`    | Submit iOS app for review                        |
