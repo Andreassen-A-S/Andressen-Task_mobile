@@ -107,7 +107,7 @@ function RootNavigator() {
     }
   }, [lastNotificationResponse, isAuthenticated, isInitializing, router]);
 
-  // Do not mount a provisional route while the stored session is unresolved.
+  // Do not mount a provisional route while the stored session is unresolved..
   // The native splash remains visible until the correct route tree is mounted.
   if (isInitializing) return null;
 
